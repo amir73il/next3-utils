@@ -1,0 +1,440 @@
+#!/bin/sh
+
+# default snapshot-name is the <date-time> in shadow copy format
+if [ -z $2 ] ; then
+	s=$( date -u +@GMT-%Y.%m.%d-%H.%M.%S )
+else
+	s=$2
+fi
+
+SYSDEBUGDIR=/sys/kernel/debug
+SNAPDEBUGDIR=$SYSDEBUGDIR/snapshot
+#TIME=time
+
+# default debug-level is old-debug-level
+if [ ! -d $SNAPDEBUGDIR ] ; then
+	mount -t debugfs debugfs $SYSDEBUGDIR || exit 1
+fi
+L=$(cat $SNAPDEBUGDIR/snapshot-debug)
+if [ -z $2 ] ; then
+	l=$L
+else
+	l=$2
+fi
+
+# read snapshot block device and mount point from conf file
+SNAPCONF=snapshot.conf
+
+if [ -z $ROOTDEV ] || [ -z $ROOTDIR ] || [ -z $VOL ] ; then
+	if [ -e ./$SNAPCONF ] ; then
+		. ./$SNAPCONF
+	elif [ -e /etc/$SNAPCONF ] ; then
+		. /etc/$SNAPCONF
+	elif [ -e /var/etc/$SNAPCONF ] ; then
+		. /var/etc/$SNAPCONF
+	fi
+fi
+if [ ! -z $1 ] && [ $1 != config ] && [ $1 != version ]  && [ $1 != debug ] && [ $1 != delay ] ; then
+	if [ -z $ROOTDEV ] || [ ! -e $ROOTDEV ] ; then
+		echo bad block device $ROOTDEV - run $0 config or define ROOTDEV
+		exit 1
+	fi
+	if [ -z $ROOTDIR ] || [ ! -d $ROOTDIR ] ; then
+		echo bad mount point $ROOTDIR - run $0 config or define ROOTDIR
+		exit 1
+	fi
+	if [ -z $VOL ] ; then
+		echo missing volume name - run $0 config or define VOL
+		exit 1
+	fi
+fi
+
+SNAPMNTDIR=/var/vol/snapshots
+SNAPDEVDIR=/dev/snapshots
+mkdir -p $SNAPDEVDIR
+mkdir -p $SNAPMNTDIR
+
+SNAPDIR=$ROOTDIR/.ctera/snapshots
+
+# See how we were called.
+case "$1" in
+  config)
+	if [ -z $2 ] || [ -z $3 ] || [ -z $4 ] ; then
+		$0 
+		exit 1
+	fi
+	ROOTDEV=$2
+	ROOTDIR=$3
+	VOL=$4
+	echo export ROOTDEV=$2 > $SNAPCONF
+	echo export ROOTDIR=$3 >> $SNAPCONF
+	echo export VOL=$4 >> $SNAPCONF
+	cat $SNAPCONF
+	tune2fs -c 0 -i 0 -e remount-ro -O has_snapshot $ROOTDEV
+	;;
+  version)
+	ver=$(cat $SNAPDEBUGDIR/snapshot-version)
+	echo snapshot-version = $ver
+	;;
+  debug)
+	echo $l > $SNAPDEBUGDIR/snapshot-debug
+	l=$(cat $SNAPDEBUGDIR/snapshot-debug)
+	echo snapshot-debug = $l
+	;;
+  delay)
+	if [ -z $2 ] ; then
+		echo missing test name
+		exit 1
+	fi
+	if [ ! -z $3 ] ; then
+		if [ $3 -gt 60 ] || [ $3 -lt 0 ] ; then
+			echo valid range for test delay is 0-60 sec
+		else
+			if [ ! -z $4 ] ; then
+				ms=$3$4
+			else
+				ms=$3$(echo 000)
+			fi
+			echo $ms > $SNAPDEBUGDIR/test-$2-delay-msec
+		fi
+	fi
+	ms=$(cat $SNAPDEBUGDIR/test-$2-delay-msec)
+	echo test-$2-delay = $ms msec
+	;;
+  start)
+	# init snapshots
+	$0 debug $l
+	if [ -e $ROOTDEV ] ; then
+		#mount -t next3 -o noatime,user_xattr,acl,errors=remount-ro $ROOTDEV $ROOTDIR
+		rs exec /proc/storage mount name $VOL
+		sleep 1
+		mkdir -p $SNAPDIR
+		# auto mount all snapshots
+		$0 mount
+	fi
+	;;
+  stop)
+	if [ -e $ROOTDEV ] ; then
+		$0 umount
+		#umount $ROOTDIR || exit 1
+		rs exec /proc/storage umount name $VOL
+		sleep 1
+	fi
+	;;
+  printst)
+	echo $2 $7 $3 $5 $13 $14 $15 $16
+	;;
+  status|st)
+	echo Mounted snapshots:
+	df -h $ROOTDIR $SNAPMNTDIR/*/* 2> /dev/null
+	echo .
+	echo "Snapshots list:"
+	echo "id inode attributes disk-usage mtime filename"
+	echo "---------------------------------------------"
+    for s in $( ls -vr $SNAPDIR/* ) ; do 
+		echo -n "$0 printst "
+		echo -n "$( lsattr -v -X $s ) "
+		echo -n "$( du -h $s ) "
+		echo -n "$( ls -lih --color=never $s ) "
+		echo
+	done > /tmp/lssnap
+	chmod a+x /tmp/lssnap
+	/tmp/lssnap
+	echo .
+	;;
+  restart)
+	$0 stop
+	$0 start $l
+	;;
+
+  create|cr)
+	if [ -f $SNAPDIR/$s ] ; then 
+		echo snapshot $s already exsists!
+		exit 1
+	else
+		touch $SNAPDIR/$s
+		$TIME chattr -X +S $SNAPDIR/$s
+	fi
+	;;
+  clean|cl)
+  	if [ -f $SNAPDIR/$s ] ; then 
+		$TIME chattr -X +t $SNAPDIR/$s
+	else 
+		echo snapshot $s not found!
+		exit 1
+	fi
+	;;
+  delete|del)
+	if [ -f $SNAPDIR/$s ] ; then 
+		$0 umount $s
+		$TIME chattr -X -S $SNAPDIR/$s
+	fi
+	;;
+  remove|rm)
+	if [ -f $SNAPDIR/$s ] ; then 
+		$0 delete $s
+		rm -f $SNAPDIR/$s
+	fi
+	;;
+  enable|en)
+  	if [ -b $SNAPDEVDIR/$s/$VOL ] ; then 
+		exit 0
+	fi
+  	if [ -f $SNAPDIR/$s ] ; then 
+		$TIME chattr -X +n $SNAPDIR/$s || exit 1
+		mkdir -p $SNAPDEVDIR/$s
+		ln $(losetup -f) $SNAPDEVDIR/$s/$VOL
+  		losetup -o 4243456 $SNAPDEVDIR/$s/$VOL $SNAPDIR/$s
+	else 
+		echo snapshot $s not found!
+		exit 1
+  	fi
+	;;
+  disable|di)
+	if [ -d $SNAPMNTDIR/$s ] ; then 
+		echo snapshot $s is mounted!
+		exit 1
+	fi
+  	if [ -b $SNAPDEVDIR/$s/$VOL ] ; then 
+		losetup -d $SNAPDEVDIR/$s/$VOL
+		rm $SNAPDEVDIR/$s/$VOL
+		rmdir $SNAPDEVDIR/$s
+	fi
+	chattr -X -n $SNAPDIR/$s
+	;;
+
+  dump)
+	if [ -z $2 ] ; then
+		$0 restart 5
+		$0 debug $L
+	else
+		chattr +c $SNAPDIR/$s
+	fi
+	;;
+  mount|mo)
+	if [ -z $2 ] ; then
+		for s in $( ls $SNAPDIR/ ) ; do 
+			$0 mount $s 2> /dev/null
+		done
+	else
+  		$0 enable $s || exit 1
+		if [ -b $SNAPDEVDIR/$s/$VOL ] ; then 
+			mkdir -p $SNAPMNTDIR/$s/$VOL
+  			mount -t ext2 -r $SNAPDEVDIR/$s/$VOL $SNAPMNTDIR/$s/$VOL || exit 1
+  		fi
+  	fi
+	;;
+  umount|um)
+	if [ -z $2 ] ; then
+		for s in $( ls $SNAPDIR/ ) ; do 
+			$0 umount $s 2> /dev/null
+		done
+	else
+		if [ -d $SNAPMNTDIR/$s ] ; then 
+			umount $SNAPMNTDIR/$s/$VOL
+			rmdir $SNAPMNTDIR/$s/$VOL
+			rmdir $SNAPMNTDIR/$s
+		fi
+  		$0 disable $s
+	fi
+	;;
+  remount)
+	$0 umount $2
+	$0 mount $2
+	;;
+
+  ls)
+	if [ -z $2 ] ; then
+		echo Files in file system:
+		d=$ROOTDIR
+	else
+		echo Files in snapshot $s:
+		d=$SNAPMNTDIR/$s/$VOL
+	fi
+	if [ -d $d ] ; then 
+		grep -v xxx $d/?/*
+		find $d/ -type f -maxdepth 1 -print
+		echo .
+	fi
+	;;
+  mkfs)
+	$0 stop || exit 1
+	$0 debug 0
+	mke2fs -j -i 16384 -E resize=536870912 $ROOTDEV
+	tune2fs -c 0 -i 0 -e remount-ro -O has_snapshot $ROOTDEV
+	$0 debug $l
+	$0 start
+	;;
+  rmdir)
+	rm -rf $ROOTDIR/? 2> /dev/null
+	rm -rf $ROOTDIR/*M 2> /dev/null
+	;;
+  mkdir)
+	$0 rmdir
+	mkdir $ROOTDIR/A
+	mkdir $ROOTDIR/B
+	mkdir $ROOTDIR/C
+	mkdir $ROOTDIR/D
+	mkdir $ROOTDIR/E
+	echo aligator > $ROOTDIR/A/a.txt
+	echo bizon > $ROOTDIR/B/b.txt
+	echo camel > $ROOTDIR/C/c.txt
+	;;
+  fsck)
+	$0 debug 0
+	if [ -z $2 ] ; then
+		$0 stop || exit 1
+		e2fsck -pf -C 0 $ROOTDEV
+		$0 start
+	else
+		$0 umount $2 2> /dev/null
+		$0 enable $2
+		e2fsck -nf -C 0 $SNAPDEVDIR/$2/$VOL
+		$0 mount $2
+	fi
+	$0 debug $l
+	;;
+  take)
+	echo Taking snapshot $s
+	$0 create $s || exit 1
+	$0 mount $s
+	echo .
+	;;
+  tests)
+	if [ -z $2 ] ; then
+		n=4
+	else
+		n=$2
+	fi
+	for s in $( ls $SNAPDIR/ ) ; do 
+		$0 delete $s 2> /dev/null
+	done
+	for s in $( ls $SNAPDIR/ ) ; do 
+		$0 remove $s 2> /dev/null
+	done
+	test $n -ge 0 && $0 test 0
+	test $n -ge 1 && $0 test 1
+	test $n -ge 2 && $0 test 2
+	test $n -ge 3 && $0 test 3
+	test $n -ge 4 && $0 test 4
+	test $n -ge 5 && $0 test 5
+	test $n -ge 6 && $0 test 6
+	test $n -ge 7 && $0 test 7
+	test $n -ge 8 && $0 test 8
+	;;
+  test)
+	if [ -z $2 ] ; then
+		n=1
+	else
+		n=$2
+	fi
+	if [ $n = 0 ] ; then
+		$0 mkdir
+		exit 0
+	fi
+	echo
+	echo Running snapshot test $n:
+	echo ------------------------
+	#sleep 6 # wait for journal commit
+	N=$n$(echo 0)
+	F=$(echo $N)M
+	echo Creating /$F
+	dd if=/dev/zero bs=1M count=$N of=$ROOTDIR/$F 2> /dev/null
+	#chattr +d $ROOTDIR/$F
+	$0 ls
+	s=$n
+	#s=$( date -u +@GMT-%Y.%m.%d-%H.%M.%S )
+	$0 take $s
+	#echo Removing /$F
+	#rm $ROOTDIR/$F
+	case "$n" in
+  	  1)
+		echo Create test:
+		echo ------------
+		echo 'Creating d.txt'
+		echo dodo > $ROOTDIR/D/d.txt
+		echo 'Creating e.txt'
+		echo emu > $ROOTDIR/E/e.txt
+	  ;;
+	  2)
+		echo Write test:
+		echo -----------
+		echo 'Writing b.txt (overwrite)'
+		echo 'barracuda' | dd conv=notrunc of=$ROOTDIR/B/b.txt 2> /dev/null
+		echo 'Writing c.txt (append)'
+		echo 'crocodile' >> $ROOTDIR/C/c.txt
+	  ;;
+	  3)
+		echo Remove test:
+		echo ------------
+		echo 'Removing d.txt'
+		rm $ROOTDIR/D/d.txt
+	  ;;
+	  4)
+		echo Restore test:
+		echo -------------
+		f=$( ls -v $SNAPDIR/ | head -n 1 )
+		echo 'Restoring from snapshot' $f
+		if [ ! -d $SNAPMNTDIR/$f ] ; then 
+			$0 mount $f || exit 1
+		fi
+		rm -rf $ROOTDIR/?
+		cp -R $SNAPMNTDIR/$f/$VOL/? $ROOTDIR/
+		$0 clean $s || exit 1
+	  ;;
+	  5)
+		echo Delete excluded test:
+		echo ---------------------
+	  	echo Removing excluded files
+	  	rm $ROOTDIR/*M
+	  ;;
+	  6)
+		echo Delete reallocated test:
+		echo ------------------------
+		chattr -d $ROOTDIR/$F
+		echo Removing /$F
+		rm $ROOTDIR/$F
+	  ;;
+	  7)
+		echo Shrink snapshots test:
+		echo ---------------------
+		for f in 5 6 4 3 2 ; do 
+			echo 'Deleting snapshot' $f
+			$0 delete $f 2> /dev/null
+			#sleep 1
+			#$0 fsck
+			$0 st
+		done
+	  ;;
+	  8)
+		echo Merge snapshots test:
+		echo ---------------------
+		$0 um 
+		for f in 7 1 8 ; do 
+			echo 'Deleting snapshot' $f
+			$0 delete $f 2> /dev/null
+			#sleep 1
+			#$0 fsck
+			$0 st
+		done
+	  ;;
+	esac
+	#sleep 1
+	#$0 fsck
+	echo .
+	$0 ls
+	$0 ls $s
+	$0 st
+	;;
+  *)
+        echo $"Usage: $0 config <block-device> <mount-point> <volume-name>"
+        echo $"Usage: $0 delay <take|delete|cow|read|bitmap> [delay-sec] [delay-msec]"
+        echo $"Usage: $0 {start|restart|mkfs|debug} [debug-level]"
+        echo $"Usage: $0 {create|cr|take|clean|enable|en|disable|di|delete|del|remove|rm} [snapshot-name] (default=@GMT-xxx)"
+        echo $"Usage: $0 {mount|mo|umount|um|remount|ls|dump|fsck} [snapshot-name] (default=all)"
+        echo $"Usage: $0 {stop|status|st|mkdir|version}"
+        echo $"Usage: $0 {test|tests} [test-number]"
+        exit 1
+esac
+
+exit 0

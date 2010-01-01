@@ -1,0 +1,11 @@
+s/linux\/include\/linux\/next3_fs\.h/next3\.h/g
+s/linux\/include\/linux\/next3_fs_i\.h/next3_i\.h/g
+s/linux\/include\/linux\/next3_fs_sb\.h/next3_sb\.h/g
+s/linux\/include\/linux\/next3_jbd\.h/next3_jbd\.h/g
+s/_LINUX_NEXT3_FS_H/_LINUX_NEXT3_H/g
+s/_LINUX_NEXT3_FS_I/_LINUX_NEXT3_I/g
+s/_LINUX_NEXT3_FS_SB/_LINUX_NEXT3_SB/g
+s/<linux\/next3_fs\.h>/"next3\.h"/g
+s/<linux\/next3_fs_i\.h>/"next3_i\.h"/g
+s/<linux\/next3_fs_sb\.h>/"next3_sb\.h"/g
+s/<linux\/next3_jbd\.h>/"next3_jbd\.h"/g
