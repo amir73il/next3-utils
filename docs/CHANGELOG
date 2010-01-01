@@ -1,0 +1,54 @@
+v1.0.0-rc6
+----------
+Dec 17, 2009
+- collect COW statistics (cached/clear/mapped/moved/copied)
+- unit testing of race conditions
+
+v1.0.0-rc5
+----------
+Oct 27, 2009
+- cache test_and_cow result in journal_head (JOURNAL_CACHE)
+- count COW credits in handle (JOURNAL_CREDITS)
+- trace journal transactions and credits status (JOURNAL_DEBUG)
+- implement journal_release (JOURNAL_RELEASE)
+- clean old snapshot files from COW bitmap (FILE_EXCLUDE)
+
+v1.0.0-rc4
+----------
+Oct 4, 2009
+- snapshot merge (FILE_MERGE)
+- snapshot shrink/merge after file system resize
+- disallow snapshot create on a non empty file
+
+v1.0.0-rc3
+----------
+Sep 14, 2009
+- rename exct3 to next3
+- patch kernel 2.6.31
+- support for online resize
+- reserve disk space for snapshot use
+- copy super block to snapshot header
+- store snapshot ID in inode generation
+
+v1.0.0-rc2
+----------
+Mar 22, 2009
+-	added "snapshot version" command
+-	"snapshot start/stop" command calls storage mount/umount, so "snapshot clean/restart" works
+	<share-name> must be the same as <volume-name> or storage mount/umount will fail
+-	"snapshot clean/mkfs" creates a journal of size 2G (smaller file systems are not supported)
+-	fix journal credits in "snapshot create"
+
+v1.0.0-rc1
+----------
+Feb 2, 2009
+
+-	After formatting an hard disk and before "snapshot config", reboot is required
+-	"snapshot config" command takes a 3rd argument <share-name>
+	<share-name> is the name given to the share of the root folder of the volume, example:
+	~ # snapshot config /dev/1/vol1 /var/vol/1 public
+-	After "snapshot config", reboot is required
+-	Use the command "snapshot take" without the <snapshot-name> argument 
+	to create a snapshot named "@GMT-<date>-<time>"
+-	"@GMT-<date>-<time>" snapshots are viewable via CIFS shadow copies
+	(don't forget to run "snapshot mount" after reboot)

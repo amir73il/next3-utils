@@ -1,0 +1,58 @@
+Next3 INDEX
+
+What is Next3?
+Next3 is a clone of the Ext3 file system with the addition of snapshot support
+
+What is this file?
+this INDEX file serves as a cross reference to the next3 snapshot code.
+it aims to help developers follow the changes from ext3 to next3
+by dividing them into categories and sub categories.
+
+Next3 patches:
+
+next3_fs.patch - adds the next3 file system to the kernel
+e2fsprogs_snapshot.patch - adds snapshot awareness to e2fsck resize2fs tune2fs lsattr and chattr
+next3_snapshot.patch - adds snapshot support to a fresh ext3 clone (see following files list)
+
+
+Next3 files:
+
+Changed kernel files:
+fs/Kconfig - add generic snapshot and next3
+fs/Makefile - add generic snapshot and next3
+fs/buffer.c - tracked read functions
+include/linux/buffer_head.h - tracked read macros
+include/linux/journal_head.h - add COW tid cache to journal_head
+include/linux/jbd.h - add recursion level to handle_t
+include/linux/magic.h - add next3 file system
+
+Added ext3 files:
+fs/next3/snapshot.h - next3 snapshot API
+fs/next3/snapshot.c - next3 snapshot core functions
+fs/next3/snapshot_ctl.c - next3 snapshot control functions
+fs/next3/snapshot_debug.h - next3 snapshot debug macros
+fs/next3/snapshot_debug.c - next3 snapshot debugfs
+
+Changed ext3 files:
+fs/next3/Kconfig - add next3 snapshot support
+fs/next3/Makefile - add next3 snapshot support
+fs/next3/balloc.c - snapshot delete block hooks
+fs/next3/file.c - snapshot file access permissions
+fs/next3/inode.c - snapshot inode special behavior and data write hooks
+fs/next3/ioctl.c - next3 snapshot control via chattr
+fs/next3/namei.c - generalized inode list functions
+fs/next3/super.c - initialize snapshot code
+fs/next3/next3_jbd.c - snapshot meta data write hooks
+include/linux/next3_jbd.h - snapshot meta data write hooks
+include/linux/next3.h - add snapshot fields to next3 on-disk structs
+include/linux/next3_sb.h - add snapshot fields to next3 in-memory structs
+
+
+Next3 patch categories:
+
+all changes to ext3 files in next3_snapshot.patch are ifdef'ed 
+with one of the macros defined in fs/next3/Kconfig.
+each macro is associated with one of the main patch categories.
+in addition the that a macro may define a sub patch category.
+
+

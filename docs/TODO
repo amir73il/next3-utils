@@ -1,0 +1,18 @@
+Enhanced next3 features:
+------------------------
+- exclude files from snapshot (exclude bitmap inode)
+
+Unsupported ext3 features:
+--------------------------
+- user/group quotas (copy user/group quota blocks on snapshot take)
+- block size != PAGE_SIZE
+
+Stability
+--------------------
+- unit testing of post crash recovery
+
+Performance:
+------------
+- run file system benchmarks
+
+
