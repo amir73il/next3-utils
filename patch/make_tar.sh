@@ -2,9 +2,10 @@
 
 DATE=$(date +%d%m%y)
 LINUX=linux-2.6.31
+E2FS=e2fsprogs-1.41.9
 
-TARFILE=~/snapshot-$DATE.tgz
+TARFILE=~/snapshot-$DATE.tar.gz
 
 cd ../..
-tar cvfz $TARFILE --exclude=.svn snapshot/{bin,docs,$LINUX,patch/*.{sh,sed}}
+tar cvfz $TARFILE --exclude=.svn snapshot/{bin,docs,$LINUX,$E2FS,patch/*.{sh,sed}}
 

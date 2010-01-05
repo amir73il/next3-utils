@@ -63,14 +63,16 @@ case "$1" in
 		$0 
 		exit 1
 	fi
-	ROOTDEV=$2
-	ROOTDIR=$3
-	VOL=$4
+	export ROOTDEV=$2
+	export ROOTDIR=$3
+	export VOL=$4
 	echo export ROOTDEV=$2 > $SNAPCONF
 	echo export ROOTDIR=$3 >> $SNAPCONF
 	echo export VOL=$4 >> $SNAPCONF
 	cat $SNAPCONF
-	tune2fs -c 0 -i 0 -e remount-ro -O has_snapshot $ROOTDEV
+	$0 stop || exit 1
+	tune2fs -c 0 -i 0 -e remount-ro -O exclude_inode,has_snapshot $ROOTDEV
+	$0 start
 	;;
   version)
 	ver=$(cat $SNAPDEBUGDIR/snapshot-version)
@@ -93,7 +95,7 @@ case "$1" in
 			if [ ! -z $4 ] ; then
 				ms=$3$4
 			else
-				ms=$3$(echo 000)
+				ms=${3}000
 			fi
 			echo $ms > $SNAPDEBUGDIR/test-$2-delay-msec
 		fi
@@ -184,7 +186,7 @@ case "$1" in
 		$TIME chattr -X +n $SNAPDIR/$s || exit 1
 		mkdir -p $SNAPDEVDIR/$s
 		ln $(losetup -f) $SNAPDEVDIR/$s/$VOL
-  		losetup -o 4243456 $SNAPDEVDIR/$s/$VOL $SNAPDIR/$s
+  		losetup -r -o 4243456 $SNAPDEVDIR/$s/$VOL $SNAPDIR/$s
 	else 
 		echo snapshot $s not found!
 		exit 1
@@ -253,14 +255,14 @@ case "$1" in
 	fi
 	if [ -d $d ] ; then 
 		grep -v xxx $d/?/*
-		find $d/ -type f -maxdepth 1 -print
+		find $d/ -maxdepth 1 -type f -print
 		echo .
 	fi
 	;;
   mkfs)
 	$0 stop || exit 1
 	$0 debug 0
-	mke2fs -j -i 16384 -E resize=536870912 $ROOTDEV
+	mke2fs -j -i 16384 -E resize=536870912 -O big_journal,exclude_inode $ROOTDEV
 	tune2fs -c 0 -i 0 -e remount-ro -O has_snapshot $ROOTDEV
 	$0 debug $l
 	$0 start
@@ -336,8 +338,8 @@ case "$1" in
 	echo Running snapshot test $n:
 	echo ------------------------
 	#sleep 6 # wait for journal commit
-	N=$n$(echo 0)
-	F=$(echo $N)M
+	N=${n}0
+	F=${N}M
 	echo Creating /$F
 	dd if=/dev/zero bs=1M count=$N of=$ROOTDIR/$F 2> /dev/null
 	#chattr +d $ROOTDIR/$F
@@ -345,8 +347,9 @@ case "$1" in
 	s=$n
 	#s=$( date -u +@GMT-%Y.%m.%d-%H.%M.%S )
 	$0 take $s
-	#echo Removing /$F
-	#rm $ROOTDIR/$F
+	$0 clean $s
+	echo Removing /$F
+	rm $ROOTDIR/$F
 	case "$n" in
   	  1)
 		echo Create test:
@@ -359,10 +362,10 @@ case "$1" in
 	  2)
 		echo Write test:
 		echo -----------
-		echo 'Writing b.txt (overwrite)'
+		echo 'Writing b.txt (in-place)'
 		echo 'barracuda' | dd conv=notrunc of=$ROOTDIR/B/b.txt 2> /dev/null
-		echo 'Writing c.txt (append)'
-		echo 'crocodile' >> $ROOTDIR/C/c.txt
+		echo 'Writing c.txt (truncate)'
+		echo 'crocodile' > $ROOTDIR/C/c.txt
 	  ;;
 	  3)
 		echo Remove test:
@@ -380,7 +383,6 @@ case "$1" in
 		fi
 		rm -rf $ROOTDIR/?
 		cp -R $SNAPMNTDIR/$f/$VOL/? $ROOTDIR/
-		$0 clean $s || exit 1
 	  ;;
 	  5)
 		echo Delete excluded test:
