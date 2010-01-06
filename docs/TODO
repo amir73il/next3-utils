@@ -1,6 +1,6 @@
 Enhanced next3 features:
 ------------------------
-- exclude files from snapshot (exclude bitmap inode)
+- exclude files with 'nodump' flag (chattr +d) from snapshot
 
 Unsupported ext3 features:
 --------------------------
@@ -14,5 +14,6 @@ Stability
 Performance:
 ------------
 - run file system benchmarks
+- improved block allocation strategies for snapshot file
 
 

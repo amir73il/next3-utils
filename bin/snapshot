@@ -264,8 +264,7 @@ case "$1" in
 	$0 debug 0
 	mke2fs -j -i 16384 -E resize=536870912 -O big_journal,exclude_inode $ROOTDEV
 	tune2fs -c 0 -i 0 -e remount-ro -O has_snapshot $ROOTDEV
-	$0 debug $l
-	$0 start
+	$0 start $L
 	;;
   rmdir)
 	rm -rf $ROOTDIR/? 2> /dev/null
@@ -294,7 +293,7 @@ case "$1" in
 		e2fsck -nf -C 0 $SNAPDEVDIR/$2/$VOL
 		$0 mount $2
 	fi
-	$0 debug $l
+	$0 debug $L
 	;;
   take)
 	echo Taking snapshot $s
@@ -362,8 +361,8 @@ case "$1" in
 	  2)
 		echo Write test:
 		echo -----------
-		echo 'Writing b.txt (in-place)'
-		echo 'barracuda' | dd conv=notrunc of=$ROOTDIR/B/b.txt 2> /dev/null
+		echo 'Writing b.txt (append)'
+		echo 'barracuda' >> $ROOTDIR/B/b.txt
 		echo 'Writing c.txt (truncate)'
 		echo 'crocodile' > $ROOTDIR/C/c.txt
 	  ;;
@@ -431,10 +430,10 @@ case "$1" in
   *)
         echo $"Usage: $0 config <block-device> <mount-point> <volume-name>"
         echo $"Usage: $0 delay <take|delete|cow|read|bitmap> [delay-sec] [delay-msec]"
-        echo $"Usage: $0 {start|restart|mkfs|debug} [debug-level]"
+        echo $"Usage: $0 {start|restart|debug} [debug-level]"
         echo $"Usage: $0 {create|cr|take|clean|enable|en|disable|di|delete|del|remove|rm} [snapshot-name] (default=@GMT-xxx)"
         echo $"Usage: $0 {mount|mo|umount|um|remount|ls|dump|fsck} [snapshot-name] (default=all)"
-        echo $"Usage: $0 {stop|status|st|mkdir|version}"
+        echo $"Usage: $0 {stop|status|st|mkfs|mkdir|version}"
         echo $"Usage: $0 {test|tests} [test-number]"
         exit 1
 esac
