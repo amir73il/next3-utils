@@ -1,0 +1,121 @@
+Next3 development history
+
+What is Next3?
+Next3 is a clone of the Ext3 file system with the addition of snapshot support
+
+What is this file?
+this HISTORY file is an attempt to serialized the next sub patches.
+it aims to help developers follow the changes from ext3 to next3
+by following the changes in the order they should be applied
+(which is not always the order that they were developed).
+the sub patches are represented by the snapshot categories defined in Kconfig.
+for a complete list snapshot patch categories see the auto generated index file.
+
+
+Next3 top-level patches:
+
+next3_fs.patch - adds the next3 file system (fresh ext3 clone) to the kernel (NEXT3_FS)
+next3_snapshot.patch - adds snapshot support to a fresh ext3 clone (NEXT3_FS_SNAPSHOT)
+e2fsprogs_snapshot.patch - adds next3 features to e2fsck resize2fs tune2fs lsattr and chattr
+
+
+Next3 snapshot applied sub patches:
+
+CONFIG_NEXT3_FS_SNAPSHOT_DEBUG - some debugging code (added snapshot_debug.c,h)
+CONFIG_NEXT3_FS_SNAPSHOT_FILE - changes to ext3 structures (added snapshot.c,h)
+CONFIG_NEXT3_FS_SNAPSHOT_FILE_PERM - snapshot file permissions
+CONFIG_NEXT3_FS_SNAPSHOT_FILE_STORE - snapshot file on-disk in-memory conversions
+CONFIG_NEXT3_FS_SNAPSHOT_CTL - snapshot management code (added snapshot_ctl.c)
+CONFIG_NEXT3_FS_SNAPSHOT_HOOKS - define snapshot hooks API
+/* checkpoint: snapshot framework and API */
+
+CONFIG_NEXT3_FS_SNAPSHOT_FILE_PEEP - peep through from active snapshot to block device 
+/* checkpoint: single empty snapshot create/delete/mount via loop device */
+
+CONFIG_NEXT3_FS_SNAPSHOT_JOURNAL_CREDITS - increase transaction credits 
+CONFIG_NEXT3_FS_SNAPSHOT_HOOKS_JBD - snapshot metadata hooks inside JBD hooks 
+/* checkpoint: snapshot is proof to metadata changes (creat/rename/mkdir) */
+
+CONFIG_NEXT3_FS_SNAPSHOT_FILE_MOVE - remap allocated blocks to snapshot file
+CONFIG_NEXT3_FS_SNAPSHOT_HOOKS_MOVE - move data blocks to active snapshot on write_begin()
+/* checkpoint: snapshot is proof to data changes (overwrite/append) */
+
+CONFIG_NEXT3_FS_SNAPSHOT_HOOKS_DELETE - move blocks to active snapshot on free_blocks()
+/* checkpoint: snapshot is proof to deletes (truncate/remove/rmdir) */
+
+/* 
+ * mile stone: functional single snapshot 
+ * constrains: 
+ * - single snapshot reader or file system writer at a time
+ * - enough free disk space for snapshot metadata
+ */
+
+CONFIG_NEXT3_FS_SNAPSHOT_LIST - snapshots list framework
+CONFIG_NEXT3_FS_SNAPSHOT_LIST_PEEP - peep through to previous snapshot on list
+CONFIG_NEXT3_FS_SNAPSHOT_LIST_ORPHAN - reuse orphan list code for snapshot list manipulation
+CONFIG_NEXT3_FS_SNAPSHOT_HOOKS_INODE - pass inode in snapshot hooks to identify snapshot file delete
+/* checkpoint: multiple snapshots create/delete last/mount via loop device */
+
+/* 
+ * mile stone: functional multiple snapshots
+ * constrains: 
+ * - single snapshot reader or file system writer at a time
+ * - enough free disk space for snapshot metadata
+ * - only oldest snapshot can be deleted
+ */
+
+CONFIG_NEXT3_FS_SNAPSHOT_JOURNAL_ERROR - check return value of JBD hooks (posted to ext4-devel)
+/* checkpoint: handle unexpected out of disk space errors due to COW operation */
+
+CONFIG_NEXT3_FS_SNAPSHOT_BALLOC_RESERVE - reserve disk space for snapshot metadata
+/* checkpoint: avoid unexpected out of disk space errors due to COW operation */
+
+CONFIG_NEXT3_FS_SNAPSHOT_JOURNAL_BYPASS - bypass journal on COW bitmap operation to save credits 
+CONFIG_NEXT3_FS_SNAPSHOT_JOURNAL_CACHE - cache buffer COW state in running transaction
+CONFIG_NEXT3_FS_SNAPSHOT_JOURNAL_TRACE - trace remaining COW/buffer credits and COW statistics 
+CONFIG_NEXT3_FS_SNAPSHOT_JOURNAL_RELEASE - check remaining COW credits on journal_release_buffer() 
+/* checkpoint: avoid out of buffer credits oops due to COW operation (warn on low COW credits) */
+
+CONFIG_NEXT3_FS_SNAPSHOT_RACE_BITMAP - resolve race conditions on pending COW bitmap operations 
+/* checkpoint: test concurrent bitmap COW operations with test-bitmap-delay-msec */
+
+CONFIG_NEXT3_FS_SNAPSHOT_RACE_COW - resolve race conditions on pending COW operations 
+/* checkpoint: test concurrent COW operations with test-cow-delay-msec */
+
+CONFIG_BLOCK_TRACKED_READ - adds tracked read support to buffered I/O
+CONFIG_NEXT3_FS_SNAPSHOT_RACE_READ - resolve race conditions on pending active snapshot read through 
+/* checkpoint: test COW during pending read through with test-read-delay-msec */
+
+/* 
+ * mile stone: stable multiple snapshots
+ * constrains: 
+ * - only oldest snapshot can be deleted
+ */
+
+CONFIG_NEXT3_FS_SNAPSHOT_EXCLUDE_INODE - read exclude bitmap blocks from exclude inode (allocate on resize)
+CONFIG_NEXT3_FS_SNAPSHOT_EXCLUDE_BITMAP - update exclude bitmap on snapshot block allocate/move/delete
+CONFIG_NEXT3_FS_SNAPSHOT_FILE_EXCLUDE - verify all snapshots blocks are excluded
+CONFIG_NEXT3_FS_SNAPSHOT_FILE_SHRINK - free unused blocks of deleted snapshots
+CONFIG_NEXT3_FS_SNAPSHOT_FILE_MERGE - move deleted snapshot blocks to older non-deleted snapshot
+
+/* 
+ * mile stone: multiple deletable snapshots
+ * constrains: 
+ * - exclude inode needs to be pre-allocated before taking snapshots
+ *     otherwise, some unused blocks may not be reclaimed on shrink/merge
+ * - unused blocks of deleted active snapshot are reclaimed after:
+ *     a new snapshot becomes active (shrink/merge)
+ *   or 
+ *     all snapshots have been deleted (cleanup)
+ * - deleted snapshots are removed from the list after:
+ *     all older snapshots have been disabled (merge)
+ *   or 
+ *     all older snapshots have been deleted (cleanup)
+ */
+
+
+Next3 snapshot unapplied sub patches:
+
+CONFIG_NEXT3_FS_SNAPSHOT_BALLOC_GOAL - special block allocation strategy for snapshot files
+CONFIG_NEXT3_FS_SNAPSHOT_EXCLUDE_FILES - exclude any file with the NODUMP flag (chattr +d)
+
