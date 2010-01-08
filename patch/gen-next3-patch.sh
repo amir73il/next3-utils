@@ -7,6 +7,7 @@ then
     exit 1
 fi
 file="next3-`date +%F`.patch"
-echo "git diff master_base.. > $file"
-git diff master_base.. > $file || exit $?
+patchhead=`head -1 .git/logs/refs/remotes/origin/master | awk '{print $2;}'`
+echo "git diff $patchhead.. > $file"
+git diff $patchhead.. > $file || exit $?
 diffstat $file
