@@ -358,7 +358,7 @@ case "$1" in
 	s=$n
 	#s=$( date -u +@GMT-%Y.%m.%d-%H.%M.%S )
 	$0 take $s
-	$0 clean $s
+	#$0 clean $s
 	echo Removing /$F
 	rm $ROOTDIR/$F
 	case "$n" in
