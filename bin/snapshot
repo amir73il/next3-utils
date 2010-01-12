@@ -70,9 +70,7 @@ case "$1" in
 	echo export ROOTDIR=$3 >> $SNAPCONF
 	echo export VOL=$4 >> $SNAPCONF
 	cat $SNAPCONF
-	$0 stop || exit 1
-	tune2fs -c 0 -i 0 -e remount-ro -O exclude_inode,has_snapshot $ROOTDEV
-	$0 start
+	$0 install
 	;;
   version)
 	ver=$(cat $SNAPDEBUGDIR/snapshot-version)
@@ -102,6 +100,20 @@ case "$1" in
 	fi
 	ms=$(cat $SNAPDEBUGDIR/test-$2-delay-msec)
 	echo test-$2-delay = $ms msec
+	;;
+  install|in)
+	if [ -e $ROOTDEV ] ; then
+		$0 stop || exit 1
+		tune2fs -c 0 -i 0 -e remount-ro -O has_snapshot $ROOTDEV
+		$0 start
+	fi
+	;;
+  uninstall|un)
+	if [ -e $ROOTDEV ] ; then
+		$0 stop || exit 1
+		tune2fs -O ^has_snapshot $ROOTDEV
+		$0 start
+	fi
 	;;
   start)
 	# init snapshots
@@ -262,8 +274,8 @@ case "$1" in
   mkfs)
 	$0 stop || exit 1
 	$0 debug 0
-	mke2fs -j -i 16384 -E resize=536870912 -O big_journal,exclude_inode $ROOTDEV
-	tune2fs -c 0 -i 0 -e remount-ro -O has_snapshot $ROOTDEV
+	mke2fs -j -i 16384 -E resize=536870912 -O has_snapshot $ROOTDEV
+	tune2fs -c 0 -i 0 -e remount-ro
 	$0 start $L
 	;;
   rmdir)
@@ -285,7 +297,7 @@ case "$1" in
 	$0 debug 0
 	if [ -z $2 ] ; then
 		$0 stop || exit 1
-		e2fsck -pf -C 0 $ROOTDEV
+		e2fsck -pf -C 0 $ROOTDEV && echo $ROOTDEV is healthy || echo $ROOTDEV has errors
 		$0 start
 	else
 		$0 umount $2 2> /dev/null
@@ -433,7 +445,7 @@ case "$1" in
         echo $"Usage: $0 {start|restart|debug} [debug-level]"
         echo $"Usage: $0 {create|cr|take|clean|enable|en|disable|di|delete|del|remove|rm} [snapshot-name] (default=@GMT-xxx)"
         echo $"Usage: $0 {mount|mo|umount|um|remount|ls|dump|fsck} [snapshot-name] (default=all)"
-        echo $"Usage: $0 {stop|status|st|mkfs|mkdir|version}"
+        echo $"Usage: $0 {install|in|uninstall|un|stop|status|st|mkfs|mkdir|version}"
         echo $"Usage: $0 {test|tests} [test-number]"
         exit 1
 esac
