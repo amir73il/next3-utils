@@ -8,7 +8,7 @@ $openfile = 0;
 
 while (($line = <>)) {
     if ($line =~ /^diff --git a\/(\S+)/) {
-	$file = $1;
+	$file = $1 . ".patch";
 	$file =~ tr/[a-zA-Z0-9_\-\.]/_/c;
 	print "SPLIT-GIT-PATCH : $1 : $file\n" if $debug;
 	close(FILE) if ($openfile);
