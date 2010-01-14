@@ -12,9 +12,7 @@ KEY=$1
 GREP=grep
 
 if [ -z $1 ] ; then
-	for f in $(cd .. && ls -d $LINUX/*/* && ls -d $LINUX/*/*/*) ; do 
-		(test -f ../$f && echo updating $f... && cp -u ../$f $f)
-	done
+	./update_files.sh ../$LINUX $LINUX
 	rm -f $LINUX/*/*/tags
 	cp -f ../docs/INDEX $INDEXNAME
 	INDEXKEYS=next3_keys

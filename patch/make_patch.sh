@@ -39,9 +39,7 @@ elif [ $SRC = $E2FS ] ; then
 	mkdir -p $E2FS/misc
 fi
 
-for f in $(cd .. && ls -d $SRC/*/* && ls -d $SRC/*/*/*) ; do 
-	(test -f ../$f && echo updating $f... && cp -f ../$f $f)
-done
+./update_files.sh ../$SRC $SRC
 
 diff -Nuarp -X .ignore $ORIG $SRC > $PATCHNAME.patch
 
