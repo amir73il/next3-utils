@@ -1,4 +1,9 @@
 #!/bin/sh
+# Copyright (C) Amir Goldstein <amir@ctera.com>, 2008-2010
+# Copyright (C) CTERA Networks, 2008-2010
+#
+# snapshot management script
+#
 
 # default snapshot-name is the <date-time> in shadow copy format
 if [ -z $2 ] ; then
@@ -60,7 +65,7 @@ SNAPDIR=$ROOTDIR/.ctera/snapshots
 case "$1" in
   config)
 	if [ -z $2 ] || [ -z $3 ] || [ -z $4 ] ; then
-		$0 
+		$0
 		exit 1
 	fi
 	export ROOTDEV=$2
@@ -145,7 +150,7 @@ case "$1" in
 	echo "Snapshots list:"
 	echo "id inode attributes disk-usage mtime filename"
 	echo "---------------------------------------------"
-    for s in $( ls -vr $SNAPDIR/* ) ; do 
+    for s in $( ls -vr $SNAPDIR/* ) ; do
 		echo -n "$0 printst "
 		echo -n "$( lsattr -v -X $s ) "
 		echo -n "$( du -h $s ) "
@@ -162,7 +167,7 @@ case "$1" in
 	;;
 
   create|cr)
-	if [ -f $SNAPDIR/$s ] ; then 
+	if [ -f $SNAPDIR/$s ] ; then
 		echo snapshot $s already exsists!
 		exit 1
 	else
@@ -171,45 +176,45 @@ case "$1" in
 	fi
 	;;
   clean|cl)
-  	if [ -f $SNAPDIR/$s ] ; then 
+  	if [ -f $SNAPDIR/$s ] ; then
 		$TIME chattr -X +t $SNAPDIR/$s
-	else 
+	else
 		echo snapshot $s not found!
 		exit 1
 	fi
 	;;
   delete|del)
-	if [ -f $SNAPDIR/$s ] ; then 
+	if [ -f $SNAPDIR/$s ] ; then
 		$0 umount $s
 		$TIME chattr -X -S $SNAPDIR/$s
 	fi
 	;;
   remove|rm)
-	if [ -f $SNAPDIR/$s ] ; then 
+	if [ -f $SNAPDIR/$s ] ; then
 		$0 delete $s
 		rm -f $SNAPDIR/$s
 	fi
 	;;
   enable|en)
-  	if [ -b $SNAPDEVDIR/$s/$VOL ] ; then 
+  	if [ -b $SNAPDEVDIR/$s/$VOL ] ; then
 		exit 0
 	fi
-  	if [ -f $SNAPDIR/$s ] ; then 
+  	if [ -f $SNAPDIR/$s ] ; then
 		$TIME chattr -X +n $SNAPDIR/$s || exit 1
 		mkdir -p $SNAPDEVDIR/$s
 		ln $(losetup -f) $SNAPDEVDIR/$s/$VOL
   		losetup -r -o 4243456 $SNAPDEVDIR/$s/$VOL $SNAPDIR/$s
-	else 
+	else
 		echo snapshot $s not found!
 		exit 1
   	fi
 	;;
   disable|di)
-	if [ -d $SNAPMNTDIR/$s ] ; then 
+	if [ -d $SNAPMNTDIR/$s ] ; then
 		echo snapshot $s is mounted!
 		exit 1
 	fi
-  	if [ -b $SNAPDEVDIR/$s/$VOL ] ; then 
+  	if [ -b $SNAPDEVDIR/$s/$VOL ] ; then
 		losetup -d $SNAPDEVDIR/$s/$VOL
 		rm $SNAPDEVDIR/$s/$VOL
 		rmdir $SNAPDEVDIR/$s
@@ -227,12 +232,12 @@ case "$1" in
 	;;
   mount|mo)
 	if [ -z $2 ] ; then
-		for s in $( ls $SNAPDIR/ ) ; do 
+		for s in $( ls $SNAPDIR/ ) ; do
 			$0 mount $s 2> /dev/null
 		done
 	else
   		$0 enable $s || exit 1
-		if [ -b $SNAPDEVDIR/$s/$VOL ] ; then 
+		if [ -b $SNAPDEVDIR/$s/$VOL ] ; then
 			mkdir -p $SNAPMNTDIR/$s/$VOL
   			mount -t ext2 -r $SNAPDEVDIR/$s/$VOL $SNAPMNTDIR/$s/$VOL || exit 1
   		fi
@@ -240,11 +245,11 @@ case "$1" in
 	;;
   umount|um)
 	if [ -z $2 ] ; then
-		for s in $( ls $SNAPDIR/ ) ; do 
+		for s in $( ls $SNAPDIR/ ) ; do
 			$0 umount $s 2> /dev/null
 		done
 	else
-		if [ -d $SNAPMNTDIR/$s ] ; then 
+		if [ -d $SNAPMNTDIR/$s ] ; then
 			umount $SNAPMNTDIR/$s/$VOL
 			rmdir $SNAPMNTDIR/$s/$VOL
 			rmdir $SNAPMNTDIR/$s
@@ -265,7 +270,7 @@ case "$1" in
 		echo Files in snapshot $s:
 		d=$SNAPMNTDIR/$s/$VOL
 	fi
-	if [ -d $d ] ; then 
+	if [ -d $d ] ; then
 		grep -v xxx $d/?/*
 		find $d/ -maxdepth 1 -type f -print
 		echo .
@@ -319,10 +324,10 @@ case "$1" in
 	else
 		n=$2
 	fi
-	for s in $( ls $SNAPDIR/ ) ; do 
+	for s in $( ls $SNAPDIR/ ) ; do
 		$0 delete $s 2> /dev/null
 	done
-	for s in $( ls $SNAPDIR/ ) ; do 
+	for s in $( ls $SNAPDIR/ ) ; do
 		$0 remove $s 2> /dev/null
 	done
 	test $n -ge 0 && $0 test 0
@@ -389,7 +394,7 @@ case "$1" in
 		echo -------------
 		f=$( ls -v $SNAPDIR/ | head -n 1 )
 		echo 'Restoring from snapshot' $f
-		if [ ! -d $SNAPMNTDIR/$f ] ; then 
+		if [ ! -d $SNAPMNTDIR/$f ] ; then
 			$0 mount $f || exit 1
 		fi
 		rm -rf $ROOTDIR/?
@@ -411,7 +416,7 @@ case "$1" in
 	  7)
 		echo Shrink snapshots test:
 		echo ---------------------
-		for f in 5 6 4 3 2 ; do 
+		for f in 5 6 4 3 2 ; do
 			echo 'Deleting snapshot' $f
 			$0 delete $f 2> /dev/null
 			#sleep 1
@@ -422,8 +427,8 @@ case "$1" in
 	  8)
 		echo Merge snapshots test:
 		echo ---------------------
-		$0 um 
-		for f in 7 1 8 ; do 
+		$0 um
+		for f in 7 1 8 ; do
 			echo 'Deleting snapshot' $f
 			$0 delete $f 2> /dev/null
 			#sleep 1
