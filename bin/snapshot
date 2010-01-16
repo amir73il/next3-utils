@@ -1,4 +1,9 @@
 #!/bin/sh
+# Copyright (C) Amir Goldstein <amir@ctera.com>, 2008-2010
+# Copyright (C) CTERA Networks, 2008-2010
+#
+# snapshot management script
+#
 
 # default snapshot-name is the <date-time> in shadow copy format
 if [ -z $2 ] ; then
