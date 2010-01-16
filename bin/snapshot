@@ -33,6 +33,8 @@ SNAPCONF=snapshot.conf
 if [ -z $ROOTDEV ] || [ -z $ROOTDIR ] || [ -z $VOL ] ; then
 	if [ -e ./$SNAPCONF ] ; then
 		. ./$SNAPCONF
+	elif [ -e ~/$SNAPCONF ] ; then
+		. ~/$SNAPCONF
 	elif [ -e /etc/$SNAPCONF ] ; then
 		. /etc/$SNAPCONF
 	elif [ -e /var/etc/$SNAPCONF ] ; then
@@ -75,6 +77,7 @@ case "$1" in
 	echo export ROOTDIR=$3 >> $SNAPCONF
 	echo export VOL=$4 >> $SNAPCONF
 	cat $SNAPCONF
+	cp $SNAPCONF ~/
 	$0 install
 	;;
   version)
@@ -176,7 +179,13 @@ case "$1" in
 	fi
 	;;
   clean|cl)
-  	if [ -f $SNAPDIR/$s ] ; then
+	echo snapshot clean is under construction!
+	exit 1
+	if [ -z $2 ] ; then
+		for s in $( ls $SNAPDIR/ ) ; do
+			$0 clean $s
+		done
+  	elif [ -f $SNAPDIR/$s ] ; then
 		$TIME chattr -X +t $SNAPDIR/$s
 	else
 		echo snapshot $s not found!
@@ -448,8 +457,8 @@ case "$1" in
         echo $"Usage: $0 config <block-device> <mount-point> <volume-name>"
         echo $"Usage: $0 delay <take|delete|cow|read|bitmap> [delay-sec] [delay-msec]"
         echo $"Usage: $0 {start|restart|debug} [debug-level]"
-        echo $"Usage: $0 {create|cr|take|clean|enable|en|disable|di|delete|del|remove|rm} [snapshot-name] (default=@GMT-xxx)"
-        echo $"Usage: $0 {mount|mo|umount|um|remount|ls|dump|fsck} [snapshot-name] (default=all)"
+        echo $"Usage: $0 {create|cr|take|enable|en|disable|di|delete|del|remove|rm} [snapshot-name] (default=@GMT-xxx)"
+        echo $"Usage: $0 {mount|mo|umount|um|remount|ls|dump|fsck|clean|cl} [snapshot-name] (default=all)"
         echo $"Usage: $0 {install|in|uninstall|un|stop|status|st|mkfs|mkdir|version}"
         echo $"Usage: $0 {test|tests} [test-number]"
         exit 1

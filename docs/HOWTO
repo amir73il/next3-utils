@@ -1,8 +1,17 @@
+Next3 HOWTO:
+============
+
+This HOWTO file contains some basic examples of how to start working
+with next3 snapshots.
+For instrcution how to build and install next3 see INSTALL file.
+
 Getting started with snapshots:
 ===============================
 1.	Configure an ext3 volume to use snapshots for the first time.
 Find the volume block-device and mount-point using the "mount" command
 And use them to run the "snapshot config" command.
+The snapshot.conf file will be created in your home directory
+and will be used by the script from now on.
 
 ~ # mount
 ...
@@ -100,7 +109,7 @@ ls: /var/vol/1/.ctera/snapshots/*: No such file or directory
 
 5.	A few more useful commands:
 "snapshot debug" - set debug level (default=1)
-"snapshot clean" - start fresh - format the volume as next3
+"snapshot mkfs" - start fresh - format the volume as next3
 "snapshot tests" - runs a few simple snapshot tests
 
 
