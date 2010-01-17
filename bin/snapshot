@@ -15,12 +15,14 @@ fi
 SYSDEBUGDIR=/sys/kernel/debug
 SNAPDEBUGDIR=$SYSDEBUGDIR/snapshot
 #TIME=time
+MOUNT_NEXT3=/usr/sbin/mount.next3
+UMOUNT_NEXT3=/usr/sbin/umount.next3
 
 # default debug-level is old-debug-level
 if [ ! -d $SNAPDEBUGDIR ] ; then
-	mount -t debugfs debugfs $SYSDEBUGDIR || exit 1
+	mount -t debugfs debugfs $SYSDEBUGDIR 2> /dev/null
 fi
-L=$(cat $SNAPDEBUGDIR/snapshot-debug)
+L=$(cat $SNAPDEBUGDIR/snapshot-debug 2> /dev/null)
 if [ -z $2 ] ; then
 	l=$L
 else
@@ -41,9 +43,10 @@ if [ -z $ROOTDEV ] || [ -z $ROOTDIR ] || [ -z $VOL ] ; then
 		. /var/etc/$SNAPCONF
 	fi
 fi
-if [ ! -z $1 ] && [ $1 != config ] && [ $1 != version ]  && [ $1 != debug ] && [ $1 != delay ] ; then
+if [ ! -z $1 ] && [ $1 != help ] && [ $1_$2 != $1_help ] && [ $1 != config ] && \
+	[ $1 != version ] && [ $1 != debug ] && [ $1 != delay ] ; then
 	if [ -z $ROOTDEV ] || [ ! -e $ROOTDEV ] ; then
-		echo bad block device $ROOTDEV - run $0 config or define ROOTDEV
+		echo bad block device $ROOTDEV - run $0 $1 config or define ROOTDEV
 		exit 1
 	fi
 	if [ -z $ROOTDIR ] || [ ! -d $ROOTDIR ] ; then
@@ -58,38 +61,48 @@ fi
 
 SNAPMNTDIR=/var/vol/snapshots
 SNAPDEVDIR=/dev/snapshots
-mkdir -p $SNAPDEVDIR
-mkdir -p $SNAPMNTDIR
+mkdir -p $SNAPDEVDIR 2> /dev/null
+mkdir -p $SNAPMNTDIR 2> /dev/null
+modprobe next3 2> /dev/null
 
 SNAPDIR=$ROOTDIR/.ctera/snapshots
 
 # See how we were called.
 case "$1" in
-  config)
-	if [ -z $2 ] || [ -z $3 ] || [ -z $4 ] ; then
+# Snapshot global commands
+  help)
+	if [ -z $2 ] ; then
 		$0
-		exit 1
+	else
+		$0 $2 help
 	fi
-	export ROOTDEV=$2
-	export ROOTDIR=$3
-	export VOL=$4
-	echo export ROOTDEV=$2 > $SNAPCONF
-	echo export ROOTDIR=$3 >> $SNAPCONF
-	echo export VOL=$4 >> $SNAPCONF
-	cat $SNAPCONF
-	cp $SNAPCONF ~/
-	$0 install
 	;;
   version)
+	if [ $1_$2 = $1_help ] ; then
+		echo "$1: display next3 snapshot version."
+		exit 0
+	fi
 	ver=$(cat $SNAPDEBUGDIR/snapshot-version)
 	echo snapshot-version = $ver
 	;;
   debug)
+	if [ $1_$2 = $1_help ] ; then
+		echo "$1: set snapshot debug level."
+		echo "debug levels: 0=none, 1=error, 2=warning, 3=info, 4=debug."
+		echo "usage: $0 $1 [debug-level]"
+		exit 0
+	fi
 	echo $l > $SNAPDEBUGDIR/snapshot-debug
 	l=$(cat $SNAPDEBUGDIR/snapshot-debug)
 	echo snapshot-debug = $l
 	;;
   delay)
+	if [ $1_$2 = $1_help ] ; then
+		echo "$1: set snapshot test delay."
+		echo "adds delay to specific snapshot operation."
+		echo "usage: $0 $1 <take|delete|cow|read|bitmap> [delay-sec] [delay-msec]"
+		exit 0
+	fi
 	if [ -z $2 ] ; then
 		echo missing test name
 		exit 1
@@ -109,44 +122,127 @@ case "$1" in
 	ms=$(cat $SNAPDEBUGDIR/test-$2-delay-msec)
 	echo test-$2-delay = $ms msec
 	;;
+
+# Next3 volume commands
+  config)
+	if [ $1_$2 = $1_help ] ; then
+		echo "$1: configure snapshot script parameters."
+		echo "creates configuration file snapshot.conf in home directory."
+		echo "the snapshot script works on a single volume at a time"
+		echo "and the configuration file defines that volume."
+		echo "usage: $0 $1 <block-device> <mount-point> <volume-name>"
+		exit 0
+	fi
+	if [ -z $2 ] || [ -z $3 ] || [ -z $4 ] ; then
+		$0
+		exit 1
+	fi
+	export ROOTDEV=$2
+	export ROOTDIR=$3
+	export VOL=$4
+	echo export ROOTDEV=$2 > $SNAPCONF
+	echo export ROOTDIR=$3 >> $SNAPCONF
+	echo export VOL=$4 >> $SNAPCONF
+	cat $SNAPCONF
+	cp $SNAPCONF ~/
+	$0 install
+	;;
   install|in)
+	if [ $1_$2 = $1_help ] ; then
+		echo "install: convert an ext3 volume to next3."
+		echo "to start using snapshots on a pre formated ext3 volume"
+		echo "the file system needs to be converted to next3 first."
+		echo "usage: $0 {install|in}"
+		exit 0
+	fi
 	if [ -e $ROOTDEV ] ; then
 		$0 stop || exit 1
 		tune2fs -c 0 -i 0 -e remount-ro -O has_snapshot $ROOTDEV
-		$0 start
+		$0 start || exit 1
+		mkdir -p $SNAPDIR
 	fi
 	;;
   uninstall|un)
+	if [ $1_$2 = $1_help ] ; then
+		echo "uninstall: convert a next3 volume to ext3."
+		echo "all existing snapshots will be discarded."
+		echo "usage: $0 {uninstall|un}"
+		exit 0
+	fi
 	if [ -e $ROOTDEV ] ; then
 		$0 stop || exit 1
 		tune2fs -O ^has_snapshot $ROOTDEV
-		$0 start
+		$0 start || exit 1
+		rm -rf $SNAPDIR
 	fi
 	;;
+  mkfs)
+	if [ $1_$2 = $1_help ] ; then
+		echo "$1: format a next3 volume."
+		echo "usage: $0 $1"
+		exit 0
+	fi
+	$0 stop || exit 1
+	mke2fs -j -i 16384 -E resize=536870912 -O has_snapshot $ROOTDEV
+	tune2fs -c 0 -i 0 -e remount-ro
+	$0 start
+	;;
   start)
-	# init snapshots
-	$0 debug $l
+	if [ $1_$2 = $1_help ] ; then
+		echo "$1: mount next3 volume and all its snapshots."
+		echo "usage: $0 $1"
+		exit 0
+	fi
 	if [ -e $ROOTDEV ] ; then
-		#mount -t next3 -o noatime,user_xattr,acl,errors=remount-ro $ROOTDEV $ROOTDIR
-		rs exec /proc/storage mount name $VOL
-		sleep 1
+		# mount next3 volume
+		if [ -e $MOUNT_NEXT3 ] ; then
+			$MOUNT_NEXT3 $ROOTDEV $ROOTDIR $VOL
+		else
+			mount $ROOTDEV $ROOTDIR
+		fi || exit 1
 		mkdir -p $SNAPDIR
 		# auto mount all snapshots
 		$0 mount
 	fi
 	;;
   stop)
+	if [ $1_$2 = $1_help ] ; then
+		echo "$1: umount next3 volume and all its snapshots."
+		echo "usage: $0 $1"
+		exit 0
+	fi
 	if [ -e $ROOTDEV ] ; then
+		# umount all snapshots
 		$0 umount
-		#umount $ROOTDIR || exit 1
-		rs exec /proc/storage umount name $VOL
-		sleep 1
+		# umount next3 volume
+		if [ -e $UMOUNT_NEXT3 ] ; then
+			$UMOUNT_NEXT3 $ROOTDEV $ROOTDIR $VOL
+		else
+			umount $ROOTDIR
+		fi
 	fi
 	;;
+  restart)
+	if [ $1_$2 = $1_help ] ; then
+		echo "$1: remount next3 volume and all its snapshots."
+		echo "usage: $0 $1"
+		exit 0
+	fi
+	$0 stop
+	$0 start
+	;;
+
   printst)
 	echo $2 $7 $3 $5 $13 $14 $15 $16
 	;;
   status|st)
+	if [ $1_$2 = $1_help ] ; then
+		echo "status: display status of next3 volume and all its snapshots."
+		echo "snapshot attributes are displayed in short format. to display"
+		echo "attributes in long format use the 'snapshot lsattr' command."
+		echo "usage: $0 {status|st}"
+		exit 0
+	fi
 	echo Mounted snapshots:
 	df -h $ROOTDIR $SNAPMNTDIR/*/* 2> /dev/null
 	echo .
@@ -164,12 +260,22 @@ case "$1" in
 	/tmp/lssnap
 	echo .
 	;;
-  restart)
-	$0 stop
-	$0 start $l
+  lsattr)
+	if [ $1_$2 = $1_help ] ; then
+		echo "$1: display attributes of next3 snapshots in long format."
+		echo "usage: $0 $1"
+		exit 0
+	fi
+    lsattr -Xl $SNAPDIR
 	;;
 
+# Snapshot control commands (single snapshot)
   create|cr)
+	if [ $1_$2 = $1_help ] ; then
+		echo "create: create a new snapshot."
+		echo "usage: $0 {create|cr} [snapshot-name] (default=@GMT-xxx)"
+		exit 0
+	fi
 	if [ -f $SNAPDIR/$s ] ; then
 		echo snapshot $s already exsists!
 		exit 1
@@ -178,33 +284,61 @@ case "$1" in
 		$TIME chattr -X +S $SNAPDIR/$s
 	fi
 	;;
-  clean|cl)
-	echo snapshot clean is under construction!
-	exit 1
-	if [ -z $2 ] ; then
-		for s in $( ls $SNAPDIR/ ) ; do
-			$0 clean $s
-		done
-  	elif [ -f $SNAPDIR/$s ] ; then
-		$TIME chattr -X +t $SNAPDIR/$s
-	else
-		echo snapshot $s not found!
-		exit 1
+  take)
+	if [ $1_$2 = $1_help ] ; then
+		echo "take: create a new snapshot and mount it."
+		echo "usage: $0 take [snapshot-name] (default=@GMT-xxx)"
+		exit 0
 	fi
+	echo Taking snapshot $s
+	$0 create $s || exit 1
+	$0 mount $s
+	echo .
 	;;
   delete|del)
+	if [ $1_$2 = $1_help ] ; then
+		echo "delete: umount a snapshot and mark it for deletion."
+		echo "any non-mounted snapshot can be marked for deletion"
+		echo "but some snapshot deletion is deferred to later time."
+		echo "usage: $0 {delete|del} <snapshot-name>"
+		exit 0
+	fi
+	if [ -z $2 ] ; then
+		$0
+		exit 1
+	fi
 	if [ -f $SNAPDIR/$s ] ; then
 		$0 umount $s
 		$TIME chattr -X -S $SNAPDIR/$s
 	fi
 	;;
   remove|rm)
+	if [ $1_$2 = $1_help ] ; then
+		echo "remove: delete a snapshot permanently."
+		echo "this command will fail for active snapshot and snapshots"
+		echo "in use by older snapshots. try using the delete command."
+		echo "usage: $0 {remove|rm} <snapshot-name>"
+		exit 0
+	fi
+	if [ -z $2 ] ; then
+		$0
+		exit 1
+	fi
 	if [ -f $SNAPDIR/$s ] ; then
 		$0 delete $s
 		rm -f $SNAPDIR/$s
 	fi
 	;;
   enable|en)
+	if [ $1_$2 = $1_help ] ; then
+		echo "enable: create the snapshot loop device."
+		echo "usage: $0 {enable|en} <snapshot-name>"
+		exit 0
+	fi
+	if [ -z $2 ] ; then
+		$0
+		exit 1
+	fi
   	if [ -b $SNAPDEVDIR/$s/$VOL ] ; then
 		exit 0
 	fi
@@ -219,6 +353,15 @@ case "$1" in
   	fi
 	;;
   disable|di)
+	if [ $1_$2 = $1_help ] ; then
+		echo "disable: remove the snapshot loop device."
+		echo "usage: $0 {disable|di} <snapshot-name>"
+		exit 0
+	fi
+	if [ -z $2 ] ; then
+		$0
+		exit 1
+	fi
 	if [ -d $SNAPMNTDIR/$s ] ; then
 		echo snapshot $s is mounted!
 		exit 1
@@ -231,15 +374,13 @@ case "$1" in
 	chattr -X -n $SNAPDIR/$s
 	;;
 
-  dump)
-	if [ -z $2 ] ; then
-		$0 restart 5
-		$0 debug $L
-	else
-		chattr +c $SNAPDIR/$s
-	fi
-	;;
+# Snapshot control commands (single or all snapshots)
   mount|mo)
+	if [ $1_$2 = $1_help ] ; then
+		echo "mount: mount a snapshot."
+		echo "usage: $0 {mount|mo} [snapshot-name] (default=all)"
+		exit 0
+	fi
 	if [ -z $2 ] ; then
 		for s in $( ls $SNAPDIR/ ) ; do
 			$0 mount $s 2> /dev/null
@@ -253,6 +394,11 @@ case "$1" in
   	fi
 	;;
   umount|um)
+	if [ $1_$2 = $1_help ] ; then
+		echo "umount: umount a snapshot."
+		echo "usage: $0 {umount|um} [snapshot-name] (default=all)"
+		exit 0
+	fi
 	if [ -z $2 ] ; then
 		for s in $( ls $SNAPDIR/ ) ; do
 			$0 umount $s 2> /dev/null
@@ -267,11 +413,80 @@ case "$1" in
 	fi
 	;;
   remount)
+	if [ $1_$2 = $1_help ] ; then
+		echo "remount: remount a snapshot."
+		echo "usage: $0 remount [snapshot-name] (default=all)"
+		exit 0
+	fi
 	$0 umount $2
 	$0 mount $2
 	;;
 
+# Snapshot sanity tests
+  dump)
+	if [ $1_$2 = $1_help ] ; then
+		echo "dump: print a map of a snapshot file."
+		echo "map is printed in KERN_DEBUG level - use dmesg to view the map."
+		echo "usage: $0 dump [snapshot-name] (default=all)"
+		exit 0
+	fi
+	if [ -z $2 ] ; then
+		$0 debug 5
+		$0 restart
+		$0 debug $L
+	else
+		chattr +c $SNAPDIR/$s
+	fi
+	;;
+  clean|cl)
+	if [ $1_$2 = $1_help ] ; then
+		echo "clean: verify all snapshot file blocks are excluded."
+		echo "sanity test to verify the health of the exclude bitmap."
+		echo "usage: $0 {clean|cl} [snapshot-name] (default=all)"
+		exit 0
+	fi
+	echo snapshot clean is under construction!
+	exit 1
+	if [ -z $2 ] ; then
+		for s in $( ls $SNAPDIR/ ) ; do
+			$0 clean $s
+		done
+  	elif [ -f $SNAPDIR/$s ] ; then
+		$TIME chattr -X +t $SNAPDIR/$s
+	else
+		echo snapshot $s not found!
+		exit 1
+	fi
+	;;
+  fsck)
+	if [ $1_$2 = $1_help ] ; then
+		echo "fsck: run fsck on a snapshot or next3 volume."
+		echo "usage: $0 fsck [snapshot-name] (default=volume)"
+		exit 0
+	fi
+	$0 debug 0
+	if [ -z $2 ] ; then
+		$0 stop || exit 1
+		e2fsck -pf -C 0 $ROOTDEV && \
+			echo $ROOTDEV 'is healthy' || \
+			echo $ROOTDEV 'has errors'
+		$0 start
+	else
+		$0 umount $2 2> /dev/null
+		$0 enable $2
+		e2fsck -nf -C 0 $SNAPDEVDIR/$2/$VOL && \
+			echo $SNAPDEVDIR/$2/$VOL 'is healthy' || \
+			echo $SNAPDEVDIR/$2/$VOL 'has errors'
+		$0 mount $2
+	fi
+	$0 debug $L
+	;;
   ls)
+	if [ $1_$2 = $1_help ] ; then
+		echo "ls: list the content of a snapshot or next3 volume."
+		echo "usage: $0 ls [snapshot-name] (default=volume)"
+		exit 0
+	fi
 	if [ -z $2 ] ; then
 		echo Files in file system:
 		d=$ROOTDIR
@@ -285,49 +500,12 @@ case "$1" in
 		echo .
 	fi
 	;;
-  mkfs)
-	$0 stop || exit 1
-	$0 debug 0
-	mke2fs -j -i 16384 -E resize=536870912 -O has_snapshot $ROOTDEV
-	tune2fs -c 0 -i 0 -e remount-ro
-	$0 start $L
-	;;
-  rmdir)
-	rm -rf $ROOTDIR/? 2> /dev/null
-	rm -rf $ROOTDIR/*M 2> /dev/null
-	;;
-  mkdir)
-	$0 rmdir
-	mkdir $ROOTDIR/A
-	mkdir $ROOTDIR/B
-	mkdir $ROOTDIR/C
-	mkdir $ROOTDIR/D
-	mkdir $ROOTDIR/E
-	echo aligator > $ROOTDIR/A/a.txt
-	echo bizon > $ROOTDIR/B/b.txt
-	echo camel > $ROOTDIR/C/c.txt
-	;;
-  fsck)
-	$0 debug 0
-	if [ -z $2 ] ; then
-		$0 stop || exit 1
-		e2fsck -pf -C 0 $ROOTDEV && echo $ROOTDEV is healthy || echo $ROOTDEV has errors
-		$0 start
-	else
-		$0 umount $2 2> /dev/null
-		$0 enable $2
-		e2fsck -nf -C 0 $SNAPDEVDIR/$2/$VOL
-		$0 mount $2
-	fi
-	$0 debug $L
-	;;
-  take)
-	echo Taking snapshot $s
-	$0 create $s || exit 1
-	$0 mount $s
-	echo .
-	;;
   tests)
+	if [ $1_$2 = $1_help ] ; then
+		echo "tests: run snapshot sanity tests 1..N."
+		echo "usage: $0 {test|tests} [test-number]"
+		exit 0
+	fi
 	if [ -z $2 ] ; then
 		n=4
 	else
@@ -350,13 +528,27 @@ case "$1" in
 	test $n -ge 8 && $0 test 8
 	;;
   test)
+	if [ $1_$2 = $1_help ] ; then
+		echo "test: run snapshot sanity test N."
+		echo "usage: $0 test [test-number]"
+		exit 0
+	fi
 	if [ -z $2 ] ; then
 		n=1
 	else
 		n=$2
 	fi
 	if [ $n = 0 ] ; then
-		$0 mkdir
+		rm -rf $ROOTDIR/? 2> /dev/null
+		rm -rf $ROOTDIR/*M 2> /dev/null
+		mkdir $ROOTDIR/A
+		mkdir $ROOTDIR/B
+		mkdir $ROOTDIR/C
+		mkdir $ROOTDIR/D
+		mkdir $ROOTDIR/E
+		echo aligator > $ROOTDIR/A/a.txt
+		echo bizon > $ROOTDIR/B/b.txt
+		echo camel > $ROOTDIR/C/c.txt
 		exit 0
 	fi
 	echo
@@ -454,14 +646,18 @@ case "$1" in
 	$0 st
 	;;
   *)
-        echo $"Usage: $0 config <block-device> <mount-point> <volume-name>"
-        echo $"Usage: $0 delay <take|delete|cow|read|bitmap> [delay-sec] [delay-msec]"
-        echo $"Usage: $0 {start|restart|debug} [debug-level]"
-        echo $"Usage: $0 {create|cr|take|enable|en|disable|di|delete|del|remove|rm} [snapshot-name] (default=@GMT-xxx)"
-        echo $"Usage: $0 {mount|mo|umount|um|remount|ls|dump|fsck|clean|cl} [snapshot-name] (default=all)"
-        echo $"Usage: $0 {install|in|uninstall|un|stop|status|st|mkfs|mkdir|version}"
-        echo $"Usage: $0 {test|tests} [test-number]"
-        exit 1
+	echo "usage: $0 help [cmd]"
+	echo "usage: $0 version"
+	echo "usage: $0 debug [debug-level]"
+	echo "usage: $0 delay <take|delete|cow|read|bitmap> [delay-sec] [delay-msec]"
+	echo "usage: $0 config <block-device> <mount-point> <volume-name>"
+	echo "usage: $0 {install|in|uninstall|un|start|restart|stop|status|st|lsattr|mkfs}"
+	echo "usage: $0 {create|cr|take} [snapshot-name] (default=@GMT-xxx)"
+	echo "usage: $0 {enable|en|disable|di|delete|del|remove|rm} <snapshot-name>"
+	echo "usage: $0 {mount|mo|umount|um|remount|dump|clean|cl} [snapshot-name] (default=all)"
+	echo "usage: $0 {fsck|ls} [snapshot-name] (default=volume)"
+	echo "usage: $0 {test|tests} [test-number]"
+	exit 1
 esac
 
 exit 0

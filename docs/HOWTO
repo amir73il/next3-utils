@@ -3,7 +3,7 @@ Next3 HOWTO:
 
 This HOWTO file contains some basic examples of how to start working
 with next3 snapshots.
-For instrcution how to build and install next3 see INSTALL file.
+For instrcutions how to build and install next3 see INSTALL file.
 
 Getting started with snapshots:
 ===============================
@@ -108,8 +108,9 @@ ls: /var/vol/1/.ctera/snapshots/*: No such file or directory
 .
 
 5.	A few more useful commands:
-"snapshot debug" - set debug level (default=1)
+"snapshot help <cmd>" - display help on snapshot commands
+"snapshot debug <n>" - set snapshot debug level (default=1)
 "snapshot mkfs" - start fresh - format the volume as next3
-"snapshot tests" - runs a few simple snapshot tests
+"snapshot tests" - runs a few simple sanity tests
 
 
