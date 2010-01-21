@@ -183,8 +183,7 @@ case "$1" in
 		exit 0
 	fi
 	$0 stop || exit 1
-#	mke2fs -j -i 16384 -E resize=536870912 -O has_snapshot,big_journal,exclude_inode $ROOTDEV
-	mke2fs -j -i 16384 -E resize=536870912 -O has_snapshot $ROOTDEV
+	mke2fs -j -i 16384 -E resize=536870912 -O has_snapshot,big_journal,exclude_inode $ROOTDEV
 	tune2fs -c 0 -i 0 -e remount-ro $ROOTDEV
 	$0 start
 	;;
