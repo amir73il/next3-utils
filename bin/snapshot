@@ -30,17 +30,14 @@ else
 fi
 
 # read snapshot block device and mount point from conf file
-SNAPCONF=snapshot.conf
+SNAPCONF=.snapshot.conf
 
+# look for snapshot config file in current then home directory
 if [ -z $ROOTDEV ] || [ -z $ROOTDIR ] || [ -z $VOL ] ; then
 	if [ -e ./$SNAPCONF ] ; then
 		. ./$SNAPCONF
 	elif [ -e ~/$SNAPCONF ] ; then
 		. ~/$SNAPCONF
-	elif [ -e /etc/$SNAPCONF ] ; then
-		. /etc/$SNAPCONF
-	elif [ -e /var/etc/$SNAPCONF ] ; then
-		. /var/etc/$SNAPCONF
 	fi
 fi
 if [ ! -z $1 ] && [ $1 != help ] && [ $1_$2 != $1_help ] && [ $1 != config ] && \
@@ -127,7 +124,7 @@ case "$1" in
   config)
 	if [ $1_$2 = $1_help ] ; then
 		echo "$1: configure snapshot script parameters."
-		echo "creates configuration file snapshot.conf in home directory."
+		echo "creates configuration file .snapshot.conf in current and home directory."
 		echo "the snapshot script works on a single volume at a time"
 		echo "and the configuration file defines that volume."
 		echo "usage: $0 $1 <block-device> <mount-point> <volume-name>"
@@ -145,7 +142,6 @@ case "$1" in
 	echo export VOL=$4 >> $SNAPCONF
 	cat $SNAPCONF
 	cp $SNAPCONF ~/
-	$0 install
 	;;
   install|in)
 	if [ $1_$2 = $1_help ] ; then
@@ -183,8 +179,8 @@ case "$1" in
 		exit 0
 	fi
 	$0 stop || exit 1
-	mke2fs -j -i 16384 -E resize=536870912 -O has_snapshot,big_journal,exclude_inode $ROOTDEV
-	tune2fs -c 0 -i 0 -e remount-ro $ROOTDEV
+	mke2fs -j -O has_snapshot,big_journal,exclude_inode $ROOTDEV
+	tune2fs -e remount-ro $ROOTDEV
 	$0 start
 	;;
   start)

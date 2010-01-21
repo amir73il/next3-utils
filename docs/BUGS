@@ -1,1 +1,25 @@
-- insuffiecient buffer/COW credits (42/0) for COW operation?
+Bug #1: "snapshot: COW warning: insuffiecient buffer/COW credits (42/0) for COW operation?"
+Next3-version: 1.0.0-rc5
+Submited-by: <oded@ctera.com>
+Test-case: possibly during online resize
+Side-effects: could lead to JBD OOPS if buffer credits drop to 0
+To-do:
+- find out if there are warnings in ver >= 1.0.0-rc6
+
+Bug #2: "JBD: mount wants too many credits (1158 > 1024)"
+Next3-version: 1.0.0-rc7
+Submited-by: Erez Zadok <ezk@cs.sunysb.edu>
+Test-case: mount next3 with too small journal
+Side-effects: followed shorly by JBD OOPS
+To-do:
+- figure out minimal journal size for next3
+- exit mount gracefully with error on too small journal
+
+Bug #3: "NULL pointer dereference at next3_get_blocks_handle+0x1712/0x19d0"
+Next3-version: 2010-01-20
+Submited-by: Erez Zadok <ezk@cs.sunysb.edu>
+Test-case: take snapshot (possibly without exclude_inode?)
+Side-effects: kernel OOPS
+To-do:
+- find out why this only happens on Erez's build/machine
+

@@ -7,33 +7,46 @@ For instrcutions how to build and install next3 see INSTALL file.
 
 Getting started with snapshots:
 ===============================
-1.	Configure an ext3 volume to use snapshots for the first time.
-Find the volume block-device and mount-point using the "mount" command
-And use them to run the "snapshot config" command.
-The snapshot.conf file will be created in your home directory
-and will be used by the script from now on.
 
-~ # mount
-...
-/dev/1/vol1 on /var/vol/1 type ext3 (rw,noatime,user_xattr,acl,data=ordered)
+1. Configure script paramerters
+===============================
+Run the "snapshot config" command with 3 parameters:
+<block-device>: the block device to format as next3
+<mount-point>: the mount point to mount next3
+<volume-name>: descriptive name for the volume
+
 ~ # snapshot config /dev/1/vol1 /var/vol/1 vol1
 setting SNAPDEV=/dev/1/vol1
 setting SNAPROOT=/var/vol/1
 setting VOL=1
-tune2fs 1.41.1 (01-Sep-2008)
-Setting maximal mount count to -1
-Setting error behavior to 2
-Setting interval between checks to 0 seconds
-snapshot-debug = 0
+
+The .snapshot.conf file will be created in your home and current directory
+and will be used by the script from now on.
+
+
+2. Setup a next3 volume
+=======================
+Run the "snapshot mkfs" command to format the volume as next3.
+OR
+Run the "snapshot install" command to convert ani existing ext3 volume to next3.
+
+~ # mount
+...
+/dev/1/vol1 on /var/vol/1 type ext3 (rw,noatime,user_xattr,acl,data=ordered)
+
+~ # snapshot install
+...
 kjournald starting.  Commit interval 5 seconds
 NEXT3 FS on dm-0, internal journal
 NEXT3-fs: mounted filesystem with ordered data mode.
 ~ # mount
 ...
-debugfs on /sys/kernel/debug type debugfs (rw)
 /dev/1/vol1 on /var/vol/1 type next3 (rw,noatime,user_xattr,acl,data=ordered)
 
-2.	To take a snapshot named "Monday", use the command "snapshot take Monday".
+
+3. Take a snapshot
+==================
+To take a snapshot named "Monday", use the command "snapshot take Monday".
 To view the status of current snapshots, use the command "snapshot status".
 The snapshot "Monday" will be mounted with read-only access.
 
@@ -53,7 +66,10 @@ id inode attributes disk-usage mtime filename
 1 21184514 --Sna---o- 172.0K Feb 9 18:51 /var/vol/1/.ctera/snapshots/Monday
 .
 
-3.	After reboot, the snapshots are still functional, but they are not mounted automatically.
+
+4. Mount snapshots
+==================
+After reboot, the snapshots are still functional, but they are not mounted automatically.
 The snapshots status is shown as disabled.
 To mount all snapshots after reboot, use the command "snapshot mount".
 
@@ -84,7 +100,10 @@ id inode attributes disk-usage mtime filename
 1 21184514 --Sna---o- 176.0K Feb 9 18:51 /var/vol/1/.ctera/snapshots/Monday
 .
 
-4.	Finally, to delete snapshot Monday, use the command "snapshot remove Monday".
+
+5. Delete a snapshot
+====================
+Finally, to delete snapshot Monday, use the command "snapshot remove Monday".
 But first you must make sure that the snapshot is not mounted.
 To un-mount Monday, use the command "snapshot umount Monday".
 
@@ -107,10 +126,12 @@ id inode attributes disk-usage mtime filename
 ls: /var/vol/1/.ctera/snapshots/*: No such file or directory
 .
 
-5.	A few more useful commands:
+
+6. What else?
+=============
+A few more useful commands:
 "snapshot help <cmd>" - display help on snapshot commands
 "snapshot debug <n>" - set snapshot debug level (default=1)
-"snapshot mkfs" - start fresh - format the volume as next3
 "snapshot tests" - runs a few simple sanity tests
 
 
