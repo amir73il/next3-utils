@@ -183,8 +183,9 @@ case "$1" in
 		exit 0
 	fi
 	$0 stop || exit 1
+#	mke2fs -j -i 16384 -E resize=536870912 -O has_snapshot,big_journal,exclude_inode $ROOTDEV
 	mke2fs -j -i 16384 -E resize=536870912 -O has_snapshot $ROOTDEV
-	tune2fs -c 0 -i 0 -e remount-ro
+	tune2fs -c 0 -i 0 -e remount-ro $ROOTDEV
 	$0 start
 	;;
   start)
@@ -198,7 +199,7 @@ case "$1" in
 		if [ -e $MOUNT_NEXT3 ] ; then
 			$MOUNT_NEXT3 $ROOTDEV $ROOTDIR $VOL
 		else
-			mount $ROOTDEV $ROOTDIR
+			mount -t next3 $ROOTDEV $ROOTDIR
 		fi || exit 1
 		mkdir -p $SNAPDIR
 		# auto mount all snapshots
