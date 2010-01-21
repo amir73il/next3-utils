@@ -1,0 +1,4 @@
+#!/bin/sh
+
+rs exec /proc/storage mount name $3 || exit 1
+sleep 1
