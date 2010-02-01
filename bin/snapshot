@@ -441,8 +441,6 @@ case "$1" in
 		echo "usage: $0 {clean|cl} [snapshot-name] (default=all)"
 		exit 0
 	fi
-	echo snapshot clean is under construction!
-	exit 1
 	if [ -z $2 ] ; then
 		for s in $( ls $SNAPDIR/ ) ; do
 			$0 clean $s
@@ -513,15 +511,15 @@ case "$1" in
 	for s in $( ls $SNAPDIR/ ) ; do
 		$0 remove $s 2> /dev/null
 	done
-	test $n -ge 0 && $0 test 0
-	test $n -ge 1 && $0 test 1
-	test $n -ge 2 && $0 test 2
-	test $n -ge 3 && $0 test 3
-	test $n -ge 4 && $0 test 4
-	test $n -ge 5 && $0 test 5
-	test $n -ge 6 && $0 test 6
-	test $n -ge 7 && $0 test 7
-	test $n -ge 8 && $0 test 8
+	test $n -ge 0 && $0 test 0 || exit 0
+	test $n -ge 1 && $0 test 1 || exit 0
+	test $n -ge 2 && $0 test 2 || exit 0
+	test $n -ge 3 && $0 test 3 || exit 0
+	test $n -ge 4 && $0 test 4 || exit 0
+	test $n -ge 5 && $0 test 5 || exit 0
+	test $n -ge 6 && $0 test 6 || exit 0
+	test $n -ge 7 && $0 test 7 || exit 0
+	test $n -ge 8 && $0 test 8 || exit 0
 	;;
   test)
 	if [ $1_$2 = $1_help ] ; then
@@ -554,15 +552,15 @@ case "$1" in
 	N=${n}0
 	F=${N}M
 	echo Creating /$F
-	dd if=/dev/zero bs=1M count=$N of=$ROOTDIR/$F 2> /dev/null
+	dd if=/dev/zero bs=1M count=$N of=$ROOTDIR/$F 2> /dev/null || exit 1
 	#chattr +d $ROOTDIR/$F
 	$0 ls
 	s=$n
 	#s=$( date -u +@GMT-%Y.%m.%d-%H.%M.%S )
-	$0 take $s
+	$0 take $s || exit 1
 	#$0 clean $s
 	echo Removing /$F
-	rm $ROOTDIR/$F
+	rm $ROOTDIR/$F || exit 1
 	case "$n" in
   	  1)
 		echo Create test:
@@ -600,15 +598,15 @@ case "$1" in
 	  5)
 		echo Delete excluded test:
 		echo ---------------------
-	  	echo Removing excluded files
-	  	rm $ROOTDIR/*M
+	  	#echo Removing excluded files
+	  	#rm $ROOTDIR/*M
 	  ;;
 	  6)
 		echo Delete reallocated test:
 		echo ------------------------
-		chattr -d $ROOTDIR/$F
-		echo Removing /$F
-		rm $ROOTDIR/$F
+		#chattr -d $ROOTDIR/$F
+		#echo Removing /$F
+		#rm $ROOTDIR/$F
 	  ;;
 	  7)
 		echo Shrink snapshots test:
@@ -633,7 +631,7 @@ case "$1" in
 			$0 st
 		done
 	  ;;
-	esac
+	esac || exit 1
 	#sleep 1
 	#$0 fsck
 	echo .

@@ -1,3 +1,11 @@
+v1.0.0-rc8
+----------
+???, 2010
+- code review by Erez Zadok <ezk@cs.sunysb.edu>
+- no sync of buffer to disk on COW-read race
+- clean fsck of snapshot image
+- trigger f/s error on exclude bitmap in-consistencies
+
 v1.0.0-rc7
 ----------
 Jan 7, 2010
