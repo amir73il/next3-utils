@@ -1,11 +1,15 @@
-Enhanced next3 features:
-------------------------
+Experimental next3 features:
+----------------------------
 - exclude files with 'nodump' flag (chattr +d) from snapshot
 
 Unsupported ext3 features:
 --------------------------
 - user/group quotas (copy user/group quota blocks on snapshot take)
 - block size != PAGE_SIZE
+
+Unsupported e2fsprogs features:
+-------------------------------
+- fsck of COW/exclude bitmaps
 
 Stability
 --------------------
