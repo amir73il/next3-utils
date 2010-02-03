@@ -422,7 +422,6 @@ case "$1" in
   dump)
 	if [ $1_$2 = $1_help ] ; then
 		echo "dump: print a map of a snapshot file."
-		echo "map is printed in KERN_DEBUG level - use dmesg to view the map."
 		echo "usage: $0 dump [snapshot-name] (default=all)"
 		exit 0
 	fi
@@ -431,7 +430,7 @@ case "$1" in
 		$0 restart
 		$0 debug $L
 	else
-		chattr +c $SNAPDIR/$s
+		chattr -d $SNAPDIR/$s
 	fi
 	;;
   clean|cl)
