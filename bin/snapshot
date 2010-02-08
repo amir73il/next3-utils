@@ -496,13 +496,15 @@ case "$1" in
   tests)
 	if [ $1_$2 = $1_help ] ; then
 		echo "tests: run snapshot sanity tests 1..N."
-		echo "usage: $0 {test|tests} [test-number]"
+		echo "usage: $0 tests [test-number] [delay-sec] [file-size-zeros]"
+		echo "delay-sec: sleep between tests"
+		echo "file-size-zeros: zeros in file size (default = 0 = 10M,20M,...)"
 		exit 0
 	fi
 	if [ -z $2 ] ; then
-		n=4
+		N=4
 	else
-		n=$2
+		N=$2
 	fi
 	for s in $( ls $SNAPDIR/ ) ; do
 		$0 delete $s 2> /dev/null
@@ -510,20 +512,22 @@ case "$1" in
 	for s in $( ls $SNAPDIR/ ) ; do
 		$0 remove $s 2> /dev/null
 	done
-	test $n -ge 0 && $0 test 0 || exit 0
-	test $n -ge 1 && $0 test 1 || exit 0
-	test $n -ge 2 && $0 test 2 || exit 0
-	test $n -ge 3 && $0 test 3 || exit 0
-	test $n -ge 4 && $0 test 4 || exit 0
-	test $n -ge 5 && $0 test 5 || exit 0
-	test $n -ge 6 && $0 test 6 || exit 0
-	test $n -ge 7 && $0 test 7 || exit 0
-	test $n -ge 8 && $0 test 8 || exit 0
+	for n in $( seq 0 $N ) ; do
+		$0 test $n $3 $4 || exit 1
+	done
+	sleep 1
+	if [ $N = 0 ] ; then
+		$0 fsck
+	else
+		$0 fsck $N
+	fi
 	;;
   test)
 	if [ $1_$2 = $1_help ] ; then
 		echo "test: run snapshot sanity test N."
-		echo "usage: $0 test [test-number]"
+		echo "usage: $0 test [test-number] [delay-sec] [file-size-zeros]"
+		echo "delay-sec: sleep before test"
+		echo "file-size-zeros: zeros in file size (default = 0 = 10M,20M,...)"
 		exit 0
 	fi
 	if [ -z $2 ] ; then
@@ -547,8 +551,14 @@ case "$1" in
 	echo
 	echo Running snapshot test $n:
 	echo ------------------------
-	#sleep 6 # wait for journal commit
-	N=${n}0
+	if [ ! -z $3 ] ; then
+		sleep $3 # delay between tests
+	fi
+	if [ ! -z $4 ] ; then
+		N=${n}$4
+	else
+		N=${n}0
+	fi
 	F=${N}M
 	echo Creating /$F
 	dd if=/dev/zero bs=1M count=$N of=$ROOTDIR/$F 2> /dev/null || exit 1
@@ -649,7 +659,7 @@ case "$1" in
 	echo "usage: $0 {enable|en|disable|di|delete|del|remove|rm} <snapshot-name>"
 	echo "usage: $0 {mount|mo|umount|um|remount|dump|clean|cl} [snapshot-name] (default=all)"
 	echo "usage: $0 {fsck|ls} [snapshot-name] (default=volume)"
-	echo "usage: $0 {test|tests} [test-number]"
+	echo "usage: $0 {test|tests} [test-number] [delay-sec] [file-size-zeros]"
 	exit 1
 esac
 

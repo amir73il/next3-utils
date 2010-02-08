@@ -1,4 +1,5 @@
 Bug #1: buffer credits lower limit is not accurate
+==================================================
 Next3-version: 1.0.0-rc7
 Submited-by: Amir Goldstein <amir@ctera.com>
 Side-effects: could lead to JBD OOPS if buffer credits drop to 0
@@ -7,13 +8,13 @@ Test:
 # snapshot tests 1 ...
 # sleep 6 ...
 # snapshot test 2 ...
-Running snapshot test 2:
-------------------------
 Creating /20M
 snapshot: __next3_journal_stop(0): credits=416, limit=417/420, user=23/23, ref=1, caller=next3_create
 snapshot: COW stats: moved/copied=0/0, mapped/clear/cached=4/0/2, bitmaps/cleared=0/0
 
+
 Bug #2: OOPS on next3 with too small journal
+============================================
 Next3-version: 1.0.0-rc7
 Submited-by: Erez Zadok <ezk@cs.sunysb.edu>
 Test: format <=512MB ext3 f/s and convert it to next3
@@ -24,13 +25,10 @@ Creating journal (4096 blocks): done ...
 # snapshot tests 1 ...
 JBD: rm wants too many credits (1590 > 1024) ...
 ...
-Running snapshot test 1:
-------------------------
 Creating /10M
 JBD: chattr wants too many credits (1158 > 1024) ...
 ...
-Taking snapshot 1
-------------[ cut here ]------------
+Taking snapshot 1 ...
 Kernel BUG at c04cc362 [verbose debug info unavailable]
 invalid opcode: 0000 [#1]
 ...
@@ -39,4 +37,5 @@ EIP is at journal_stop+0x45/0x1d9
 To-do:
 - figure out minimal journal size for next3
 - exit mount gracefully with error on too small journal
+
 
