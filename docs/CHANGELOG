@@ -1,10 +1,20 @@
 v1.0.0-rc8
 ----------
 ???, 2010
+Bug fixes:
+- data loss on in-place write to full disk (atomic move-on-write)
+- corrupted read of data in new snapshot (fix COW-read race)
+- unused blocks moved to snapshot (fix test COW bitmap blocks count)
+- used blocks freed from snapshot (fix shrink blocks count)
+Performance:
+- fast read of data in new snapshot (copy from cache on COW-read race)
+Stability:
 - code review by Erez Zadok <ezk@cs.sunysb.edu>
-- no sync of buffer to disk on COW-read race
+Sanity tests:
 - clean fsck of snapshot image
 - trigger f/s error on exclude bitmap in-consistencies
+- trigger f/s error if snapshot load fails
+- warn on read through of non-allocated block
 
 v1.0.0-rc7
 ----------

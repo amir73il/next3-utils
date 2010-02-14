@@ -28,6 +28,8 @@ if [ -z $2 ] ; then
 else
 	l=$2
 fi
+# check if test read is enabled
+test_read=$(cat $SNAPDEBUGDIR/test-read-delay-msec)
 
 # read snapshot block device and mount point from conf file
 SNAPCONF=.snapshot.conf
@@ -488,17 +490,20 @@ case "$1" in
 		d=$SNAPMNTDIR/$s/$VOL
 	fi
 	if [ -d $d ] ; then
-		grep -v xxx $d/?/*
-		find $d/ -maxdepth 1 -type f -print
+		cd $d > /dev/null
+		grep -v xxx ?/*
+		test -e md5list && (md5sum -c md5list || exit 1)
+		#find $d/ -maxdepth 1 -type f -print
+		cd - > /dev/null
 		echo .
 	fi
 	;;
   tests)
 	if [ $1_$2 = $1_help ] ; then
 		echo "tests: run snapshot sanity tests 1..N."
-		echo "usage: $0 tests [test-number] [delay-sec] [file-size-zeros]"
+		echo "usage: $0 tests [test-number] [delay-sec] [file-size-mb]"
 		echo "delay-sec: sleep between tests"
-		echo "file-size-zeros: zeros in file size (default = 0 = 10M,20M,...)"
+		echo "file-size-mb: test file size in mega bytes (default = 1)"
 		exit 0
 	fi
 	if [ -z $2 ] ; then
@@ -506,6 +511,8 @@ case "$1" in
 	else
 		N=$2
 	fi
+	# disable read-ahead if test read is enabled
+	test $test_read = 0 || blockdev --setra 0 $ROOTDEV
 	for s in $( ls $SNAPDIR/ ) ; do
 		$0 delete $s 2> /dev/null
 	done
@@ -515,6 +522,8 @@ case "$1" in
 	for n in $( seq 0 $N ) ; do
 		$0 test $n $3 $4 || exit 1
 	done
+	# skip fsck if test read is enabled
+	test $test_read = 0 || exit 0
 	sleep 1
 	if [ $N = 0 ] ; then
 		$0 fsck
@@ -525,9 +534,9 @@ case "$1" in
   test)
 	if [ $1_$2 = $1_help ] ; then
 		echo "test: run snapshot sanity test N."
-		echo "usage: $0 test [test-number] [delay-sec] [file-size-zeros]"
+		echo "usage: $0 test [test-number] [delay-sec] [file-size-mb]"
 		echo "delay-sec: sleep before test"
-		echo "file-size-zeros: zeros in file size (default = 0 = 10M,20M,...)"
+		echo "file-size-mb: test file size in mega bytes (default = 1)"
 		exit 0
 	fi
 	if [ -z $2 ] ; then
@@ -537,7 +546,8 @@ case "$1" in
 	fi
 	if [ $n = 0 ] ; then
 		rm -rf $ROOTDIR/? 2> /dev/null
-		rm -rf $ROOTDIR/*M 2> /dev/null
+		rm -rf $ROOTDIR/*M.? 2> /dev/null
+		rm -rf $ROOTDIR/md5list 2> /dev/null
 		mkdir $ROOTDIR/A
 		mkdir $ROOTDIR/B
 		mkdir $ROOTDIR/C
@@ -555,21 +565,28 @@ case "$1" in
 		sleep $3 # delay between tests
 	fi
 	if [ ! -z $4 ] ; then
-		N=${n}$4
+		M=$4
 	else
-		N=${n}0
+		M=1
 	fi
-	F=${N}M
-	echo Creating /$F
-	dd if=/dev/zero bs=1M count=$N of=$ROOTDIR/$F 2> /dev/null || exit 1
+	F=${M}M
+	echo Creating $n x $F files
+	cd $ROOTDIR > /dev/null
+	for i in $( seq 1 $n ) ; do
+		dd if=/dev/urandom bs=1M count=$M of=$F.$i 2> /dev/null || exit 1
+		md5sum $F.$i >> md5list || exit 1
+	done
+	cd - > /dev/null
 	#chattr +d $ROOTDIR/$F
-	$0 ls
+	$0 ls || exit 1
 	s=$n
 	#s=$( date -u +@GMT-%Y.%m.%d-%H.%M.%S )
 	$0 take $s || exit 1
 	#$0 clean $s
-	echo Removing /$F
-	rm $ROOTDIR/$F || exit 1
+	echo Appending $F zeros to $F.$n
+	dd if=/dev/zero bs=1M count=$M >> $ROOTDIR/$F.1 2> /dev/null || exit 1
+	echo Removing $n x $F files
+	rm $ROOTDIR/$F.? $ROOTDIR/md5list || exit 1
 	case "$n" in
   	  1)
 		echo Create test:
@@ -644,8 +661,8 @@ case "$1" in
 	#sleep 1
 	#$0 fsck
 	echo .
-	$0 ls
-	$0 ls $s
+	$0 ls || exit 1
+	$0 ls $s || exit 1
 	$0 st
 	;;
   *)
@@ -659,7 +676,7 @@ case "$1" in
 	echo "usage: $0 {enable|en|disable|di|delete|del|remove|rm} <snapshot-name>"
 	echo "usage: $0 {mount|mo|umount|um|remount|dump|clean|cl} [snapshot-name] (default=all)"
 	echo "usage: $0 {fsck|ls} [snapshot-name] (default=volume)"
-	echo "usage: $0 {test|tests} [test-number] [delay-sec] [file-size-zeros]"
+	echo "usage: $0 {test|tests} [test-number] [delay-sec] [file-size-mb]"
 	exit 1
 esac
 
