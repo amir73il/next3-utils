@@ -22,14 +22,23 @@ UMOUNT_NEXT3=/usr/sbin/umount.next3
 if [ ! -d $SNAPDEBUGDIR ] ; then
 	mount -t debugfs debugfs $SYSDEBUGDIR 2> /dev/null
 fi
-L=$(cat $SNAPDEBUGDIR/snapshot-debug 2> /dev/null)
-if [ -z $2 ] ; then
-	l=$L
+if [ -e $SNAPDEBUGDIR/snapshot-debug ] ; then
+	L=$(cat $SNAPDEBUGDIR/snapshot-debug 2> /dev/null)
+	if [ -z $2 ] ; then
+		l=$L
+	else
+		l=$2
+	fi
 else
-	l=$2
+	L=0
+	l=0
 fi
 # check if test read is enabled
-test_read=$(cat $SNAPDEBUGDIR/test-read-delay-msec)
+if [ -e $SNAPDEBUGDIR/test-read-delay-msec ] ; then
+	test_read=$(cat $SNAPDEBUGDIR/test-read-delay-msec)
+else
+	test_read=0
+fi
 
 # read snapshot block device and mount point from conf file
 SNAPCONF=.snapshot.conf
@@ -91,8 +100,10 @@ case "$1" in
 		echo "usage: $0 $1 [debug-level]"
 		exit 0
 	fi
-	echo $l > $SNAPDEBUGDIR/snapshot-debug
-	l=$(cat $SNAPDEBUGDIR/snapshot-debug)
+	if [ -e $SNAPDEBUGDIR/snapshot-debug ] ; then
+		echo $l > $SNAPDEBUGDIR/snapshot-debug
+		l=$(cat $SNAPDEBUGDIR/snapshot-debug)
+	fi
 	echo snapshot-debug = $l
 	;;
   delay)
@@ -104,7 +115,11 @@ case "$1" in
 	fi
 	if [ -z $2 ] ; then
 		echo missing test name
-		exit 1
+		$0 usage
+	fi
+	if [ ! -e $SNAPDEBUGDIR/test-$2-delay-msec ] ; then
+		echo invalid test name $2
+		$0 usage
 	fi
 	if [ ! -z $3 ] ; then
 		if [ $3 -gt 60 ] || [ $3 -lt 0 ] ; then
@@ -464,14 +479,14 @@ case "$1" in
 		$0 stop || exit 1
 		e2fsck -pf -C 0 $ROOTDEV && \
 			echo $ROOTDEV 'is healthy' || \
-			echo $ROOTDEV 'has errors'
+			echo $ROOTDEV 'has errors' >&2
 		$0 start
 	else
 		$0 umount $2 2> /dev/null
 		$0 enable $2
 		e2fsck -nf -C 0 $SNAPDEVDIR/$2/$VOL && \
 			echo $SNAPDEVDIR/$2/$VOL 'is healthy' || \
-			echo $SNAPDEVDIR/$2/$VOL 'has errors'
+			echo $SNAPDEVDIR/$2/$VOL 'has errors' >&2
 		$0 mount $2
 	fi
 	$0 debug $L
@@ -522,13 +537,18 @@ case "$1" in
 	for n in $( seq 0 $N ) ; do
 		$0 test $n $3 $4 || exit 1
 	done
-	# skip fsck if test read is enabled
-	test $test_read = 0 || exit 0
+	# skip fsck if non zero read delay or zero delay between tests         
+        ( [ ${test_read}_ms = 0_ms ] && [ ${3}_ms != 0_ms ] ) || exit 0
 	sleep 1
 	if [ $N = 0 ] ; then
 		$0 fsck
 	else
-		$0 fsck $N
+		for n in $( seq 1 $N ) ; do
+			$0 ls $n
+		done
+		for n in $( seq 1 $N ) ; do
+			$0 fsck $n > /dev/null
+		done
 	fi
 	;;
   test)
@@ -582,11 +602,14 @@ case "$1" in
 	s=$n
 	#s=$( date -u +@GMT-%Y.%m.%d-%H.%M.%S )
 	$0 take $s || exit 1
+	#$0 take $s.1 || exit 1
 	#$0 clean $s
 	echo Appending $F zeros to $F.$n
 	dd if=/dev/zero bs=1M count=$M >> $ROOTDIR/$F.1 2> /dev/null || exit 1
+	#$0 take $s.2 || exit 1
 	echo Removing $n x $F files
 	rm $ROOTDIR/$F.? $ROOTDIR/md5list || exit 1
+	#$0 take $s.3 || exit 1
 	case "$n" in
   	  1)
 		echo Create test:
