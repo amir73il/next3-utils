@@ -173,6 +173,7 @@ case "$1" in
 		tune2fs -c 0 -i 0 -e remount-ro -O has_snapshot $ROOTDEV
 		$0 start || exit 1
 		mkdir -p $SNAPDIR
+		chattr +x $SNAPDIR
 	fi
 	;;
   uninstall|un)
@@ -214,6 +215,7 @@ case "$1" in
 			mount -t next3 $ROOTDEV $ROOTDIR
 		fi || exit 1
 		mkdir -p $SNAPDIR
+		chattr +x $SNAPDIR
 		# auto mount all snapshots
 		$0 mount
 	fi
@@ -293,7 +295,7 @@ case "$1" in
 		echo snapshot $s already exsists!
 		exit 1
 	else
-		touch $SNAPDIR/$s
+		touch $SNAPDIR/$s 2> /dev/null
 		$TIME chattr -X +S $SNAPDIR/$s
 	fi
 	;;
@@ -462,7 +464,7 @@ case "$1" in
 			$0 clean $s
 		done
   	elif [ -f $SNAPDIR/$s ] ; then
-		$TIME chattr -X +t $SNAPDIR/$s
+		$TIME chattr -x $SNAPDIR/$s
 	else
 		echo snapshot $s not found!
 		exit 1
