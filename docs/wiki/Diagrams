@@ -1,0 +1,34 @@
+The Diagrams in this page explain the differences between block write operations in Ext3 and Next3.
+
+For the example, an arbitrary value of 2TB was selected as the file system size. The same value is imposed as the active snapshot sparse file size.
+
+Next3 uses a bigger default journal size (3GB) than Ext3 default journal size (128MB), to accommodate the active snapshot metadata in the block write transaction.
+
+=Ext3 block write=
+The Diagrams in this section depict the interaction between Ext3 and the journal block device (JBD) on write of metadata block and data block (in data=ordered mode).
+
+==Metadata block journaled write with Ext3+JBD==
+Before writing a metadata block, the get_write_access() JBD API is called to add the buffer to the transaction.
+
+[[File:Ext3_metadata_write.GIF|Ext3 metadata write]]
+
+
+==Data block ordered write with Ext3+JBD==
+Before writing a data page, the get_block() callback is called to start a transaction and to allocate missing inode blocks.
+
+[[File:Ext3_data_write.GIF|Ext3 data write]]
+
+
+=Next3 block write=
+The Diagrams in this section depict the interaction between Next3, the active snapshot file and the journal block device (JBD) on write of metadata block and data block (in data=ordered mode).
+
+==Metadata block copy-on-write with Next3+Snapshot+JBD==
+Before writing a metadata block, the get_write_access() Snapshot API is called to copy the block to the active snapshot.
+
+[[File:Next3_metadata_write.GIF|Next3 metadata write]]
+
+
+==Data block move-on-write with Next3+Snapshot+JBD==
+Before writing a data page, the get_block() callback is called to move the data block to the active snapshot and to allocate a new data block.
+
+[[File:Next3_data_write.GIF|Next3 data write]]

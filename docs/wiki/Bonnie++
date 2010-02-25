@@ -1,0 +1,37 @@
+Bonnie++ is a simple benchmark tool for measuring file I/O performance. We used Bonnie++ to verify the following assumptions about Next3 vs. Ext3 write performance:
+# Next3 write performance should be equivalent to Ext3 performance when there are no snapshots
+# Next3 generates some synchronic read/write I/O requests after a new snapshot is taken
+# Next3 generates a-synchronic write I/O requests when writing blocks that are included in a snapshot
+
+The benchmarks where run in the following variations to test the assumptions above:
+* EXT3+W+RW: write a 1G file to empty Ext3, re-write 1G
+* NEXT3+W+RW: write a 1G file to empty Next3, re-write 1G
+* NEXT3+S+W+RW: take a new snapshot of empty Next3, write a 1G file, re-write 1G
+* NEXT3-S+W+RW: keep old snapshot of empty Next3, write a 1G file, re-write 1G
+* NEXT3+W+S+RW: write a 1G file to empty Next3, take a snapshot, re-write 1G
+
+=== Benchmark tests over NFS ===
+These benchmark tests were run over NFS.
+
+The client was an X86 machine with 8MB RAM and the server was an ARM machine with 512MB RAM.
+The %CPU and Sequential Input results are irrelevant in this setup.
+
+<pre>
+bonnie++ -d /mnt/nfs/ -n 0 -s 1g:64k -r 512 -u root -f -m NEXT3
+
+Version  1.03       ------Sequential Output------ --Sequential Input- --Random-
+                    -Per Chr- --Block-- -Rewrite- -Per Chr- --Block-- --Seeks--
+Machine   Size:chnk K/sec %CP K/sec %CP K/sec %CP K/sec %CP K/sec %CP  /sec %CP
+EXT3+W+RW    1G:64k           33527   1 38749   2           +++++ +++  6980  26
+NEXT3+W+RW   1G:64k           32486   1 38408   2           +++++ +++  6696  25
+NEXT3+W+RW   1G:64k           33979   2 38489   2           +++++ +++  7447  28
+NEXT3+S+W+RW 1G:64k           31143   1 39484   3           +++++ +++  7904  29
+NEXT3-S+W+RW 1G:64k           34527   2 38149   2           +++++ +++  7860  29
+NEXT3+W+S+RW 1G:64k           32344   2 23748   1           +++++ +++  6028  23
+</pre>
+
+The results verify the assumptions we have made about Next3 vs. Ext3 write performance:
+# Next3 w/o snapshots (NEXT3+W+RW) performs similar to Ext3 (EXT3+W+RW)
+# Next3 with old snapshot (NEXT3-S+W+RW) performs similar to Next3 w/o snapshots (NEXT3+W+RW) and better than Next3 with new snapshot (NEXT3+S+W+RW)
+# Re-write of file whose blocks are included in a snapshot (NEXT3+W+S+RW) is slower than re-write of file whose blocks are not included in a snapshot (NEXT3+S+W+RW)
+
