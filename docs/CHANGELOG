@@ -1,3 +1,9 @@
+v1.0.0-rc9-WIP
+----------
+???, 2010
+- free snapshot blocks when discarding snapshots (tune2fs)
+- cleanup after reboot in the middle of snapshot take
+
 v1.0.0-rc8
 ----------
 Feb 21, 2010
