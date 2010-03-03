@@ -13,7 +13,7 @@ else
 fi
 
 SYSDEBUGDIR=/sys/kernel/debug
-SNAPDEBUGDIR=$SYSDEBUGDIR/snapshot
+SNAPDEBUGDIR=$SYSDEBUGDIR/next3
 #TIME=time
 MOUNT_NEXT3=/usr/sbin/mount.next3
 UMOUNT_NEXT3=/usr/sbin/umount.next3

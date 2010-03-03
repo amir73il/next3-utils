@@ -1,4 +1,4 @@
-Bonnie++ is a simple benchmark tool for measuring file I/O performance. We used Bonnie++ to verify the following assumptions about Next3 vs. Ext3 write performance:
+Bonnie++ is a benchmark tool for measuring file I/O performance. We used Bonnie++ to verify the following assumptions about Next3 vs. Ext3 write performance:
 # Next3 write performance should be equivalent to Ext3 performance when there are no snapshots
 # Next3 generates some synchronic read/write I/O requests after a new snapshot is taken
 # Next3 generates a-synchronic write I/O requests when writing blocks that are included in a snapshot
