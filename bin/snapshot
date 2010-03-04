@@ -388,6 +388,28 @@ case "$1" in
 	fi
 	chattr -X -n $SNAPDIR/$s
 	;;
+  tag)
+	if [ $1_$2 = $1_help ] ; then
+		echo "tag: toggle a snapshot's tag."
+		echo "usage: $0 {tag} <snapshot-name>"
+		exit 0
+	fi
+	if [ -z $2 ] ; then
+		$0
+		exit 1
+	fi
+	if [ -f $SNAPDIR/$s ] ; then
+		tagged=$(lsattr -Xl $SNAPDIR/$s | grep Tagged)
+		if [ -z "$tagged" ] ; then
+			chattr -X +t $SNAPDIR/$s
+		else
+			chattr -X -t $SNAPDIR/$s
+		fi
+	else
+		echo snapshot $s not found!
+		exit 1
+	fi
+	;;
 
 # Snapshot control commands (single or all snapshots)
   mount|mo)
@@ -698,7 +720,7 @@ case "$1" in
 	echo "usage: $0 config <block-device> <mount-point> <volume-name>"
 	echo "usage: $0 {install|in|uninstall|un|start|restart|stop|status|st|lsattr|mkfs}"
 	echo "usage: $0 {create|cr|take} [snapshot-name] (default=@GMT-xxx)"
-	echo "usage: $0 {enable|en|disable|di|delete|del|remove|rm} <snapshot-name>"
+	echo "usage: $0 {enable|en|disable|di|delete|del|remove|rm|tag} <snapshot-name>"
 	echo "usage: $0 {mount|mo|umount|um|remount|dump|clean|cl} [snapshot-name] (default=all)"
 	echo "usage: $0 {fsck|ls} [snapshot-name] (default=volume)"
 	echo "usage: $0 {test|tests} [test-number] [delay-sec] [file-size-mb]"
