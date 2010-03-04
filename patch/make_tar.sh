@@ -1,11 +1,12 @@
 #!/bin/sh
 
 DATE=$(date +%d%m%y)
-LINUX=linux-2.6.31
+LINUX=linux-2.6.31.11
 E2FS=e2fsprogs-1.41.9
+NEXT3=next3-1.0.0
 
-TARFILE=~/snapshot-$DATE.tar.gz
+TARFILE=~/$NEXT3-$DATE.tar.gz
 
 cd ../..
-tar cvfz $TARFILE --exclude=.svn snapshot/{bin,docs,$LINUX,$E2FS,patch/Makefile,patch/*.{sh,sed,c}}
+tar cvfz $TARFILE --exclude=.svn $NEXT3/{bin,docs,$LINUX,$E2FS,patch/Makefile,patch/*.{sh,sed,c}}
 
