@@ -107,9 +107,45 @@ int main(int argc, char *argv[])
 			exit_error("line too long inside snapshot patch",
 					filename, lineno, line);
 
-		if (line[0] == '#') {
+		if (config) {
+			if (!strncmp(line, "config ", 7)) {
+				if (!strncmp(line+7, MAINKEY+7, MAINKEY_LEN-7)) {
+					if (!snapshot) {
+						/* snapshot main config */
+						nested = snapshot = 1;
+					} else {
+						/* snapshot sub config */
+						nested = 2;
+						if (!key)
+							/* discard all snapshot sub configs */
+							break;
+						if (!strncmp(line+MAINKEY_LEN+1, key, keylen)) {
+							/* start filtering snapshot sub config */
+							if (filter)
+								exit_error("nested snapshot sub config",
+										filename, lineno, line);
+							filter = FILTER_UNDEFINED;
+						} else {
+							/* stop filtering snapshot sub config */
+							filter = FILTER_NONE;
+						}
+					}
+				}
+			} else if (snapshot) {
+				if (filter) {
+					if (!strncmp(line+1, "bool ", 5))
+						printf("%.*s\n\n", len-9, line+7);
+					else if (!strncmp(line+1, "  ", 2))
+						printf("%s", line+3);
+				} else if (key) {
+				       	if (!strncmp(line+1, "depends on ", 11) && 
+						!strncmp(line+12+MAINKEY_LEN+1, key, keylen))
+						exit_error("snapshot sub config dependecy",
+								filename, lineno, line);
+				} 
+			}
+		} else if (line[0] == '#') {
 			char *ifdef = NULL;
-
 			/* strip off warnings and pragmas */
 			if (!key && (!strncmp(line+1, "warning", 7) ||
 					!strncmp(line+1, "pragma", 6)))
@@ -198,15 +234,7 @@ int main(int argc, char *argv[])
 						continue;
 					}
 				}
-			} else if (config) {
-				if (!strncmp(line, "config ", 7)) {
-				} else if (!strncmp(line+1, "bool ", 5)) {
-				} else if (!strncmp(line+1, "select ", 7)) {
-				} else if (!strncmp(line+1, "depends on ", 11)) {
-				} else if (!strncmp(line+1, "help ", 5)) {
-				}
 			}
-
 		}
 
 		if (filter != FILTER_UNDEFINED)

@@ -4,7 +4,7 @@ What is Next3?
 Next3 is a clone of the Ext3 file system with the addition of snapshot support
 
 What is this file?
-this HISTORY file is an attempt to serialized the next sub patches.
+this HISTORY file is an attempt to serialized the next3 sub patches.
 it aims to help developers follow the changes from ext3 to next3
 by following the changes in the order they should be applied
 (which is not always the order that they were developed).
@@ -67,14 +67,14 @@ CONFIG_NEXT3_FS_SNAPSHOT_HOOKS_INODE - pass inode in snapshot hooks to identify 
 CONFIG_NEXT3_FS_SNAPSHOT_JOURNAL_ERROR - check return value of JBD hooks (posted to ext4-devel)
 /* checkpoint: handle unexpected out of disk space errors due to COW operation */
 
-CONFIG_NEXT3_FS_SNAPSHOT_BALLOC_RESERVE - reserve disk space for snapshot metadata
-/* checkpoint: avoid unexpected out of disk space errors due to COW operation */
-
 CONFIG_NEXT3_FS_SNAPSHOT_JOURNAL_BYPASS - bypass journal on COW bitmap operation to save credits 
+CONFIG_NEXT3_FS_SNAPSHOT_JOURNAL_RELEASE - check remaining COW credits on journal_release_buffer() 
 CONFIG_NEXT3_FS_SNAPSHOT_JOURNAL_CACHE - cache buffer COW state in running transaction
 CONFIG_NEXT3_FS_SNAPSHOT_JOURNAL_TRACE - trace remaining COW/buffer credits and COW statistics 
-CONFIG_NEXT3_FS_SNAPSHOT_JOURNAL_RELEASE - check remaining COW credits on journal_release_buffer() 
 /* checkpoint: avoid out of buffer credits oops due to COW operation (warn on low COW credits) */
+
+CONFIG_NEXT3_FS_SNAPSHOT_BALLOC_RESERVE - reserve disk space for snapshot metadata
+/* checkpoint: avoid unexpected out of disk space errors due to COW operation */
 
 CONFIG_NEXT3_FS_SNAPSHOT_RACE_BITMAP - resolve race conditions on pending COW bitmap operations 
 /* checkpoint: test concurrent bitmap COW operations with test-bitmap-delay-msec */
@@ -94,9 +94,9 @@ CONFIG_NEXT3_FS_SNAPSHOT_RACE_READ - resolve race conditions on pending active s
 
 CONFIG_NEXT3_FS_SNAPSHOT_EXCLUDE_INODE - read exclude bitmap blocks from exclude inode (allocate on resize)
 CONFIG_NEXT3_FS_SNAPSHOT_EXCLUDE_BITMAP - update exclude bitmap on snapshot block allocate/move/delete
-CONFIG_NEXT3_FS_SNAPSHOT_FILE_EXCLUDE - verify all snapshots blocks are excluded
-CONFIG_NEXT3_FS_SNAPSHOT_FILE_SHRINK - free unused blocks of deleted snapshots
-CONFIG_NEXT3_FS_SNAPSHOT_FILE_MERGE - move deleted snapshot blocks to older non-deleted snapshot
+CONFIG_NEXT3_FS_SNAPSHOT_CLEANUP - cleanup snapshots list from deleted snapshots
+CONFIG_NEXT3_FS_SNAPSHOT_CLEANUP_SHRINK - free unused blocks of deleted snapshots
+CONFIG_NEXT3_FS_SNAPSHOT_CLEANUP_MERGE - move deleted snapshot blocks to older non-deleted snapshot
 
 /* 
  * mile stone: multiple deletable snapshots

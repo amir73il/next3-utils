@@ -15,12 +15,16 @@ E2FS_PKG?=../../pkg
 
 # 'key' parameter to strip_ifdefs
 NOKEY=xxx
+NOID=xxx
 KEY?=${NOKEY}
-ID?=xxx
+ID?=${NOID}
+
+# patches signed-off-by
+SIGNATURE=Amir Goldstein <amir73il@users.sf.net>
 
 N3_PATCH=next3_snapshot~${KEY}.patch
 N3_BASEPATCH=next3_fs.patch
-N3_SUBPATCH=next3_snapshot_${KEY}.patch
+N3_SUBPATCH=next3_snapshot_${ID}_${KEY}.patch
 DATE=${shell date +%d%m%y}
 N3_RELEASE=${RELEASE}/next3_snapshot-${DATE}.patch
 LINUX=linux-2.6.31.11
@@ -31,6 +35,8 @@ SRC_PREV=head^
 SRC_HEAD=head
 PREV=HEAD^
 HEAD=HEAD
+
+CFLAGS=-g
 
 INC=${LINUX}/include/linux
 INC_FILES=${INC}/jbd.h ${INC}/buffer_head.h ${INC}/journal-head.h ${INC}/magic.h
@@ -61,7 +67,8 @@ distclean: clean_next3 clean_e2fs
 .PHONY: next3 next3_fs series
 next3: ${STRIP} rotate_dirs ${BASE} ${N3_FILES}
 	test ${KEY} == ${NOKEY} || diff -Nuarp ${SRC_PREV} ${SRC_HEAD} > ${N3_SUBPATCH}~ || test 1 = 1
-	test ${KEY} == ${NOKEY} || diff -Nuarp ${PREV} ${HEAD} > ${N3_SUBPATCH} || echo ${ID} ${N3_SUBPATCH} >> next3_series
+	test ${KEY} == ${NOKEY} || diff -Nuarp ${PREV} ${HEAD} >> ${N3_SUBPATCH} || test 1 = 1
+	test ${ID} == ${NOID} || echo ${ID} ${N3_SUBPATCH} >> next3_series
 	diff -Nuarp ${BASE} ${SRC_HEAD} > ${N3_PATCH}~ || test 1 = 1
 	test ${KEY} != ${NOKEY} || cp ${N3_PATCH}~ ${N3_RELEASE}~
 	diff -Nuarp ${BASE} ${HEAD} > ${N3_PATCH} || test 1 = 1
@@ -71,15 +78,24 @@ next3_fs: ${BASE}
 	diff -Nuarp ${ORIG} ${BASE} > ${N3_BASEPATCH} || cp ${N3_BASEPATCH} ${RELEASE}
 
 series: next3_fs next3
-	: > next3_series
-	make KEY=balloc_goal
-	make KEY=exclude_files
+	rm -f next3_series
+	make ID=83 KEY=exclude_files
+	make ID=62 KEY=balloc_goal
 	make KEY=HEAD
-	: > next3_series
-	make ID=01 KEY=file_merge
-	make ID=02 KEY=file_shrink
-	make ID=03 KEY=file_exclude
-	sort -r next3_series | ( while read id patch ; do echo $$patch ; done ) > series
+	rm -f next3_series
+	make ID=92 KEY=cleanup_merge
+	make ID=91 KEY=cleanup_shrink
+	make ID=90 KEY=cleanup
+	make ID=82 KEY=exclude_bitmap
+	make ID=81 KEY=exclude_inode
+	make KEY=exclude
+	make ID=73 KEY=race_read
+	make ID=72 KEY=race_cow
+	make ID=71 KEY=race_bitmap
+	make KEY=race
+	make ID=61 KEY=balloc_reserve
+	make KEY=balloc
+	sort next3_series | ( while read id patch ; do echo $$patch ; done ) > series
 
 ${BASE}: next3.sed next3_fs.sed
 	rm -rf ${LINUX} ${BASE} ${ORIG}
@@ -152,8 +168,14 @@ ${N3}/%:
 	@test ${KEY} == ${NOKEY} || ${STRIP} ${SRC_HEAD}/$@ ${SRC_PREV}/$@ ${KEY}
 	@${STRIP} ${SRC_PREV}/$@ ${PREV}/$@
 
+${N3}/Kconfig: ${SRC}/${N3}/Kconfig
+	@test ${KEY} != ${NOKEY} || (cp $< ${SRC_PREV}/$@ && cp $< ${SRC_HEAD}/$@)
+	@test ${KEY} == ${NOKEY} || ((${STRIP} ${SRC_HEAD}/$@ ${SRC_PREV}/$@ ${KEY} && \
+		echo && echo "Signed-off-by: ${SIGNATURE}") > ${N3_SUBPATCH})
+	@${STRIP} ${SRC_PREV}/$@ ${PREV}/$@
+
 clean_next3:
-	rm -rf ${STRIP} ${LINUX}* next3* series
+	rm -rf ${STRIP} ${LINUX}* next3* series *.patch*
 	rm -rf ${SRC_HEAD} ${SRC_PREV} ${HEAD} ${PREV}
 
 #
