@@ -73,7 +73,7 @@ CONFIG_NEXT3_FS_SNAPSHOT_JOURNAL_CACHE - cache buffer COW state in running trans
 CONFIG_NEXT3_FS_SNAPSHOT_JOURNAL_TRACE - trace remaining COW/buffer credits and COW statistics 
 /* checkpoint: avoid out of buffer credits oops due to COW operation (warn on low COW credits) */
 
-CONFIG_NEXT3_FS_SNAPSHOT_BALLOC_RESERVE - reserve disk space for snapshot metadata
+CONFIG_NEXT3_FS_SNAPSHOT_BLOCK_RESERVE - reserve disk space for snapshot metadata
 /* checkpoint: avoid unexpected out of disk space errors due to COW operation */
 
 CONFIG_NEXT3_FS_SNAPSHOT_RACE_BITMAP - resolve race conditions on pending COW bitmap operations 
@@ -116,6 +116,6 @@ CONFIG_NEXT3_FS_SNAPSHOT_CLEANUP_MERGE - move deleted snapshot blocks to older n
 
 Next3 snapshot unapplied sub patches:
 
-CONFIG_NEXT3_FS_SNAPSHOT_BALLOC_GOAL - special block allocation strategy for snapshot files
+CONFIG_NEXT3_FS_SNAPSHOT_BLOCK_GOAL - special block allocation strategy for snapshot files
 CONFIG_NEXT3_FS_SNAPSHOT_EXCLUDE_FILES - exclude any file with the NODUMP flag (chattr +d)
 

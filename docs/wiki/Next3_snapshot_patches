@@ -6,6 +6,31 @@ Snapshot control with chattr -X.
 Take/delete snapshot with chattr -X +/-S.
 Enable/disable snapshot with chattr -X +/-n.
 
+===next3_snapshot_ctl_init.patch===
+
+Next3 snapshot control - init new snapshot.
+
+On snapshot create, a few special blocks (i.e. the super block and
+group descriptors) are pre-allocated and on snapshot take, they are
+copied under journal_lock_updates().  This is done to avoid the
+recursion that would be caused by COWing these blocks after the
+snapshot becomes active.
+
+===next3_snapshot_ctl_fix.patch===
+
+Next3 snapshot control - fix new snapshot.
+
+On snapshot take, after copying the pre-allocated blocks, some are
+fixed to make the snapshot image appear as a valid Ext2 file system.
+
+===next3_snapshot_ctl_reserve.patch===
+
+Next3 snapshot control - reserve disk space for snapshot.
+
+Ensure there is enough disk space for snapshot file future use.
+Reserve disk space on snapshot take based on file system overhead
+size, number of directories and number of blocks/inodes in use.
+
 ==next3_snapshot_journal.patch==
 
 Next3 snapshot journaled.
@@ -91,21 +116,6 @@ to map the page to a disk block.  If the page is not mapped in the
 snapshot file, the previous snapshots on the list are checked.
 The first found mapping is returned.
 
-==next3_snapshot_balloc.patch==
-
-Next3 snapshot block allocator.
-
-Special considerations of the file system block allocator when
-allocating blocks for snapshots.
-
-===next3_snapshot_balloc_reserve.patch===
-
-Next3 snapshot block allocator - reserve disk space for snapshot.
-
-Ensure there is enough disk space for snapshot file future use.
-Reserve disk space on snapshot creation time based on file system
-overhead size and number of directories/blocks/inodes in use.
-
 ==next3_snapshot_race.patch==
 
 Next3 snapshot race conditions.
@@ -160,8 +170,8 @@ have to remove themselves before the COW operation is completed.
 Next3 snapshot exclude.
 
 Mark all snapshot blocks excluded.
-Excluding snapshot file blocks is essential for efficient shrinking
-and merging of old snapshot files.
+Excluding snapshot file blocks is essential for efficient cleanup
+of deleted snapshot files.
 
 ===next3_snapshot_exclude_inode.patch===
 

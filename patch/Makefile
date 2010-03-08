@@ -69,7 +69,7 @@ distclean: clean_next3 clean_e2fs
 next3: ${STRIP} rotate_dirs ${BASE} ${N3_FILES}
 	test ${KEY} == ${NOKEY} || diff -Nuarp ${SRC_PREV} ${SRC_HEAD} > ${N3_SUBPATCH}+ || test 1 = 1
 	test ${KEY} == ${NOKEY} || diff -Nuarp ${PREV} ${HEAD} >> ${N3_SUBPATCH} || test 1 = 1
-	test ${ID} == ${NOID} || echo ${ID} ${N3_SUBPATCH} >> next3_series
+	test ${ID} == ${NOID} || ((echo -n ${ID} ${N3_SUBPATCH} , ; (diffstat ${N3_SUBPATCH}|tail -n 1)) >> next3_series)
 	diff -Nuarp ${BASE} ${SRC_HEAD} > ${N3_PATCH}+ || test 1 = 1
 	test ${KEY} != ${NOKEY} || cp ${N3_PATCH}+ ${N3_RELEASE}~
 	diff -Nuarp ${BASE} ${HEAD} > ${N3_PATCH} || test 1 = 1
@@ -81,7 +81,7 @@ next3_fs: ${BASE}
 series: next3_fs next3
 	rm -f next3_series
 	make ID=83 KEY=exclude_files
-	make ID=62 KEY=balloc_goal
+	make ID=34 KEY=block_goal
 	make KEY=HEAD
 	rm -f next3_series
 	make ID=92 KEY=cleanup_merge
@@ -94,19 +94,24 @@ series: next3_fs next3
 	make ID=72 KEY=race_cow
 	make ID=71 KEY=race_bitmap
 	make ID=70 KEY=race
-	make ID=61 KEY=balloc_reserve
-	make ID=60 KEY=balloc
-	make ID=51 KEY=list_peep
-	make ID=50 KEY=list
-	make ID=46 KEY=journal_trace
-	make ID=45 KEY=journal_cache
-	make ID=44 KEY=journal_bypass
-	make ID=43 KEY=journal_release
-	make ID=42 KEY=journal_credits
-	make ID=41 KEY=journal_error
-	make ID=40 KEY=journal
-	make ID=30 KEY=ctl
-	sort next3_series | ( while read id patch ; do echo $$patch ; done ) > series
+	make ID=61 KEY=list_peep
+	make ID=60 KEY=list
+	make ID=56 KEY=journal_trace
+	make ID=55 KEY=journal_cache
+	make ID=54 KEY=journal_bypass
+	make ID=53 KEY=journal_release
+	make ID=52 KEY=journal_credits
+	make ID=51 KEY=journal_error
+	make ID=50 KEY=journal
+	make ID=43 KEY=ctl_reserve
+	make ID=42 KEY=ctl_fix
+	make ID=41 KEY=ctl_init
+	make ID=40 KEY=ctl
+#	make ID=33 KEY=block_move
+#	make ID=32 KEY=block_bitmap
+#	make ID=31 KEY=block_cow
+#	make ID=30 KEY=block
+	sort next3_series | ( while read id patch info ; do echo $$patch ; done ) > series
 
 wiki:
 	cat series | ( while read patch ; do cat $$patch~ ; done ) > ${N3_WIKI}
