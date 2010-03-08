@@ -5,6 +5,7 @@
 
 #define MAINKEY "CONFIG_NEXT3_FS_SNAPSHOT"
 #define MAINKEY_LEN 24
+#define MAX_KEY 20
 
 #define LINE_SIZE 120
 #define LINE_LIMIT 80
@@ -17,7 +18,7 @@ static void usage(void)
 
 static void exit_error(const char *str, const char *filename, int lineno, const char *line)
 {
-	fprintf(stderr, "%s:%d: %s\n:%s\n",
+	fprintf(stderr, "%s:%d: %s:\n%s\n",
 			filename, lineno, str, line);
 	exit(1);
 }
@@ -31,10 +32,12 @@ enum filter {
 int main(int argc, char *argv[])
 {
 	char line[LINE_SIZE+2];
+	char KEY[MAX_KEY+1];
 	FILE *infile, *outfile;
 	const char *filename, *filetype;
 	char *key = NULL;
-	int len, keylen, ifdefno = 0, lineno = 0;
+	int len, keylen, keytokens;
+	int ifdefno = 0, lineno = 0;
 	int nested = 0, snapshot = 0, config = 0;
 	enum filter filter = 0, strip = 0;
 
@@ -64,10 +67,15 @@ int main(int argc, char *argv[])
 		key = argv[3];
 		/* convert key to uppercase */
 		keylen = 0;
+		keytokens = 0;
 		while (key[keylen]) {
-			key[keylen] = toupper(key[keylen]);
+			KEY[keylen] = toupper(key[keylen]);
+			if (key[keylen] == '_')
+				keytokens++;
 			keylen++;
 		}
+		KEY[keylen] = 0;
+		key = KEY;
 		/* default to =n */
 		strip = FILTER_UNDEFINED;
 	}
@@ -88,14 +96,18 @@ int main(int argc, char *argv[])
 		/* strip config NEXT3_FS_SNAPSHOT_xxx */
 		config = 1;
 
-	fprintf(stderr, "stripping %s_%s%s from file %s...\n",
-			MAINKEY, key ? : "", 
-			!strip ? "" : (strip > 0 ? "=y" : "=n"),
-			filename);
-
-	if (!key && !strncmp(filename, "snapshot", 8))
+	if (!key && !strncmp(filename, "snapshot", 8) ||
+		(key && !strcmp(key, "snapshot"))) {
 		/* snapshot* files are ifdefed in Makefile */
 		nested = snapshot = 1;
+		/* key == "snapshot" means strip all snapshot ifdefs */
+		key = NULL;
+	}
+
+	fprintf(stderr, "stripping %s%s%s%s from file %s...\n",
+			MAINKEY, key ? "_" : "", key ? : "", 
+			!strip ? "" : (strip > 0 ? "=y" : "=n"),
+			filename);
 
 	while (fgets(line, sizeof(line), infile)) {
 		lineno++;
@@ -134,7 +146,12 @@ int main(int argc, char *argv[])
 			} else if (snapshot) {
 				if (filter) {
 					if (!strncmp(line+1, "bool ", 5))
-						printf("%.*s\n\n", len-9, line+7);
+						printf("%.*snext3_snapshot_%s.patch%.*s\n\n"
+								"%.*s.\n\n",
+								keytokens+2, "====",
+								argv[3],
+								keytokens+2, "====",
+								len-9, line+7);
 					else if (!strncmp(line+1, "  ", 2))
 						printf("%s", line+3);
 				} else if (key) {
@@ -240,6 +257,9 @@ int main(int argc, char *argv[])
 		if (filter != FILTER_UNDEFINED)
 			fputs(line, outfile);
 	}
+
+	if (config)
+		puts("");
 
 	fclose(infile);
 	fclose(outfile);

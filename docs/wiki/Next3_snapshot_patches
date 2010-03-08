@@ -1,0 +1,209 @@
+==next3_snapshot_ctl.patch==
+
+Next3 snapshot control.
+
+Snapshot control with chattr -X.
+Take/delete snapshot with chattr -X +/-S.
+Enable/disable snapshot with chattr -X +/-n.
+
+==next3_snapshot_journal.patch==
+
+Next3 snapshot journaled.
+
+Next3 snapshot operations are journaled inside the same transaction
+with the file system operation that triggered them.
+
+===next3_snapshot_journal_error.patch===
+
+Next3 snapshot journaled - record journal error.
+
+Snapshot errors are recorded as journal errors.
+Next3 should be mounted with errors=remount-ro.
+After a snapshot error, the file system will be in read-only mode.
+The administrator must un-mount the file system and run fsck
+to prevent data corruption.
+Some places in Ext3 original code don't check for return value of
+JBD functions.  Check for snapshot/journal errors in those places.
+
+===next3_snapshot_journal_credits.patch===
+
+Next3 snapshot journaled - increase transaction credits.
+
+Snapshot operations are journaled as part of the running transaction.
+The amount of requested credits is multiplied with a factor, to ensure
+that enough buffer credits are reserved in the running transaction.
+
+===next3_snapshot_journal_release.patch===
+
+Next3 snapshot journaled - implement journal_release_buffer().
+
+journal_release_buffer() is called to cancel a previous call
+to journal_get_write_access() and to recall the used buffer credit.
+Current implementation of journal_release_buffer() in JBD is empty,
+since no buffer credtis are used until the buffer is marked dirty.
+However, because resulting snapshot COW operation cannot be undone,
+we try to extend the current transaction to compensate for the used
+credits of the extra COW operation, so we don't run out of buffer
+credits too soon.
+
+===next3_snapshot_journal_bypass.patch===
+
+Next3 snapshot journaled - bypass to save credits.
+
+Don't journal COW bitmap indirect blocks to save journal credits.
+
+===next3_snapshot_journal_cache.patch===
+
+Next3 snapshot journaled - cache last COW tid in journal_head.
+
+Cache last COW transaction id in buffer's journal_head.
+the cache supresses COW tests until the transaction in committed,
+which implies an avarage cache expiry of 2.5 seconds.
+Before taking a new snapshot, the journal is flushed to disk
+and the current transaction in commited, so the COW cache is
+invalidated (as it should be).
+
+===next3_snapshot_journal_trace.patch===
+
+Next3 snapshot journaled - trace COW/buffer credits.
+
+Extra debug prints to trace snapshot usage of buffer credits.
+
+==next3_snapshot_list.patch==
+
+Next3 snapshot list support.
+
+Implementation of multiple incremental snapshots.
+Snapshot inodes are chained on a list starting at the super block,
+both on-disk and in-memory, similar to the orhpan inodes.  We reuse
+the orphan inode list functions to manipulate the snapshot list.
+Unlink and truncate of snapshot inodes on the list is not allowed,
+so an inode can never be chained on both orphan and snapshot lists.
+We makes use of this fact to overload the in-memory inode field
+next3_inode_info.i_orphan for the chaining of snapshots.
+
+===next3_snapshot_list_peep.patch===
+
+Next3 snapshot list - read through to previous snapshot.
+
+On snapshot page read, the function next3_get_block() is called
+to map the page to a disk block.  If the page is not mapped in the
+snapshot file, the previous snapshots on the list are checked.
+The first found mapping is returned.
+
+==next3_snapshot_balloc.patch==
+
+Next3 snapshot block allocator.
+
+Special considerations of the file system block allocator when
+allocating blocks for snapshots.
+
+===next3_snapshot_balloc_reserve.patch===
+
+Next3 snapshot block allocator - reserve disk space for snapshot.
+
+Ensure there is enough disk space for snapshot file future use.
+Reserve disk space on snapshot creation time based on file system
+overhead size and number of directories/blocks/inodes in use.
+
+==next3_snapshot_race.patch==
+
+Next3 snapshot race conditions.
+
+Resolve snapshot race conditions
+
+===next3_snapshot_race_bitmap.patch===
+
+Next3 snapshot race conditions - concurrent COW bitmap operations.
+
+Wait for pending COW bitmap creations to complete.
+When concurrent tasks try to COW buffers from the same block group
+for the first time, the first task to reset the COW bitmap cache
+is elected to create the new COW bitmap block.
+The rest of the tasks wait until the COW bitmap cache is uptodate.
+The COWing task copies the bitmap block into the new COW bitmap block
+and updates the COW bitmap cache with the new block number.
+
+===next3_snapshot_race_cow.patch===
+
+Next3 snapshot race conditions - concurrent COW operations.
+
+Wait for pending COW operations to complete.
+When concurrent tasks try to COW the same buffer, the task that takes
+the active snapshot trucate_mutex is elected as the the COWing task.
+The COWing task allocates a new snapshot block and creates a buffer
+cache entry with ref_count=1 for that new block.  It then locks the
+new buffer and marks it with the buffer_new flag.  The rest of the
+tasks, find the 'new' buffer in the buffer cache and have to wait
+until the buffer_new flag is cleared.  The COWing task copies the
+source buffer into the 'new' buffer, unlocks it, marks it as journal
+dirty data, clears the new_buffer flag and drops its reference count.
+On active snapshot readpage, the buffer cache is checked.
+If a 'new' buffer entry is found, the reader task waits until the
+buffer_new flag is cleared and then copies the 'new' buffer directly
+into the snapshot file page.
+
+===next3_snapshot_race_read.patch===
+
+Next3 snapshot race conditions - tracked reads.
+
+Wait for pending read I/O requests to complete.
+When a snapshot file readpage reads through to the block device,
+the snapshot page buffer is added to the block tracked readers.
+Upon completion of the async read I/O request of the snapshot page,
+the page buffer is removed from the block tracked readers.
+When a block is being COWed, all of its tracked readers
+have to remove themselves before the COW operation is completed.
+
+==next3_snapshot_exclude.patch==
+
+Next3 snapshot exclude.
+
+Mark all snapshot blocks excluded.
+Excluding snapshot file blocks is essential for efficient shrinking
+and merging of old snapshot files.
+
+===next3_snapshot_exclude_inode.patch===
+
+Next3 snapshot exclude - the exclude inode.
+
+The exclude inode owns all the exclude bitmap blocks.
+The exclude inode is pre-allocated by 'tune2fs -O exclude_inode'.
+The location of exclude bitmap blocks is read on mount time and cached
+in the group descriptors.  The exclude inode is extended on online and
+offline resize operations when block groups are added.
+
+===next3_snapshot_exclude_bitmap.patch===
+
+Next3 snapshot exclude - the exclude bitmap.
+
+Excluding blocks is done by setting their bit in the exclude bitmap.
+There is one exclude bitmap block per block group and it's location
+is cached in the group descriptor.
+
+==next3_snapshot_cleanup.patch==
+
+Next3 snapshot cleanup.
+
+Cleanup snapshots list and reclaim unused blocks of deleted snapshots.
+Oldest snapshot can be removed from list and it's blocks can be freed.
+Non-oldest snapshots have to be shrunk and merged before they can be
+removed from the list.  All snapshot blocks must be excluded in order
+to properly shrink/merge deleted old snapshots.
+
+===next3_snapshot_cleanup_shrink.patch===
+
+Next3 snapshot cleanup - shrink deleted snapshots.
+
+Free blocks of deleted snapshots, which are not in use by an older
+non-deleted snapshot.  Shrinking helps reclaiming disk space
+while older snapshots are currently in use (enabled).
+
+===next3_snapshot_cleanup_merge.patch===
+
+Next3 snapshot cleanup - merge shrunk snapshots.
+
+Move blocks of deleted and shrunk snapshots to an older non-deleted
+and disabled snapshot.  Merging helps removing snapshots from list
+while older snapshots are not currently in use (disabled).
+

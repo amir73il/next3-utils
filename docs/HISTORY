@@ -25,6 +25,7 @@ CONFIG_NEXT3_FS_SNAPSHOT_DEBUG - some debugging code (added snapshot_debug.c,h)
 CONFIG_NEXT3_FS_SNAPSHOT_FILE - changes to ext3 structures (added snapshot.c,h)
 CONFIG_NEXT3_FS_SNAPSHOT_FILE_PERM - snapshot file permissions
 CONFIG_NEXT3_FS_SNAPSHOT_FILE_STORE - snapshot file on-disk in-memory conversions
+CONFIG_NEXT3_FS_SNAPSHOT_BLOCK - snapshot file block operations
 CONFIG_NEXT3_FS_SNAPSHOT_CTL - snapshot management code (added snapshot_ctl.c)
 CONFIG_NEXT3_FS_SNAPSHOT_HOOKS - define snapshot hooks API
 /* checkpoint: snapshot framework and API */
@@ -34,9 +35,10 @@ CONFIG_NEXT3_FS_SNAPSHOT_FILE_PEEP - peep through from active snapshot to block 
 
 CONFIG_NEXT3_FS_SNAPSHOT_JOURNAL_CREDITS - increase transaction credits 
 CONFIG_NEXT3_FS_SNAPSHOT_HOOKS_JBD - snapshot metadata hooks inside JBD hooks 
+CONFIG_NEXT3_FS_SNAPSHOT_HOOKS_INODE - pass inode in snapshot hooks to identify snapshot file updates
 /* checkpoint: snapshot is proof to metadata changes (creat/rename/mkdir) */
 
-CONFIG_NEXT3_FS_SNAPSHOT_FILE_MOVE - remap allocated blocks to snapshot file
+CONFIG_NEXT3_FS_SNAPSHOT_BLOCK_MOVE - remap allocated blocks to snapshot file
 CONFIG_NEXT3_FS_SNAPSHOT_HOOKS_MOVE - move data blocks to active snapshot on write_begin()
 /* checkpoint: snapshot is proof to data changes (overwrite/append) */
 
@@ -50,10 +52,8 @@ CONFIG_NEXT3_FS_SNAPSHOT_HOOKS_DELETE - move blocks to active snapshot on free_b
  * - enough free disk space for snapshot metadata
  */
 
-CONFIG_NEXT3_FS_SNAPSHOT_LIST - snapshots list framework
+CONFIG_NEXT3_FS_SNAPSHOT_LIST - snapshots list implementation
 CONFIG_NEXT3_FS_SNAPSHOT_LIST_PEEP - peep through to previous snapshot on list
-CONFIG_NEXT3_FS_SNAPSHOT_LIST_ORPHAN - reuse orphan list code for snapshot list manipulation
-CONFIG_NEXT3_FS_SNAPSHOT_HOOKS_INODE - pass inode in snapshot hooks to identify snapshot file delete
 /* checkpoint: multiple snapshots create/delete last/mount via loop device */
 
 /* 
@@ -67,8 +67,8 @@ CONFIG_NEXT3_FS_SNAPSHOT_HOOKS_INODE - pass inode in snapshot hooks to identify 
 CONFIG_NEXT3_FS_SNAPSHOT_JOURNAL_ERROR - check return value of JBD hooks (posted to ext4-devel)
 /* checkpoint: handle unexpected out of disk space errors due to COW operation */
 
-CONFIG_NEXT3_FS_SNAPSHOT_JOURNAL_BYPASS - bypass journal on COW bitmap operation to save credits 
 CONFIG_NEXT3_FS_SNAPSHOT_JOURNAL_RELEASE - check remaining COW credits on journal_release_buffer() 
+CONFIG_NEXT3_FS_SNAPSHOT_JOURNAL_BYPASS - bypass journal on COW bitmap operation to save credits 
 CONFIG_NEXT3_FS_SNAPSHOT_JOURNAL_CACHE - cache buffer COW state in running transaction
 CONFIG_NEXT3_FS_SNAPSHOT_JOURNAL_TRACE - trace remaining COW/buffer credits and COW statistics 
 /* checkpoint: avoid out of buffer credits oops due to COW operation (warn on low COW credits) */

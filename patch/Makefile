@@ -24,9 +24,10 @@ SIGNATURE=Amir Goldstein <amir73il@users.sf.net>
 
 N3_PATCH=next3_snapshot~${KEY}.patch
 N3_BASEPATCH=next3_fs.patch
-N3_SUBPATCH=next3_snapshot_${ID}_${KEY}.patch
+N3_SUBPATCH=${ID}_next3_snapshot_${KEY}.patch
 DATE=${shell date +%d%m%y}
 N3_RELEASE=${RELEASE}/next3_snapshot-${DATE}.patch
+N3_WIKI=../docs/wiki/Next3_snapshot_patches
 LINUX=linux-2.6.31.11
 ORIG=origin
 BASE=branch
@@ -64,13 +65,13 @@ clean: clean_next3
 distclean: clean_next3 clean_e2fs
 	rm -rf ${ORIG} ${BASE}
 
-.PHONY: next3 next3_fs series
+.PHONY: next3 next3_fs series wiki
 next3: ${STRIP} rotate_dirs ${BASE} ${N3_FILES}
-	test ${KEY} == ${NOKEY} || diff -Nuarp ${SRC_PREV} ${SRC_HEAD} > ${N3_SUBPATCH}~ || test 1 = 1
+	test ${KEY} == ${NOKEY} || diff -Nuarp ${SRC_PREV} ${SRC_HEAD} > ${N3_SUBPATCH}+ || test 1 = 1
 	test ${KEY} == ${NOKEY} || diff -Nuarp ${PREV} ${HEAD} >> ${N3_SUBPATCH} || test 1 = 1
 	test ${ID} == ${NOID} || echo ${ID} ${N3_SUBPATCH} >> next3_series
-	diff -Nuarp ${BASE} ${SRC_HEAD} > ${N3_PATCH}~ || test 1 = 1
-	test ${KEY} != ${NOKEY} || cp ${N3_PATCH}~ ${N3_RELEASE}~
+	diff -Nuarp ${BASE} ${SRC_HEAD} > ${N3_PATCH}+ || test 1 = 1
+	test ${KEY} != ${NOKEY} || cp ${N3_PATCH}+ ${N3_RELEASE}~
 	diff -Nuarp ${BASE} ${HEAD} > ${N3_PATCH} || test 1 = 1
 	test ${KEY} != HEAD || cp ${N3_PATCH} ${N3_RELEASE}
 
@@ -88,14 +89,27 @@ series: next3_fs next3
 	make ID=90 KEY=cleanup
 	make ID=82 KEY=exclude_bitmap
 	make ID=81 KEY=exclude_inode
-	make KEY=exclude
+	make ID=80 KEY=exclude
 	make ID=73 KEY=race_read
 	make ID=72 KEY=race_cow
 	make ID=71 KEY=race_bitmap
-	make KEY=race
+	make ID=70 KEY=race
 	make ID=61 KEY=balloc_reserve
-	make KEY=balloc
+	make ID=60 KEY=balloc
+	make ID=51 KEY=list_peep
+	make ID=50 KEY=list
+	make ID=46 KEY=journal_trace
+	make ID=45 KEY=journal_cache
+	make ID=44 KEY=journal_bypass
+	make ID=43 KEY=journal_release
+	make ID=42 KEY=journal_credits
+	make ID=41 KEY=journal_error
+	make ID=40 KEY=journal
+	make ID=30 KEY=ctl
 	sort next3_series | ( while read id patch ; do echo $$patch ; done ) > series
+
+wiki:
+	cat series | ( while read patch ; do cat $$patch~ ; done ) > ${N3_WIKI}
 
 ${BASE}: next3.sed next3_fs.sed
 	rm -rf ${LINUX} ${BASE} ${ORIG}
@@ -170,8 +184,8 @@ ${N3}/%:
 
 ${N3}/Kconfig: ${SRC}/${N3}/Kconfig
 	@test ${KEY} != ${NOKEY} || (cp $< ${SRC_PREV}/$@ && cp $< ${SRC_HEAD}/$@)
-	@test ${KEY} == ${NOKEY} || ((${STRIP} ${SRC_HEAD}/$@ ${SRC_PREV}/$@ ${KEY} && \
-		echo && echo "Signed-off-by: ${SIGNATURE}") > ${N3_SUBPATCH})
+	@test ${KEY} == ${NOKEY} || ((${STRIP} ${SRC_HEAD}/$@ ${SRC_PREV}/$@ ${KEY} > ${N3_SUBPATCH}~) && \
+			(cat ${N3_SUBPATCH}~ ; echo "Signed-off-by: ${SIGNATURE}") > ${N3_SUBPATCH})
 	@${STRIP} ${SRC_PREV}/$@ ${PREV}/$@
 
 clean_next3:
