@@ -37,8 +37,8 @@ int main(int argc, char *argv[])
 	const char *filename, *filetype;
 	char *key = NULL;
 	int len, keylen, keytokens;
-	int ifdefno = 0, lineno = 0;
-	int nested = 0, snapshot = 0, config = 0;
+	int ifdefno = 0, lineno = 0, nested = 0;
+	int snapshot = 0, config = 0, debug = 0;
 	enum filter filter = 0, strip = 0;
 
 	if (argc < 3)
@@ -97,11 +97,18 @@ int main(int argc, char *argv[])
 		config = 1;
 
 	if (!key && !strncmp(filename, "snapshot", 8) ||
-		(key && !strcmp(key, "snapshot"))) {
+		(key && !strcmp(key, "SNAPSHOT"))) {
 		/* snapshot* files are ifdefed in Makefile */
 		nested = snapshot = 1;
 		/* key == "snapshot" means strip all snapshot ifdefs */
 		key = NULL;
+	}
+
+	if (key && !strcmp(key, "DEBUG")) {
+		debug = 1;
+		/* remove snapshot_debug files */
+		if (!strncmp(filename, "snapshot_debug", 14))
+			exit(0);
 	}
 
 	fprintf(stderr, "stripping %s%s%s%s from file %s...\n",
@@ -121,7 +128,10 @@ int main(int argc, char *argv[])
 
 		if (config) {
 			if (!strncmp(line, "config ", 7)) {
-				if (!strncmp(line+7, MAINKEY+7, MAINKEY_LEN-7)) {
+				if (debug && !strncmp(line+7, "NEXT3_FS_DEBUG", 14)) {
+					/* strip debug config */
+					filter = FILTER_UNDEFINED;
+				} else if (!strncmp(line+7, MAINKEY+7, MAINKEY_LEN-7)) {
 					if (!snapshot) {
 						/* snapshot main config */
 						nested = snapshot = 1;
@@ -161,6 +171,10 @@ int main(int argc, char *argv[])
 								filename, lineno, line);
 				} 
 			}
+		} else if (debug) {
+			/* strip lines with "snapshot_debug" */
+			if (strstr(line, "snapshot_debug"))
+				continue;
 		} else if (line[0] == '#') {
 			char *ifdef = NULL;
 			/* strip off warnings and pragmas */

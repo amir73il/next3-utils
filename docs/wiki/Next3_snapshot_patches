@@ -1,3 +1,14 @@
+==next3_snapshot_debug.patch==
+
+Next3 snapshot debugging support.
+
+To turn snapshot debugging on, run:
+"echo N > /sys/kernel/debug/next3/snapshot-debug",
+where N is a number between 1 and 5, the higher the number,
+the more debugging output is generated.
+To turn snapshot debugging off, run:
+"echo 0 > /sys/kernel/debug/next3/snapshot-debug".
+
 ==next3_snapshot_hooks.patch==
 
 Next3 snapshot hooks.

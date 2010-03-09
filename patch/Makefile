@@ -68,13 +68,13 @@ distclean: clean_next3 clean_e2fs
 .PHONY: next3 next3_fs series wiki
 next3: ${STRIP} rotate_dirs ${BASE} ${N3_FILES}
 	test -z ${ID} || diff -Nuarp ${SRC_PREV} ${SRC_HEAD} > ${N3_SUBPATCH}+ || test 1 = 1
-	test -z ${ID} || (diff -Nuarp ${PREV} ${HEAD} >> ${N3_SUBPATCH} || \
+	test -z ${ID} || (diff -Nuarp ${PREV} ${HEAD} >> ${N3_SUBPATCH} ; \
 			((echo -n ${ID} ${N3_SUBPATCH} , ; \
 			(diffstat ${N3_SUBPATCH}|tail -n 1)) >> next3_series))
 	test -z ${ID0} || (cp ${N3_SUBPATCH} ${N3_ID0PATCH} ; \
 			((echo -n ${ID0} ${N3_ID0PATCH} , ; \
 			(diffstat ${N3_ID0PATCH}|tail -n 1)) >> next3_series0))
-	test ! -z ${KEY} || (diff -Nuarp ${BASE} ${SRC_PREV} > ${N3_PATCH}+ || \
+	test ! -z ${KEY} || (diff -Nuarp ${BASE} ${SRC_PREV} > ${N3_PATCH}+ ; \
 				cp ${N3_PATCH}+ ${N3_RELEASE}+)
 	test -z ${ID0} || diff -Nuarp ${BASE} ${PREV} > ${N3_PATCH} || test 1 = 1
 	test _${KEY} != _HEAD || cp ${N3_PATCH} ${N3_RELEASE}
@@ -124,10 +124,12 @@ series: next3_fs next3
 	make ID=12 KEY=hooks_delete
 	make ID=11 KEY=hooks_jbd
 	make ID=10 KEY=hooks
+	make ID=01 KEY=debug
 	sort next3_series | ( while read id patch info ; do echo $$patch ; done ) > series
 
 wiki:
 	cat series | ( while read patch ; do cat $$patch~ ; done ) > ${N3_WIKI}
+	cp ${N3_WIKI} ${RELEASE}
 
 ${BASE}: next3.sed next3_fs.sed
 	rm -rf ${LINUX} ${BASE} ${ORIG}
@@ -149,6 +151,10 @@ ${BASE}: next3.sed next3_fs.sed
 	mv ${N3}/ext3_jbd.h ${N3}/next3_jbd.h
 	mv ${N3}/ext3_jbd.c ${N3}/next3_jbd.c
 	sed -i -f next3_fs.sed ${N3}/*
+	# add next3 to linux file systems
+	cp ${SRC}/${INC}/magic.h ${INC}
+	cp ${SRC}/${FS}/Kconfig ${FS}
+	cp ${SRC}/${FS}/Makefile ${FS}
 	mv ${LINUX} ${BASE}
 
 next3.sed:
