@@ -1,3 +1,101 @@
+==next3_snapshot_hooks.patch==
+
+Next3 snapshot hooks.
+
+Insert generic snapshot API calls inside Next3 file system.
+
+===next3_snapshot_hooks_jbd.patch===
+
+Next3 snapshot hooks - inside JBD hooks.
+
+Before every meta data buffer write, the journal API is called,
+namely, one of the next3_journal_get_XXX_access() functions.
+we use these journal hooks to call the snapshot API,
+before every meta data buffer write.
+
+===next3_snapshot_hooks_delete.patch===
+
+Next3 snapshot hooks - delete blocks.
+
+Before deleting file blocks in next3_free_blocks(),
+we call the snapshot API snapshot_get_delete_access(),
+to optionally move the block to the snapshot file.
+
+===next3_snapshot_hooks_data.patch===
+
+Next3 snapshot hooks - move data blocks.
+
+Before every regular file data buffer write,
+the function next3_get_block() is called to map the buffer to disk.
+we use this hook to call the snapshot API snapshot_get_move_access(),
+to optionally move the block to the snapshot file.
+
+==next3_snapshot_file.patch==
+
+Next3 snapshot file.
+
+Next3 snapshot implementation as a file inside the file system.
+Snapshot files are marked with the snapfile flag and have special
+read-only aops.
+
+===next3_snapshot_file_peep.patch===
+
+Next3 snapshot file - read through to block device.
+
+On active snapshot file page read, the function next3_get_block()
+is called to map the page to a disk block.  If the page is not mapped
+in the snapshot file a direct mapping to the block device is returned.
+
+===next3_snapshot_file_perm.patch===
+
+Next3 snapshot file - permissions.
+
+Enforce snapshot file permissions.
+Write truncate and unlink of snapshot inodes is not allowed.
+
+===next3_snapshot_file_store.patch===
+
+Next3 snapshot file - store on disk.
+
+Snapshot inode is stored differently in memory and on disk.
+During store and load of snapshot inode, some of the inode flags
+and fields are converted.
+
+==next3_snapshot_block.patch==
+
+Next3 snapshot block operations.
+
+Core implementation of special snapshot file block operations.
+The argument @create to the function next3_get_blocks_handle()
+is re-interpreted as a snapshot block command argument.  The old
+argument values 0(=read) and 1(=create) preserve the original
+behavior of the function.  The bit field h_cowing in the current
+transaction handle is used to prevent COW recursions.
+
+===next3_snapshot_block_cow.patch===
+
+Next3 snapshot block operation - copy blocks to snapshot.
+
+Imeplementation of copying blocks into a snapshot file.
+This mechanism is used to copy-on-write metadata blocks to snapshot.
+
+===next3_snapshot_block_bitmap.patch===
+
+Next3 snapshot block operation - copy block bitmap to snapshot.
+
+The snapshot copy of the file system block bitmap is called the COW
+bitmap and it is used to check if a block was allocated at the time
+that the snapshot was taken.
+
+===next3_snapshot_block_move.patch===
+
+Next3 snapshot block operation - move blocks to snapshot.
+
+Imeplementation of moving blocks into a snapshot file.
+The move block command maps an allocated blocks to the snapshot file,
+allocating only the indirect blocks when needed.
+This mechanism is used to move-on-write data blocks to snapshot.
+
 ==next3_snapshot_ctl.patch==
 
 Next3 snapshot control.
@@ -30,6 +128,13 @@ Next3 snapshot control - reserve disk space for snapshot.
 Ensure there is enough disk space for snapshot file future use.
 Reserve disk space on snapshot take based on file system overhead
 size, number of directories and number of blocks/inodes in use.
+
+===next3_snapshot_ctl_dump.patch===
+
+Next3 snapshot control - dump snapshot file blocks map.
+
+Use chattr -d to print the blocks map of a snapshot file.
+Snapshot debugging should be enabled.
 
 ==next3_snapshot_journal.patch==
 

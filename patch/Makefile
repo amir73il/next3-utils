@@ -13,11 +13,8 @@ LINUX_PKG?=../../kernel/2.6.31
 # location of e2fsprogs archive
 E2FS_PKG?=../../pkg
 
-# 'key' parameter to strip_ifdefs
-NOKEY=xxx
-NOID=xxx
-KEY?=${NOKEY}
-ID?=${NOID}
+# xlate "X0" -> "X", "XY" -> ""
+ID0=${shell (echo ${ID}|grep 0|tr -d 0)}
 
 # patches signed-off-by
 SIGNATURE=Amir Goldstein <amir73il@users.sf.net>
@@ -25,6 +22,7 @@ SIGNATURE=Amir Goldstein <amir73il@users.sf.net>
 N3_PATCH=next3_snapshot~${KEY}.patch
 N3_BASEPATCH=next3_fs.patch
 N3_SUBPATCH=${ID}_next3_snapshot_${KEY}.patch
+N3_ID0PATCH=${ID0}_next3_snapshot_${KEY}.patch
 DATE=${shell date +%d%m%y}
 N3_RELEASE=${RELEASE}/next3_snapshot-${DATE}.patch
 N3_WIKI=../docs/wiki/Next3_snapshot_patches
@@ -34,8 +32,10 @@ BASE=branch
 STRIP=./strip_ifdefs
 SRC_PREV=head^
 SRC_HEAD=head
+SRC_HEAD0=head~
 PREV=HEAD^
 HEAD=HEAD
+HEAD0=HEAD~
 
 CFLAGS=-g
 
@@ -67,23 +67,27 @@ distclean: clean_next3 clean_e2fs
 
 .PHONY: next3 next3_fs series wiki
 next3: ${STRIP} rotate_dirs ${BASE} ${N3_FILES}
-	test ${KEY} == ${NOKEY} || diff -Nuarp ${SRC_PREV} ${SRC_HEAD} > ${N3_SUBPATCH}+ || test 1 = 1
-	test ${KEY} == ${NOKEY} || diff -Nuarp ${PREV} ${HEAD} >> ${N3_SUBPATCH} || test 1 = 1
-	test ${ID} == ${NOID} || ((echo -n ${ID} ${N3_SUBPATCH} , ; (diffstat ${N3_SUBPATCH}|tail -n 1)) >> next3_series)
-	diff -Nuarp ${BASE} ${SRC_HEAD} > ${N3_PATCH}+ || test 1 = 1
-	test ${KEY} != ${NOKEY} || cp ${N3_PATCH}+ ${N3_RELEASE}~
-	diff -Nuarp ${BASE} ${HEAD} > ${N3_PATCH} || test 1 = 1
-	test ${KEY} != HEAD || cp ${N3_PATCH} ${N3_RELEASE}
+	test -z ${ID} || diff -Nuarp ${SRC_PREV} ${SRC_HEAD} > ${N3_SUBPATCH}+ || test 1 = 1
+	test -z ${ID} || (diff -Nuarp ${PREV} ${HEAD} >> ${N3_SUBPATCH} || \
+			((echo -n ${ID} ${N3_SUBPATCH} , ; \
+			(diffstat ${N3_SUBPATCH}|tail -n 1)) >> next3_series))
+	test -z ${ID0} || (cp ${N3_SUBPATCH} ${N3_ID0PATCH} ; \
+			((echo -n ${ID0} ${N3_ID0PATCH} , ; \
+			(diffstat ${N3_ID0PATCH}|tail -n 1)) >> next3_series0))
+	test ! -z ${KEY} || (diff -Nuarp ${BASE} ${SRC_PREV} > ${N3_PATCH}+ || \
+				cp ${N3_PATCH}+ ${N3_RELEASE}+)
+	test -z ${ID0} || diff -Nuarp ${BASE} ${PREV} > ${N3_PATCH} || test 1 = 1
+	test _${KEY} != _HEAD || cp ${N3_PATCH} ${N3_RELEASE}
 
 next3_fs: ${BASE}
 	diff -Nuarp ${ORIG} ${BASE} > ${N3_BASEPATCH} || cp ${N3_BASEPATCH} ${RELEASE}
 
 series: next3_fs next3
-	rm -f next3_series
-	make ID=83 KEY=exclude_files
-	make ID=34 KEY=block_goal
-	make KEY=HEAD
-	rm -f next3_series
+	rm -f next3_series*
+	make ID=x2 KEY=exclude_files
+	make ID=x1 KEY=block_goal
+	make ID=x0 KEY=HEAD
+	rm -f next3_series*
 	make ID=92 KEY=cleanup_merge
 	make ID=91 KEY=cleanup_shrink
 	make ID=90 KEY=cleanup
@@ -103,14 +107,23 @@ series: next3_fs next3
 	make ID=52 KEY=journal_credits
 	make ID=51 KEY=journal_error
 	make ID=50 KEY=journal
+	make ID=44 KEY=ctl_dump
 	make ID=43 KEY=ctl_reserve
 	make ID=42 KEY=ctl_fix
 	make ID=41 KEY=ctl_init
 	make ID=40 KEY=ctl
-#	make ID=33 KEY=block_move
-#	make ID=32 KEY=block_bitmap
-#	make ID=31 KEY=block_cow
-#	make ID=30 KEY=block
+	make ID=33 KEY=block_move
+	make ID=32 KEY=block_bitmap
+	make ID=31 KEY=block_cow
+	make ID=30 KEY=block
+	make ID=23 KEY=file_store
+	make ID=22 KEY=file_perm
+	make ID=21 KEY=file_peep
+	make ID=20 KEY=file
+	make ID=13 KEY=hooks_data
+	make ID=12 KEY=hooks_delete
+	make ID=11 KEY=hooks_jbd
+	make ID=10 KEY=hooks
 	sort next3_series | ( while read id patch info ; do echo $$patch ; done ) > series
 
 wiki:
@@ -169,27 +182,28 @@ rotate_dirs:
 	@mkdir -p ${PREV}/${INC} ${PREV}/${N3}
 	@mkdir -p ${HEAD}/${INC} ${HEAD}/${N3}
 
-${INC}/%:
-	@test ${KEY} != ${NOKEY} || cp ${SRC}/$@ ${SRC_PREV}/$@
-	@test ${KEY} != ${NOKEY} || cp ${SRC}/$@ ${SRC_HEAD}/$@
-	@test ${KEY} == ${NOKEY} || ${STRIP} ${SRC_HEAD}/$@ ${SRC_PREV}/$@ ${KEY}
+${INC}/%: ${SRC}/${INC}/%
+	@test ! -z ${KEY} || cp ${SRC}/$@ ${SRC_PREV}/$@
+	@test ! -z ${ID} || cp ${SRC_PREV}/$@ ${SRC_HEAD}/$@
+	@test -z ${ID} || ${STRIP} ${SRC_HEAD}/$@ ${SRC_PREV}/$@ ${KEY}
 	@${STRIP} ${SRC_PREV}/$@ ${PREV}/$@
 
-${FS}/%:
-	@test ${KEY} != ${NOKEY} || cp ${SRC}/$@ ${SRC_PREV}/$@
-	@test ${KEY} != ${NOKEY} || cp ${SRC}/$@ ${SRC_HEAD}/$@
-	@test ${KEY} == ${NOKEY} || ${STRIP} ${SRC_HEAD}/$@ ${SRC_PREV}/$@ ${KEY}
+${FS}/%: ${SRC}/${FS}/%
+	@test ! -z ${KEY} || cp ${SRC}/$@ ${SRC_PREV}/$@
+	@test ! -z ${ID} || cp ${SRC_PREV}/$@ ${SRC_HEAD}/$@
+	@test -z ${ID} || ${STRIP} ${SRC_HEAD}/$@ ${SRC_PREV}/$@ ${KEY}
 	@${STRIP} ${SRC_PREV}/$@ ${PREV}/$@
 
 ${N3}/%:
-	@test ${KEY} != ${NOKEY} || cp ${SRC}/$@ ${SRC_PREV}/$@
-	@test ${KEY} != ${NOKEY} || cp ${SRC}/$@ ${SRC_HEAD}/$@
-	@test ${KEY} == ${NOKEY} || ${STRIP} ${SRC_HEAD}/$@ ${SRC_PREV}/$@ ${KEY}
+	@test ! -z ${KEY} || cp ${SRC}/$@ ${SRC_PREV}/$@
+	@test ! -z ${ID} || cp ${SRC_PREV}/$@ ${SRC_HEAD}/$@
+	@test -z ${ID} || ${STRIP} ${SRC_HEAD}/$@ ${SRC_PREV}/$@ ${KEY}
 	@${STRIP} ${SRC_PREV}/$@ ${PREV}/$@
 
-${N3}/Kconfig: ${SRC}/${N3}/Kconfig
-	@test ${KEY} != ${NOKEY} || (cp $< ${SRC_PREV}/$@ && cp $< ${SRC_HEAD}/$@)
-	@test ${KEY} == ${NOKEY} || ((${STRIP} ${SRC_HEAD}/$@ ${SRC_PREV}/$@ ${KEY} > ${N3_SUBPATCH}~) && \
+${N3}/Kconfig:
+	@test ! -z ${KEY} || cp ${SRC}/$@ ${SRC_PREV}/$@
+	@test ! -z ${ID} || cp ${SRC_PREV}/$@ ${SRC_HEAD}/$@
+	@test -z ${ID} || ((${STRIP} ${SRC_HEAD}/$@ ${SRC_PREV}/$@ ${KEY} > ${N3_SUBPATCH}~) && \
 			(cat ${N3_SUBPATCH}~ ; echo "Signed-off-by: ${SIGNATURE}") > ${N3_SUBPATCH})
 	@${STRIP} ${SRC_PREV}/$@ ${PREV}/$@
 
