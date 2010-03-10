@@ -1,0 +1,185 @@
+=Next3 source files=
+Following is a list of kernel source files modified by the [[Next3 patches]].
+
+To better understand the changes in each file, one should follow the [[Next3 snapshot patches]] series.
+
+==Changed kernel files==
+*fs/Kconfig - add next3 file system
+*fs/Makefile - add next3 file system
+*include/linux/magic.h - add next3 file system
+*include/linux/jbd.h - add task COW state to handle_t
+*include/linux/journal_head.h - add COW tid cache to journal_head
+*include/linux/buffer_head.h - add tracked read macros
+*fs/buffer.c - add tracked read functions
+
+==Added Next3 files==
+*fs/next3/snapshot.h - next3 snapshot API
+*fs/next3/snapshot.c - next3 snapshot COW functions
+*fs/next3/snapshot_ctl.c - next3 snapshot control functions
+*fs/next3/snapshot_debug.h - next3 snapshot debug macros
+*fs/next3/snapshot_debug.c - next3 snapshot debug functions
+
+==Changed Next3 files==
+*fs/next3/Kconfig - add next3 snapshot support
+*fs/next3/Makefile - add next3 snapshot support
+*fs/next3/balloc.c - snapshot delete block hooks
+*fs/next3/file.c - snapshot file access permissions
+*fs/next3/inode.c - snapshot file aops and data write hooks
+*fs/next3/ioctl.c - next3 snapshot control via chattr
+*fs/next3/namei.c - snapshot list functions
+*fs/next3/super.c - initialize snapshot code
+*fs/next3/next3_jbd.c - snapshot metadata write hooks
+*fs/next3/next3_jbd.h - snapshot metadata write hooks
+*fs/next3/next3.h - add snapshot fields to next3 on-disk structs
+*fs/next3/next3_i.h - add snapshot fields to next3 in-memory structs
+*fs/next3/next3_sb.h - add snapshot fields to next3 in-memory structs
+
+==Other Next3 files==
+*fs/next3/* - files cloned from ext3 and unchanged by snapshot patch
+
+
+
+----
+
+=Data structures and locking semantics=
+Following is a list of file system data structures manipulated by the snapshot code.
+
+The data integrity rules SHOULD guaranty that file system data CAN NOT be corrupted by the snapshot code.
+
+The locking semantics SHOULD guaranty that data structure are manipulated by the snapshot code in a safe manner.
+
+==Data integrity rules==
+# Snapshot code MUST NOT change any data or metadata block, EXCEPT changes that are explicitly allowed by other data integrity rules.
+# Snapshot code MAY change reserved fields and bits in on-disk file system structures (which are not used by ext2 and ext4).
+# Snapshot code MAY add fields and bits to in-memory file system structures, as long as they are initialized properly.
+# The "snapshot file" flag (NEXT3_SNAPFILE_FL) may only be set on directories and inherited to files created inside them.
+# Other "snapshot file" flags (NEXT3_SNAPFILE_*_FL) MAY ONLY be set by executing the "set flags" ioctl (NEXT3_IOC_SETFLAGS) on a "snapshot file" by a privileged user.
+# Snapshot code MAY directly change data and metadata blocks, which are exclusively associated with "snapshot files" and with the special "exclude inode" (NEXT3_EXCLUDE_INO).
+# Snapshot code MAY indirectly change file system global counters, due to "snapshot inode" changes.
+# Snapshot code MAY un-map a regular file data block from its inode, given that the data of this block is obsolete (overwritten and committed).
+
+==Reserved on-disk structure fields used by snapshots==
+
+- struct next3_group_desc.bg_reserved[0-1]
+
+/* bg_exclude_bitmap set by mke2fs/tune2fs on fs with no snapshots and by
+   online resize under ? */
+
+/* bg_cow_bitmap set by next3_snapshot_read_cow_bitmap() under
+   sb_bgl_lock(), reset by next3_snapshot_reset_cow_bitmap under
+   lock_super() or sb_lock */
+
+- struct next3_inode.osd2.linux1.l_i_reserved1 (overlaps ext4 l_i_version)
+
+- struct next3_inode.osd2.linux2.l_i_reserved2
+
+/* i_snapshot_blocks, i_next_snapshot set by next3_do_update_inode() under
+   inode_mutex (?) */
+
+- struct next3_inode.i_flags & 0x7F000000 (Snapshot persistent flags)
+
+- struct next3_inode.i_flags & 0x00F80000 (Snapshot non-persistent flags
+  overlaps ext4 extents flag)
+
+/* set by next3_ioctl() under sbi->snapshot_mutex and inode_mutex */
+/* set by next3_snapshot_load() under sb_lock */
+/* set by next3_iget() on first non cached inode access */
+
+- struct next3_super_block.s_reserved[last 3]
+
+/* s_last_snapshot reset by tune2fs on cleanly un mounted fs */
+/* s_last_snapshot, s_last_snapshot_id, s_snapshot_r_blocks_count set by
+   snapshot_take() under lock_super() */
+/* s_last_snapshot reset by next3_inode_list_del() under lock_super() */
+
+- struct next3_super_block.s_feature_compat & 0x00001000 ("exclude_inode"
+  feature)
+
+/* ON/OFF by mke2fs/tune2fs on cleanly un mounted fs with no snapshots */
+
+- struct next3_super_block.s_feature_ro_compat & 0x00001000 ("has_snapshot"
+  feature)
+
+/* ON by mke2fs/tune2fs, OFF by tune2fs on cleanly un mounted fs */
+/* ON by snapshot_take() under lock_super() */
+
+
+==New in-memory structure fields used by snapshots==
+- struct buffer_head.b_state & 1<<BH_Tracked_Read (buffer_head.h)
+/* set by next3_snapshot_get_block() under lock_buffer()
+   along with taking 0x10000 refcounts on bdev buffer */
+/* cleared by end_buffer_async_read() (fs/buffer.c) under lock_buffer()
+   along with dropping 0x10000 refcounts on bdev buffer */
+/* end_buffer_tracked_read() clears the buffer mapped flag
+   to prevent reading the block returned by next3_snapshot_get_block() again
+   without tracking the read */
+
+- struct next3_sb_info.{s_snapshot_mutex, s_active_snapshot,
+  s_snapshot_list} (next3_sb.h)
+
+/* active_snapshot set by next3_snapshot_take() and next3_snapshot_update()
+   under snapshot_mutex or sb_lock */
+/* snapshot_list set by next3_snapshot_create() and next3_snapshot_update()
+   under snapshot_mutex or sb_lock */
+
+- struct handle_s.{h_level,h_base_credits,h_cow_*} (jbd.h)
+
+/* this struct is per task - should verify SMP safe though not relevant to
+   CTERA platforms */
+/* h_level, h_cow_* set by next3_snapshot_test_and_cow() */
+/* h_{buffer,base,cow}_credits set by
+   next3_journal_{start,restart,extend,release}() */
+
+- struct journal_head.b_cow_tid (journal_head.h)
+
+/* set by next3_snapshot_test_and_cow() under jbd_lock_bh_state() */
+
+==Reserved inode flags used by snapshots==
+/* under sbi->snapshot_mutex and inode_mutex:
+   NEXT3_SNAPFILE_FL and NEXT3_SNAPFILE_TAKE_FL set and inode added to
+   in-memory snapshot list by next3_snapshot_create()
+
+   NEXT3_SNAPFILE_TAKE_FL cleared, inode added to on-disk snapshot list and
+   set as in-memory active snapshot by next3_snapshot_take() on success
+
+   NEXT3_SNAPFILE_FL and NEXT3_SNAPFILE_TAKE_FL cleared and inode removed
+   from in-memory list by next3_snapshot_update() after snapshot_take()
+   failure */
+
+/* NEXT3_SNAPFILE_FL flag cleared by next3_iget() for non-cached inodes on
+   first time access */
+
+/* NEXT3_SNAPFILE_FL flag is set by next3_snapshot_load() for all inodes on
+   the on-disk snapshot list under sb_lock */
+
+/* once a snapshot inode is on the in-memory snapshot list it has a
+   reference count and is never dropped from inode cache */
+
+==Blocks used exclusively by snapshots==
+/* exclude inode blocks are allocated and initialized by tune2fs/mke2fs */
+
+/* exclude inode data blocks are modified and journalled (data journalled)
+   by next3_snapshot_test_and_cow() */
+
+/* active snapshot inode blocks are allocated, modified and journalled (data
+   ordered) by next3_snapshot_test_and_cow() under various snapshot race
+   protections (see NEXT3_FS_SNAPSHOT_RACE) */
+
+/* deleted snapshot inode blocks are de-allocated by next3_snapshot_update()
+   under sbi->snapshot_mutex (next3_unlink() and next3_truncate() of snapshot
+   inode are not permitted) */
+
+==Global counters indirectly changed by snapshots==
+
+-          struct next3_group_desc.bg_free_blocks_count
+
+-          struct next3_super_block.s_free_blocks_count
+
+-          struct next3_sb_info.s_freeblocks_counter
+/* not changed directly by snapshot code */
+
+
+==Regular file metadata blocks changed by snapshots==
+/* need to verify there is no race condition between concurrent
+   next3_snapshot_get_move_access() on the same data block */
+
