@@ -19,11 +19,8 @@ NEXT3(TM) is a flavor of the widely used Ext3 file system with built-in support 
 * [[Changelog]]
 * [[License]]
 
-== Contact ==
-Please contact the project administrator directly.
-
-== Source Code Download ==
-Next3 code will be published on the project page soon.
+== Source Code ==
+[[Next3 patches]] will be published on the project page soon.
 
 Please contact the project administrator if you would like to get a copy of the source code.
 
@@ -36,3 +33,7 @@ Please contact the project administrator if you would like to become a beta test
 [[Bonnie++]]
 
 Please contact the project administrator if you would like to run benchmarks.
+
+== Contact ==
+Please contact the project administrator directly or post a message to the [https://lists.sourceforge.net/lists/listinfo/next3-devel next3-devel mailing list].
+

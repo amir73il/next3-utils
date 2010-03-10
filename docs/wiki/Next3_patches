@@ -1,0 +1,16 @@
+The Next3 source code package consists of the following components.
+
+==linux-2.6.x.y-next3_fs.patch==
+Adds a cloned Next3 file system to the kernel (cloned from Ext3 in kernel 2.6.x.y, but may be applied to other kernels as well).
+
+==next3_snapshot-1.0.y.patch==
+Adds snapshot support (version 1.0.y) to a fresh Next3 clone. Also available as a patch series ([[Next3 snapshot patches]]).
+
+==e2fsprogs-1.41.x-next3-1.0.y.patch==
+Adds snapshot awareness (version 1.0.y) to e2fsck, mke2fs, dumpe2fs, debugfs, resize2fs, tune2fs, lsattr and chattr.
+
+There are no snapshot COW operations during offline processing, only restrictions on changing a file system with snapshots offline.
+
+==snapshot script==
+The snapshot script uses patched e2fsprogs utils to manage Next3 snapshots and run snapshot tests.
+
