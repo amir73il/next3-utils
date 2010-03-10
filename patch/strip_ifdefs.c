@@ -235,11 +235,12 @@ int main(int argc, char *argv[])
 				if (!nested)
 					exit_error("else without ifdef",
 							filename, lineno, line);
-				if (nested > 0)
+				if (nested > 0) {
 					filter = -filter;
-				if (filter)
-					/* strip the else line */
-					continue;
+					if (filter)
+						/* strip the else line */
+						continue;
+				}
 			} else if (!strncmp(line+1, "endif", 5)) {
 				if (!nested) {
 					if (*filetype == 'h' || len > 7)
