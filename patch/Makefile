@@ -14,12 +14,12 @@ LINUX_PKG?=../../kernel/2.6.31
 E2FS_PKG?=../../pkg
 
 # xlate "X0" -> "X", "XY" -> ""
-ID0=${shell (echo ${ID}|grep 0|tr -d 0)}
+ID0?=${shell (echo ${ID}|grep 0|tr -d 0)}
 
 # patches signed-off-by
 SIGNATURE=Amir Goldstein <amir73il@users.sf.net>
 
-N3_PATCH=next3_snapshot~${KEY}.patch
+N3_PATCH=next3_snapshot.patch
 N3_BASEPATCH=next3_fs.patch
 N3_SUBPATCH=${ID}_next3_snapshot_${KEY}.patch
 N3_ID0PATCH=${ID0}_next3_snapshot_${KEY}.patch
@@ -66,27 +66,35 @@ distclean: clean_next3 clean_e2fs
 	rm -rf ${ORIG} ${BASE}
 
 .PHONY: next3 next3_fs series wiki
-next3: ${STRIP} rotate_dirs ${BASE} ${N3_FILES}
-	test -z ${ID} || diff -Nuarp ${SRC_PREV} ${SRC_HEAD} > ${N3_SUBPATCH}+ || test 1 = 1
-	test -z ${ID} || (diff -Nuarp ${PREV} ${HEAD} >> ${N3_SUBPATCH} ; \
+next3: ${STRIP} rotate_dirs ${BASE} ${N3_FILES} ${N3_PATCH}~
+	@test -z ${ID} || diff -Nuarp ${SRC_PREV} ${SRC_HEAD} > ${N3_SUBPATCH}+ || test 1 = 1
+	@test -z ${ID} || (diff -Nuarp ${PREV} ${HEAD} >> ${N3_SUBPATCH} ; \
 			((echo -n ${ID} ${N3_SUBPATCH} , ; \
 			(diffstat ${N3_SUBPATCH}|tail -n 1)) >> next3_series))
-	test -z ${ID0} || (cp ${N3_SUBPATCH} ${N3_ID0PATCH} ; \
-			((echo -n ${ID0} ${N3_ID0PATCH} , ; \
+	@test -z ${ID0} || (cp ${N3_SUBPATCH} ${N3_ID0PATCH} ; \
+			((echo -n ${ID} ${N3_ID0PATCH} , ; \
 			(diffstat ${N3_ID0PATCH}|tail -n 1)) >> next3_series0))
-	test ! -z ${KEY} || (diff -Nuarp ${BASE} ${SRC_PREV} > ${N3_PATCH}+ ; \
-				cp ${N3_PATCH}+ ${N3_RELEASE}+)
-	test -z ${ID0} || diff -Nuarp ${BASE} ${PREV} > ${N3_PATCH} || test 1 = 1
-	test _${KEY} != _HEAD || cp ${N3_PATCH} ${N3_RELEASE}
+	@diff -Nuarp ${BASE} ${SRC_PREV} > _${N3_PATCH}+ || test 1 = 1
+	@(cat ${N3_PATCH}~ ; echo "Signed-off-by: ${SIGNATURE}") > _${N3_PATCH}
+	@diff -Nuarp ${BASE} ${PREV} >> _${N3_PATCH} || test 1 = 1
+	@test ! -z ${KEY} || (cp _${N3_PATCH}+ ${N3_RELEASE}+ ; cp _${N3_PATCH}+ ${N3_PATCH}+)
+	@test _${KEY} != _HEAD || (cp _${N3_PATCH} ${N3_RELEASE} ; cp _${N3_PATCH} ${N3_PATCH})
+	@test _${ID} != _00 || (cp _${N3_PATCH} ${N3_SUBPATCH} ; \
+				cp _${N3_PATCH} ${N3_ID0PATCH} ; \
+				cp ${N3_PATCH}~ ${N3_SUBPATCH}~)
+	diffstat _${N3_PATCH}|tail -n 1
+
+${N3_PATCH}~:
+	(echo "next3_snapshot.patch adds snapshot support to Next3 (after it was cloned from Ext3)." ; echo ) > $@
+	(echo "The next3_snapshot patch aggregates all next3_snapshot_X sub-patches and next3_snapshot_X_Y sub-sub-patches." ; echo ) >> $@
 
 next3_fs: ${BASE}
 	diff -Nuarp ${ORIG} ${BASE} > ${N3_BASEPATCH} || cp ${N3_BASEPATCH} ${RELEASE}
 
 series: next3_fs next3
-	rm -f next3_series*
-	make ID=x2 KEY=exclude_files
-	make ID=x1 KEY=block_goal
-	make ID=x0 KEY=HEAD
+	make KEY=exclude_files
+	make KEY=block_goal
+	make KEY=HEAD
 	rm -f next3_series*
 	make ID=92 KEY=cleanup_merge
 	make ID=91 KEY=cleanup_shrink
@@ -124,14 +132,15 @@ series: next3_fs next3
 	make ID=12 KEY=hooks_delete
 	make ID=11 KEY=hooks_jbd
 	make ID=10 KEY=hooks
-	make ID=01 KEY=debug
+	make ID0=0 ID=01 KEY=debug
+	make ID0=0 ID=00 KEY=base
 	sort next3_series | ( while read id patch info ; do echo $$patch ; done ) > series
 
 wiki:
 	cat series | ( while read patch ; do cat $$patch~ ; done ) > ${N3_WIKI}
 	cp ${N3_WIKI} ${RELEASE}
 
-${BASE}: next3.sed next3_fs.sed
+${BASE}: next3.sed next3_fs.sed next3_ext4.sed
 	rm -rf ${LINUX} ${BASE} ${ORIG}
 	mkdir -p ${BASE} ${ORIG}
 	tar xfj ${LINUX_PKG}/${LINUX}.tar.bz2 ${INC_FILES} ${FS_FILES} ${E3} ${E3_INC_FILES}
@@ -152,15 +161,26 @@ ${BASE}: next3.sed next3_fs.sed
 	mv ${N3}/ext3_jbd.c ${N3}/next3_jbd.c
 	sed -i -f next3_fs.sed ${N3}/*
 	# add next3 to linux file systems
-	cp ${SRC}/${INC}/magic.h ${INC}
-	cp ${SRC}/${FS}/Kconfig ${FS}
-	cp ${SRC}/${FS}/Makefile ${FS}
+	grep -v EXT4 ${INC}/magic.h > x
+	diff x ${INC}/magic.h | sed -f next3_ext4.sed > y
+	patch ${INC}/magic.h < y
+	grep -v EXT4 ${FS}/Makefile > x
+	diff x ${FS}/Makefile | sed -f next3_ext4.sed > y
+	patch ${FS}/Makefile < y
+	grep -v fs.ext4 ${FS}/Kconfig > x
+	diff x ${FS}/Kconfig | sed -f next3_ext4.sed > y
+	patch ${FS}/Kconfig < y
+	rm x y
 	mv ${LINUX} ${BASE}
 
 next3.sed:
 	echo "s/ext3/next3/g" > $@
 	echo "s/Ext3/Next3/g" >> $@
 	echo "s/EXT3/NEXT3/g" >> $@
+
+next3_ext4.sed:
+	echo "s/ext4/next3/g" > $@
+	echo "s/EXT4/NEXT3/g" >> $@
 
 next3_fs.sed:
 	echo "s/linux\/include\/linux\/next3_fs\.h/next3\.h/g" > $@
@@ -188,30 +208,35 @@ rotate_dirs:
 	@mkdir -p ${PREV}/${INC} ${PREV}/${N3}
 	@mkdir -p ${HEAD}/${INC} ${HEAD}/${N3}
 
-${INC}/%: ${SRC}/${INC}/%
+${INC}/%:
 	@test ! -z ${KEY} || cp ${SRC}/$@ ${SRC_PREV}/$@
-	@test ! -z ${ID} || cp ${SRC_PREV}/$@ ${SRC_HEAD}/$@
-	@test -z ${ID} || ${STRIP} ${SRC_HEAD}/$@ ${SRC_PREV}/$@ ${KEY}
+	@test -z ${KEY} || ${STRIP} ${SRC_HEAD}/$@ ${SRC_PREV}/$@ ${KEY}
 	@${STRIP} ${SRC_PREV}/$@ ${PREV}/$@
 
-${FS}/%: ${SRC}/${FS}/%
+${FS}/%:
 	@test ! -z ${KEY} || cp ${SRC}/$@ ${SRC_PREV}/$@
-	@test ! -z ${ID} || cp ${SRC_PREV}/$@ ${SRC_HEAD}/$@
-	@test -z ${ID} || ${STRIP} ${SRC_HEAD}/$@ ${SRC_PREV}/$@ ${KEY}
+	@test -z ${KEY} || ${STRIP} ${SRC_HEAD}/$@ ${SRC_PREV}/$@ ${KEY}
 	@${STRIP} ${SRC_PREV}/$@ ${PREV}/$@
 
 ${N3}/%:
 	@test ! -z ${KEY} || cp ${SRC}/$@ ${SRC_PREV}/$@
-	@test ! -z ${ID} || cp ${SRC_PREV}/$@ ${SRC_HEAD}/$@
-	@test -z ${ID} || ${STRIP} ${SRC_HEAD}/$@ ${SRC_PREV}/$@ ${KEY}
+	@test -z ${KEY} || ${STRIP} ${SRC_HEAD}/$@ ${SRC_PREV}/$@ ${KEY}
 	@${STRIP} ${SRC_PREV}/$@ ${PREV}/$@
 
 ${N3}/Kconfig:
 	@test ! -z ${KEY} || cp ${SRC}/$@ ${SRC_PREV}/$@
-	@test ! -z ${ID} || cp ${SRC_PREV}/$@ ${SRC_HEAD}/$@
-	@test -z ${ID} || ((${STRIP} ${SRC_HEAD}/$@ ${SRC_PREV}/$@ ${KEY} > ${N3_SUBPATCH}~) && \
+	@test -z ${KEY} || ((${STRIP} ${SRC_HEAD}/$@ ${SRC_PREV}/$@ ${KEY} > ${N3_SUBPATCH}~) && \
 			(cat ${N3_SUBPATCH}~ ; echo "Signed-off-by: ${SIGNATURE}") > ${N3_SUBPATCH})
 	@${STRIP} ${SRC_PREV}/$@ ${PREV}/$@
+
+${INC}/magic.h: ${BASE}/${INC}/magic.h
+	@cp $< ${SRC_PREV}/$@ ; cp $< ${PREV}/$@
+
+${FS}/Kconfig: ${BASE}/${FS}/Kconfig
+	@cp $< ${SRC_PREV}/$@ ; cp $< ${PREV}/$@
+
+${FS}/Makefile: ${BASE}/${FS}/Makefile
+	@cp $< ${SRC_PREV}/$@ ; cp $< ${PREV}/$@
 
 clean_next3:
 	rm -rf ${STRIP} ${LINUX}* next3* series *.patch*

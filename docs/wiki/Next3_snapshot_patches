@@ -1,3 +1,7 @@
+next3_snapshot.patch adds snapshot support to Next3 (after it was cloned from Ext3).
+
+The next3_snapshot patch aggregates all next3_snapshot_X sub-patches and next3_snapshot_X_Y sub-sub-patches.
+
 ==next3_snapshot_debug.patch==
 
 Next3 snapshot debugging support.
