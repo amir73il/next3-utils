@@ -8,5 +8,5 @@ NEXT3=next3-1.0.0
 TARFILE=~/$NEXT3-$DATE.tar.gz
 
 cd ../..
-tar cvfz $TARFILE --exclude=.svn $NEXT3/{bin,docs,$LINUX,$E2FS,patch/Makefile,patch/*.{sh,sed,c}}
+tar cvfz $TARFILE --exclude=.svn $NEXT3/{bin,docs,$LINUX,$E2FS,patch/Makefile,patch/*.{sh,c}}
 

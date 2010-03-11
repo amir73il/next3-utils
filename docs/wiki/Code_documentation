@@ -45,6 +45,7 @@ To better understand the changes in each file, one should follow the [[Next3 sna
 Following is a list of file system data structures manipulated by the snapshot code.
 
 The data integrity rules SHOULD guaranty that file system data CAN NOT be corrupted by the snapshot code.
+They DO NOT guaranty the data integrity inside the snapshot read-only image.
 
 The locking semantics SHOULD guaranty that data structure are manipulated by the snapshot code in a safe manner.
 
@@ -52,124 +53,187 @@ The locking semantics SHOULD guaranty that data structure are manipulated by the
 # Snapshot code MUST NOT change any data or metadata block, EXCEPT changes that are explicitly allowed by other data integrity rules.
 # Snapshot code MAY change reserved fields and bits in on-disk file system structures (which are not used by ext2 and ext4).
 # Snapshot code MAY add fields and bits to in-memory file system structures, as long as they are initialized properly.
-# The "snapshot file" flag (NEXT3_SNAPFILE_FL) may only be set on directories and inherited to files created inside them.
-# Other "snapshot file" flags (NEXT3_SNAPFILE_*_FL) MAY ONLY be set by executing the "set flags" ioctl (NEXT3_IOC_SETFLAGS) on a "snapshot file" by a privileged user.
-# Snapshot code MAY directly change data and metadata blocks, which are exclusively associated with "snapshot files" and with the special "exclude inode" (NEXT3_EXCLUDE_INO).
-# Snapshot code MAY indirectly change file system global counters, due to "snapshot inode" changes.
-# Snapshot code MAY un-map a regular file data block from its inode, given that the data of this block is obsolete (overwritten and committed).
+# The "snapshot file" flag (NEXT3_SNAPFILE_FL) may only be set on directories and inherited to files created inside them. Other "snapshot file" flags (NEXT3_SNAPFILE_*_FL) MAY ONLY be set on snapshot files.
+# Snapshot code MAY directly change data and metadata blocks, which are exclusively associated with snapshot files and with the special "exclude" inode (NEXT3_EXCLUDE_INO).
+# Snapshot code MAY indirectly change file system global counters and bitmaps, due to snapshot file changes.
+# Snapshot code MAY un-map a regular file or directory block from its inode and map it the a snapshot file, given that the data of this block is about to become obsolete (overwritten or truncated).
 
 ==Reserved on-disk structure fields used by snapshots==
 
-- struct next3_group_desc.bg_reserved[0-1]
+=== struct next3_group_desc.bg_reserved[0] ===
+bg_exclude_bitmap - caches the address of the block group exclude bitmap block, which is mapped by the "exclude" inode.
 
-/* bg_exclude_bitmap set by mke2fs/tune2fs on fs with no snapshots and by
-   online resize under ? */
+* Set by mke2fs/tune2fs/resize2fs on un-mounted fs with no snapshots when allocating the "exclude" inode.
+* Set by next3_group_add() under snapshot_mutex for new block group added on online resize.
+* Set by next3_snapshot_init_bitmap_cache() under sb_lock on mount.
+ 
+=== struct next3_group_desc.bg_reserved[1] ===
+bg_cow_bitmap - caches the address of the block group COW bitmap block, which is mapped by the "active" snapshot file.
 
-/* bg_cow_bitmap set by next3_snapshot_read_cow_bitmap() under
-   sb_bgl_lock(), reset by next3_snapshot_reset_cow_bitmap under
-   lock_super() or sb_lock */
+* Set by next3_snapshot_read_cow_bitmap() under sb_bgl_lock() on first block group access after snapshot take.
+* Reset to 0 by next3_snapshot_reset_bitmap_cache() under lock_super() on snapshot take and under sb_lock on mount.
 
-- struct next3_inode.osd2.linux1.l_i_reserved1 (overlaps ext4 l_i_version)
+=== struct next3_inode.osd2.linux1.l_i_reserved1 ===
+i_next_snapshot - inode number of next snapshot on the list.
 
-- struct next3_inode.osd2.linux2.l_i_reserved2
+Overlaps with ext4 persistent l_i_version, but the next snapshot inode is a valid value for version.
+The in-memory version of snapshot file is their snapshot id. We use lsattr -v to display the snapshot id.
 
-/* i_snapshot_blocks, i_next_snapshot set by next3_do_update_inode() under
-   inode_mutex (?) */
+* Set by next3_do_update_inode() under inode_mutex when writing a snapshot inode to disk.
 
-- struct next3_inode.i_flags & 0x7F000000 (Snapshot persistent flags)
+=== struct next3_inode.osd2.linux2.l_i_reserved2 ===
+i_snapshot_blocks - size in blocks of snapshot block device, which is the size of the file system at the time the snapshot was taken.
 
-- struct next3_inode.i_flags & 0x00F80000 (Snapshot non-persistent flags
-  overlaps ext4 extents flag)
+* Set by next3_do_update_inode() under inode_mutex when writing a snapshot inode to disk.
 
-/* set by next3_ioctl() under sbi->snapshot_mutex and inode_mutex */
-/* set by next3_snapshot_load() under sb_lock */
-/* set by next3_iget() on first non cached inode access */
+=== struct next3_inode.i_flags & 0x1FF00000 ===
+NEXT3_SNAPFILE_*FL - snapshot file flags (only flags 0x1F000000 are stored on-disk).
 
-- struct next3_super_block.s_reserved[last 3]
+* Set by next3_snapshot_set_flags() under snapshot_mutex and inode_mutex when changing a snapshot file's status.
+* Set by next3_snapshot_update() for all snapshots on the list under sb_lock on mount time and under snapshot_mutex after changing a snapshot file's status.
 
-/* s_last_snapshot reset by tune2fs on cleanly un mounted fs */
-/* s_last_snapshot, s_last_snapshot_id, s_snapshot_r_blocks_count set by
-   snapshot_take() under lock_super() */
-/* s_last_snapshot reset by next3_inode_list_del() under lock_super() */
+=== struct next3_super_block.s_reserved[last 3] ===
+# s_last_snapshot - inode number of last snapshot taken (and first on the snapshots list).
+# s_last_snapshot_id - id of last snapshot taken (running index).
+# s_snapshot_r_blocks_count - reserved blocks for last snapshot future use (metadata only).
 
-- struct next3_super_block.s_feature_compat & 0x00001000 ("exclude_inode"
-  feature)
+* Reset to 0 by tune2fs -O ^has_snapshot on cleanly un-mounted fs when converting back to Ext3.
+* Set by next3_snapshot_take() under lock_super() and snapshot_mutex after a new snapshot was taken.
+* s_last_snapshot is reset to 0 by next3_snapshot_remove() under lock_super() and snapshot_mutex after the last snapshot was deleted.
 
-/* ON/OFF by mke2fs/tune2fs on cleanly un mounted fs with no snapshots */
+=== struct next3_super_block.s_feature_compat & 0x00003000 ===
+# NEXT3_FEATURE_COMPAT_BIG_JOURNAL - journal size >= 2GB.
+# NEXT3_FEATURE_COMPAT_EXCLUDE_INODE - exclude inode is allocated.
 
-- struct next3_super_block.s_feature_ro_compat & 0x00001000 ("has_snapshot"
-  feature)
+* ON/OFF by mke2fs/tune2fs on cleanly un-mounted fs with no snapshots.
 
-/* ON by mke2fs/tune2fs, OFF by tune2fs on cleanly un mounted fs */
-/* ON by snapshot_take() under lock_super() */
+=== struct next3_super_block.s_feature_ro_compat & 0x0000F000 ===
+# NEXT3_FEATURE_RO_COMPAT_HAS_SNAPSHOT - file system with snapshots.
+# NEXT3_FEATURE_RO_COMPAT_A_SNAPSHOT - a read-only ext2 snapshot image.
+# NEXT3_FEATURE_RO_COMPAT_FIX_SNAPSHOT - file system with corrupted snapshots.
+# NEXT3_FEATURE_RO_COMPAT_FIX_EXCLUDE - file system with exclude bitmap errors.
 
+* ON/OFF by mke2fs/tune2fs/e2fsck on a cleanly un-mounted fs.
+* ON by snapshot code under lock_super().
 
 ==New in-memory structure fields used by snapshots==
-- struct buffer_head.b_state & 1<<BH_Tracked_Read (buffer_head.h)
-/* set by next3_snapshot_get_block() under lock_buffer()
-   along with taking 0x10000 refcounts on bdev buffer */
-/* cleared by end_buffer_async_read() (fs/buffer.c) under lock_buffer()
-   along with dropping 0x10000 refcounts on bdev buffer */
-/* end_buffer_tracked_read() clears the buffer mapped flag
-   to prevent reading the block returned by next3_snapshot_get_block() again
-   without tracking the read */
 
-- struct next3_sb_info.{s_snapshot_mutex, s_active_snapshot,
-  s_snapshot_list} (next3_sb.h)
+=== struct next3_sb_info.s_snapshot_mutex ===
+This mutex synchronizes snapshot control operations and protects the active snapshot and snapshots list.
 
-/* active_snapshot set by next3_snapshot_take() and next3_snapshot_update()
-   under snapshot_mutex or sb_lock */
-/* snapshot_list set by next3_snapshot_create() and next3_snapshot_update()
-   under snapshot_mutex or sb_lock */
+* Initialized on next3_fill_super() under sb_lock on mount time.
+* Acquired on next3_ioctl() when trying to set snapshot file flags and when trying to resize the file system.
 
-- struct handle_s.{h_level,h_base_credits,h_cow_*} (jbd.h)
+=== struct next3_sb_info.s_active_snapshot ===
+Holds a reference to active snapshot inode. The active snapshot has a positive reference count, so it is pinned to the inode cache.
 
-/* this struct is per task - should verify SMP safe though not relevant to
-   CTERA platforms */
-/* h_level, h_cow_* set by next3_snapshot_test_and_cow() */
-/* h_{buffer,base,cow}_credits set by
-   next3_journal_{start,restart,extend,release}() */
+* Initialized on next3_fill_super() under sb_lock on mount time.
+* Set by next3_snapshot_load() under sb_lock on mount time.
+* Set by next3_snapshot_take() under snapshot_mutex after a new snapshot was taken.
+* Reset by next3_snapshot_update() under snapshot_mutex after the last snapshot was deleted.
+* Reset by next3_snapshot_destroy() under sb_lock on umount time.
 
-- struct journal_head.b_cow_tid (journal_head.h)
+=== struct next3_sb_info.s_snapshot_list ===
+Head of the snapshot inodes list. All snapshots on the list have a positive reference count, so they are pinned to the inode cache.
 
-/* set by next3_snapshot_test_and_cow() under jbd_lock_bh_state() */
+* Initialized on next3_fill_super() under sb_lock on mount time.
+* Set by next3_snapshot_load() under sb_lock on mount time.
+* Set by next3_snapshot_create() under snapshot_mutex before a new snapshot is taken.
+* Reset by next3_snapshot_remove() under snapshot_mutex after the last snapshot was deleted.
+* Reset by next3_snapshot_destroy() under sb_lock on umount time.
+
+=== struct next3_inode_info.i_ophan,i_next ===
+The old field i_orphan is normally used to chain unlinked and truncated inodes on in-memory orphan list.
+Snapshots on the snapshot list cannot be unlinked nor truncated, so i_orphan is reused to chain the snapshot inodes on in-memory snapshot list.
+Orphan list uses the old field i_dtime to cache the inode number of the next orphan inode.
+Snapshot list uses the new field i_next to cache the inode number of the next snapshot inode.
+
+* Initialized on allocation of new inode struct.
+* Set by next3_snapshot_load() under sb_lock on mount time.
+* Set by next3_snapshot_create() under snapshot_mutex before a new snapshot is taken.
+* Set by next3_snapshot_remove() under snapshot_mutex after a snapshot was deleted.
+* Reset by next3_snapshot_destroy() under sb_lock on umount time.
+
+=== struct handle_s.h_cowing,h_cow_* ===
+The h_cowing flag signals that the task is performing a snapshot COW operation.
+The h_cow_* counters collect statistics on the task's snapshot COW operations.
+
+* The handle_s struct is a per task transaction handle, which requires no locking.
+* h_cowing is set at the beginning of next3_snapshot_test_and_cow() and reset before exiting the function.
+* h_cow_* counters are updated by next3_snapshot_test_and_cow() and reset when a new transaction handle is created.
+
+=== struct handle_s.h_base_credits,h_user_credits ===
+The old field h_buffer_credits is used to keep count of remaining transaction credits.
+In Next3, the user requested transaction credits are multiplied by a factor to account for the extra snapshot COW operation credits.
+The new field h_base_credits is used to store the user requested credits.
+The new field h_user_credits is used to keep count of remaining user credits (requested by user - used by user).
+
+* Set by next3_journal_start,restart,extend,release,dirty_metadata() after updating h_buffer_credits.
+
+=== struct journal_head.b_user_modified ===
+The old flag b_modified signals that the buffer was modified during the current transaction.
+The new flag b_user_modified signals that the buffer was modified during the current transaction not during a COW operation.
+
+* Set by next3_journal_dirty_metadata() under jbd_lock_bh_state() when buffer is modified for the first time in a transaction not during a COW operation.
+
+=== struct journal_head.b_cow_tid ===
+Cache the id of the last transaction in which the buffer was COWed.
+
+* Set by next3_snapshot_test_and_cow() under jbd_lock_bh_state() when buffer is COWed.
+
+=== struct buffer_head.b_state & 1<<BH_Tracked_Read ===
+This flag signals that the buffer points to a snapshot file page which reads through a hole in active snapshot to the block device.
+The snapshot code tracks the a-sync I/O of these buffers to resolve read-COW race conditions.
+
+* Set by next3_snapshot_get_block() under lock_buffer() along with taking 0x10000 reference counts on block device page buffer.
+* Reset by end_buffer_async_read() under lock_buffer() along with dropping 0x10000 reference counts on block device page buffer.
+* end_buffer_tracked_read() also clears the buffer mapped flag to prevent reading the block returned by next3_snapshot_get_block() again without tracking the read.
 
 ==Reserved inode flags used by snapshots==
-/* under sbi->snapshot_mutex and inode_mutex:
-   NEXT3_SNAPFILE_FL and NEXT3_SNAPFILE_TAKE_FL set and inode added to
-   in-memory snapshot list by next3_snapshot_create()
+=== NEXT3_SNAPFILE_FL ===
+This flag identifies a snapshot file, which has special read-only aops.
 
-   NEXT3_SNAPFILE_TAKE_FL cleared, inode added to on-disk snapshot list and
-   set as in-memory active snapshot by next3_snapshot_take() on success
+It cannot be changed on regular files, but only on directories, so a snapshot file must be created inside a snapshots directory.
+A snapshot file cannot be opened for write by users, so only the snapshot code can modify snapshot files data and metadata.
+Snapshot control operations are performed by privileged users on snapshot files by modifying snapshot file status flags.
+ 
+=== NEXT3_SNAPFILE_LIST_FL ===
+This flag controls adding and removing a snapshot file from the snapshots list.
 
-   NEXT3_SNAPFILE_FL and NEXT3_SNAPFILE_TAKE_FL cleared and inode removed
-   from in-memory list by next3_snapshot_update() after snapshot_take()
-   failure */
+It is not a persistent flag, but a status flag that signals that the inode is on the in-memory snapshots list.
+It is not modified directly by the user, but only used to signal snapshot take or snapshot delete operations.
+The actual removal of snapshot from the list is usually deferred to a later cleanup time.
 
-/* NEXT3_SNAPFILE_FL flag cleared by next3_iget() for non-cached inodes on
-   first time access */
+* Set by next3_snapshot_load() for all inodes on the on-disk snapshot list under sb_lock on mount time.
+* Set by ext3_snapshot_create() along with adding inode to snapshot list under snapshot_mutex and inode_mutex on start of snapshot take.
+* Cleared by next3_snapshot_update() along with removing inode from snapshot list under snapshot_mutex on cleanup of deleted and unused snapshot.
+* Cleared by next3_do_update_inode() under inode_mutex when writing a snapshot inode to disk.
 
-/* NEXT3_SNAPFILE_FL flag is set by next3_snapshot_load() for all inodes on
-   the on-disk snapshot list under sb_lock */
+=== NEXT3_SNAPFILE_*_FL ===
+The rest of the flags are either simple modifiable status flags, such as ENABLE and TAGGED, or read-only status flags, such as INUSE and DELETED.
 
-/* once a snapshot inode is on the in-memory snapshot list it has a
-   reference count and is never dropped from inode cache */
+* Modifiable flags are set by next3_snapshot_set_flags() under snapshot_mutex and inode_mutex.
+* Status flags are set by next3_snapshot_update() under snapshot_mutex after snapshot control operations.
 
 ==Blocks used exclusively by snapshots==
-/* exclude inode blocks are allocated and initialized by tune2fs/mke2fs */
+=== Snapshot file blocks ===
+Blocks that are mapped to snapshot files are not modifiable by users, because:
+# snapshot files are read-only.
+# snapshots on the list cannot be unlinked nor truncated by users.
+# all snapshot file blocks are freed before a snapshot is removed from the list.
 
-/* exclude inode data blocks are modified and journalled (data journalled)
-   by next3_snapshot_test_and_cow() */
+* Active snapshot blocks are allocated, modified and journaled (ordered) by next3_snapshot_test_and_cow() under various snapshot race protections (next3_snapshot_race.patch)
+* Deleted snapshot blocks are moved or freed by next3_snapshot_shrink,merge,remove() under snapshot_mutex.
 
-/* active snapshot inode blocks are allocated, modified and journalled (data
-   ordered) by next3_snapshot_test_and_cow() under various snapshot race
-   protections (see NEXT3_FS_SNAPSHOT_RACE) */
+=== Exclude inode blocks ===
+The exclude inode data blocks are the exclude bitmap blocks.
 
-/* deleted snapshot inode blocks are de-allocated by next3_snapshot_update()
-   under sbi->snapshot_mutex (next3_unlink() and next3_truncate() of snapshot
-   inode are not permitted) */
+Exclude inode blocks are allocated and initialized by tune2fs/mke2fs/resize2fs on an un-mounted fs.
+The special exclude inode is not accessible to users because it has no directory entry.
 
-==Global counters indirectly changed by snapshots==
+* Exclude bitmap blocks are modified and journaled (ordered) by next3_snapshot_test_and_cow() with atomic set_bit operation.
+
+==Global counters and bitmaps indirectly changed by snapshots==
 
 -          struct next3_group_desc.bg_free_blocks_count
 
