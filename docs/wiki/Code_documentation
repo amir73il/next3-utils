@@ -35,7 +35,7 @@ To better understand the changes in each file, one should follow the [[Next3 sna
 *fs/next3/next3_sb.h - add snapshot fields to next3 in-memory structs
 
 ==Other Next3 files==
-*fs/next3/* - files cloned from ext3 and unchanged by snapshot patch
+*fs/next3/* - files cloned from ext3 (next3_fs.patch) and unchanged by snapshots code (next3_snapshot.patch)
 
 
 
@@ -56,7 +56,7 @@ The locking semantics SHOULD guaranty that data structure are manipulated by the
 # The "snapshot file" flag (NEXT3_SNAPFILE_FL) may only be set on directories and inherited to files created inside them. Other "snapshot file" flags (NEXT3_SNAPFILE_*_FL) MAY ONLY be set on snapshot files.
 # Snapshot code MAY directly change data and metadata blocks, which are exclusively associated with snapshot files and with the special "exclude" inode (NEXT3_EXCLUDE_INO).
 # Snapshot code MAY indirectly change file system global counters and bitmaps, due to snapshot file changes.
-# Snapshot code MAY un-map a regular file or directory block from its inode and map it the a snapshot file, given that the data of this block is about to become obsolete (overwritten or truncated).
+# Snapshot code MAY un-map a regular file or directory block from its inode and map it to a snapshot file, given that the data of this block is about to become obsolete (overwritten or truncated).
 
 ==Reserved on-disk structure fields used by snapshots==
 
@@ -114,7 +114,8 @@ NEXT3_SNAPFILE_*FL - snapshot file flags (only flags 0x1F000000 are stored on-di
 # NEXT3_FEATURE_RO_COMPAT_FIX_EXCLUDE - file system with exclude bitmap errors.
 
 * ON/OFF by mke2fs/tune2fs/e2fsck on a cleanly un-mounted fs.
-* ON by snapshot code under lock_super().
+* HAS_SNAPSHOT and A_SNAPSHOT ON by next3_snapshot_take() under lock_super() and snapshot_mutex.
+* FIX_SNAPSHOT and FIX_SNAPSHOT ON by snapshot code when consistency errors are detected before marking the fs error flag.
 
 ==New in-memory structure fields used by snapshots==
 
@@ -183,7 +184,7 @@ Cache the id of the last transaction in which the buffer was COWed.
 
 === struct buffer_head.b_state & 1<<BH_Tracked_Read ===
 This flag signals that the buffer points to a snapshot file page which reads through a hole in active snapshot to the block device.
-The snapshot code tracks the a-sync I/O of these buffers to resolve read-COW race conditions.
+The snapshot code tracks the a-sync I/O of these buffers to resolve read-COW race conditions (next3_snapshot_race_read.patch).
 
 * Set by next3_snapshot_get_block() under lock_buffer() along with taking 0x10000 reference counts on block device page buffer.
 * Reset by end_buffer_async_read() under lock_buffer() along with dropping 0x10000 reference counts on block device page buffer.
@@ -222,7 +223,7 @@ Blocks that are mapped to snapshot files are not modifiable by users, because:
 # snapshots on the list cannot be unlinked nor truncated by users.
 # all snapshot file blocks are freed before a snapshot is removed from the list.
 
-* Active snapshot blocks are allocated, modified and journaled (ordered) by next3_snapshot_test_and_cow() under various snapshot race protections (next3_snapshot_race.patch)
+* Active snapshot blocks are allocated, modified and journaled (data blocks are ordered) by next3_snapshot_test_and_cow() under various snapshot race protections (next3_snapshot_race.patch).
 * Deleted snapshot blocks are moved or freed by next3_snapshot_shrink,merge,remove() under snapshot_mutex.
 
 === Exclude inode blocks ===
@@ -234,16 +235,28 @@ The special exclude inode is not accessible to users because it has no directory
 * Exclude bitmap blocks are modified and journaled (ordered) by next3_snapshot_test_and_cow() with atomic set_bit operation.
 
 ==Global counters and bitmaps indirectly changed by snapshots==
+The file system has some global bitmaps and counters that are modified indirectly by snapshot COW operations.
+Whenever a block is allocated for the active snapshot file, the block bitmap is updated along with the exclude bitmap.
 
--          struct next3_group_desc.bg_free_blocks_count
+The following counters may be affected by snapshot COW operations:
+* next3_group_desc.bg_free_blocks_count
+* next3_super_block.s_free_blocks_count
+* next3_sb_info.s_freeblocks_counter
 
--          struct next3_super_block.s_free_blocks_count
+==Blocks remapped by snapshots==
+===Truncated blocks remapped by snapshots===
+When truncating or unlinking regular files and directories, their blocks are unmapped from their inode and cleared from the block bitmap.
+Before the blocks are cleared from block bitmap, they may be mapped to the active snapshot inode.
+In that case, they are not cleared from block bitmap and they are set in the exclude bitmap.
 
--          struct next3_sb_info.s_freeblocks_counter
-/* not changed directly by snapshot code */
+* The un-mapping of blocks from their inode and mapping of these blocks to the active snapshot is journaled in the same transaction.
 
+===Regular files data blocks remapped by snapshots===
+Before writing to a regular file, missing data blocks are allocated and mapped to the file's inode.
+Before overwriting an allocated data block, the block may be mapped to the active snapshot inode.
+In that case, a new data block is allocated and mapped to the file's inode in-place of the moved block.
 
-==Regular file metadata blocks changed by snapshots==
-/* need to verify there is no race condition between concurrent
-   next3_snapshot_get_move_access() on the same data block */
+* The mapping of the new block and remapping of the old block to the active snapshot is journaled in the same transaction.
+* If new block allocation fails, the old block is not moved to active snapshot and the write operation fails.
+* ''need to verify there is no race condition between concurrent next3_snapshot_get_move_access() on the same data block.''
 
