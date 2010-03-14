@@ -1,20 +1,20 @@
-v1.0.0-rc9-WIP
-----------
+v1.0.9-WIP
+------
 ???, 2010
 - free snapshot blocks when discarding snapshots (tune2fs)
 - cleanup after reboot in the middle of snapshot take
 
-v1.0.0-rc8
-----------
+v1.0.8
+------
 Feb 21, 2010
 Bug fixes:
-- data loss on in-place write to full disk (atomic move-on-write)
 - corrupted read of data in new snapshot (fix COW-read race)
 - unused blocks moved to snapshot (fix test COW bitmap blocks count)
 - used blocks freed from snapshot (fix shrink blocks count)
 Performance:
 - fast read of data in new snapshot (copy from cache on COW-read race)
 Stability:
+- atomic move-on-write hook
 - code review by Erez Zadok <ezk@cs.sunysb.edu>
 Sanity tests:
 - clean fsck of snapshot image
@@ -22,47 +22,46 @@ Sanity tests:
 - trigger f/s error if snapshot load fails
 - warn on read through of non-allocated block
 Compatibility:
-- requires e2fsprogs v1.41.9-next3-rc8
+- requires e2fsprogs v1.41.9-next3-1.0.8
 
-v1.0.0-rc7
-----------
+v1.0.7
+------
 Jan 7, 2010
 - clear snapshot blocks from COW bitmap with the use of exclude bitmap
 
-v1.0.0-rc6
-----------
+v1.0.6
+------
 Dec 17, 2009
 - collect COW statistics (cached/clear/mapped/moved/copied)
 - unit testing of race conditions
 
-v1.0.0-rc5
-----------
+v1.0.5
+------
 Oct 27, 2009
 - cache test_and_cow result in journal_head (JOURNAL_CACHE)
 - count COW credits in handle (JOURNAL_CREDITS)
-- trace journal transactions and credits status (JOURNAL_DEBUG)
+- trace journal transactions and credits status (JOURNAL_TRACE)
 - implement journal_release (JOURNAL_RELEASE)
 - clean old snapshot files from COW bitmap (FILE_EXCLUDE)
 
-v1.0.0-rc4
-----------
+v1.0.4
+------
 Oct 4, 2009
 - snapshot merge (FILE_MERGE)
 - snapshot shrink/merge after file system resize
 - disallow snapshot create on a non empty file
 
-v1.0.0-rc3
-----------
+v1.0.3
+------
 Sep 14, 2009
-- rename exct3 to next3
-- patch kernel 2.6.31
+- rebase to kernel 2.6.31
 - support for online resize
 - reserve disk space for snapshot use
 - copy super block to snapshot header
 - store snapshot ID in inode generation
 
-v1.0.0-rc2
-----------
+v1.0.2
+------
 Mar 22, 2009
 -	added "snapshot version" command
 -	"snapshot start/stop" command calls storage mount/umount, so "snapshot clean/restart" works
@@ -70,8 +69,8 @@ Mar 22, 2009
 -	"snapshot clean/mkfs" creates a journal of size 2G (smaller file systems are not supported)
 -	fix journal credits in "snapshot create"
 
-v1.0.0-rc1
-----------
+v1.0.1
+------
 Feb 2, 2009
 
 -	After formatting an hard disk and before "snapshot config", reboot is required

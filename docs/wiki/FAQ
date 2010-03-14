@@ -65,3 +65,7 @@ Its purpose, design goals and implementation details are completely different fr
 
 == Can Next3 snapshot support be applied to Ext4? ==
 Most of the snapshot code can work on Ext4, but the move-on-write technology used for regular files data blocks is not applicable for extent mapped files.
+
+== How can I get for more information? ==
+Please contact the project administrator directly with any question about Next3.
+

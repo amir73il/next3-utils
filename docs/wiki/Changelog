@@ -1,0 +1,59 @@
+==v1.0.9-WIP (??? 2010)==
+* Free snapshot blocks when discarding snapshots (tune2fs).
+* Cleanup after reboot in the middle of snapshot take.
+
+==v1.0.8 (Feb 2010)==
+===Bug fixes:===
+* Incorrect cached data in new snapshot (fix COW-read race).
+* Unused blocks moved to snapshot (fix test COW bitmap blocks count).
+* Used blocks freed from snapshot (fix shrink blocks count).
+Performance:
+* Fast read of data in new snapshot (copy from cache on COW-read race).
+===Stability:===
+* Atomic move-on-write.
+* Code review by Erez Zadok <ezk@cs.sunysb.edu>.
+===Sanity tests:===
+* Clean fsck of snapshot image.
+* Trigger f/s error on exclude bitmap in-consistencies.
+* Trigger f/s error if snapshot load fails.
+* Warn on read through of non-allocated block.
+===Compatibility:===
+* requires e2fsprogs v1.41.9-next3-1.0.8.
+
+==v1.0.7 (Jan 2010)==
+* Clear snapshot blocks from COW bitmap with the use of exclude bitmap.
+
+==v1.0.6 (Dec 2009)==
+* Collect COW statistics (cached/clear/mapped/moved/copied).
+* Unit testing of race conditions.
+
+==v1.0.5 (Nov 2009)==
+* Cache test_and_cow result in journal_head.
+* Count COW credits in transaction handle.
+* Trace journal transactions remaining credits and statistics.
+* Implement next3_journal_release().
+* Clean old snapshot file blocks from COW bitmap.
+
+==v1.0.4 (Oct 2009)==
+* Implement snapshot merge.
+* Snapshot shrink/merge after file system resize.
+* Disallow snapshot take on a non empty file.
+
+==v1.0.3 (Sep 2009)==
+* Rebase to kernel 2.6.31.
+* Support for online resize.
+* Reserve disk space for snapshot use on snapshot take.
+* Copy super block to snapshot header on snapshot take.
+* Store snapshot ID in inode generation.
+
+==v1.0.2 (Mar 2009)==
+* Added "snapshot version" command.
+* "snapshot start/stop" command calls next3 mount/umount.
+* "snapshot clean/mkfs" creates a journal of size 2G (smaller file systems are not supported).
+* Fix journal credits in "snapshot create".
+
+==v1.0.1 (Feb 2009)==
+* After formatting an hard disk and before "snapshot config", reboot is required.
+* After "snapshot config", reboot is required.
+* Use the command "snapshot take" without the <snapshot-name> argument to create a snapshot named "@GMT-<date>-<time>".
+
