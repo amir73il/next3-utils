@@ -93,7 +93,7 @@ next3_fs: ${BASE}
 
 series: next3_fs next3
 	make KEY=exclude_files
-	make KEY=block_goal
+	make KEY=file_goal
 	make KEY=HEAD
 	rm -f next3_series*
 	make ID=92 KEY=cleanup_merge
@@ -106,7 +106,7 @@ series: next3_fs next3
 	make ID=72 KEY=race_cow
 	make ID=71 KEY=race_bitmap
 	make ID=70 KEY=race
-	make ID=61 KEY=list_peep
+	make ID=61 KEY=list_read
 	make ID=60 KEY=list
 	make ID=56 KEY=journal_trace
 	make ID=55 KEY=journal_cache
@@ -126,7 +126,7 @@ series: next3_fs next3
 	make ID=30 KEY=block
 	make ID=23 KEY=file_store
 	make ID=22 KEY=file_perm
-	make ID=21 KEY=file_peep
+	make ID=21 KEY=file_read
 	make ID=20 KEY=file
 	make ID=13 KEY=hooks_data
 	make ID=12 KEY=hooks_delete
