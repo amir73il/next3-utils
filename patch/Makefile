@@ -1,5 +1,5 @@
 # Makefile for generating Next3 patches
-# Amir Goldstein <amir@ctera.com>, 2010
+# Amir Goldstein <amir73il@users.sf.net>, 2010
 #
 # 
 

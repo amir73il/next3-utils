@@ -11,7 +11,7 @@ Performance:
 * Fast read of data in new snapshot (copy from cache on COW-read race).
 ===Stability:===
 * Atomic move-on-write.
-* Code review by Erez Zadok <ezk@cs.sunysb.edu>.
+* Code review by [http://www.cs.sunysb.edu/~ezk Erez Zadok]
 ===Sanity tests:===
 * Clean fsck of snapshot image.
 * Trigger f/s error on exclude bitmap in-consistencies.

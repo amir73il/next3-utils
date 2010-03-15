@@ -6,7 +6,8 @@ NEXT3(TM) is a flavor of the widely used Ext3 file system with built-in support 
 * Snapshots use available file system disk space
 * Snapshot deletion frees up disk space
 * Retains Ext3 stability including journaling and fsck
-* Small performance overhead
+* Small performance overhead on average usage scenarios
+* No upper limit on number or size of snapshots
 
 == Documentation ==
 

@@ -6,13 +6,16 @@ Nothing.
 
 == Is Next3 a new file system? ==
 No, Next3 was cloned from Ext3 as an independent development branch.
-Basically, it's Ext3 with snapshot support patches.
+The [[Next3 snapshot patches]] add snapshot support the the cloned Next3.
 
 == What is the development status of Next3? ==
-Version 1.0.0 has been in beta testing for a while, with no serious issues found.
-The tests were limited to a specific hardware configuration (ARM, single core, 512MB RAM) with a specific Linux installation.
+Next3 is part of a new commercial product, so it has undergone extensive testing.
+All the tests were limited to a specific hardware configuration (ARM, single core, 512MB RAM) with a specific Linux installation.
 
-Next3 will become publicly available for a wider beta soon.
+Next3 version 1.0 was released on February 2009 and 1.0.y versions have been used by a closed group of beta testers since, with no serious issues found.
+Next3 had undergone independent code review by a file system research lab.
+
+Next3 is now publicly available for beta testers with various platforms under the terms of the GNU public license.
 
 == Does Next3 change the on-disk format of Ext3? ==
 No, it only uses some reserved fields in the super block and inode structs.
@@ -37,14 +40,23 @@ When a snapshot file is mounted as a read-only Ext2 file system via a loop devic
 Same as LVM snapshot take, that is, as fast as ext3_freeze().
 
 == How is Next3 performance compared to Ext3? ==
-Without snapshots, Next3 performance is equivalent to Ext3 performance. With snapshots, there is a small overhead per write of metadata block (copy-on-write) and a smaller overhead per write of data block (move-on-write).
+Without snapshots, Next3 performance is equivalent to Ext3 performance. With snapshots, there is a small overhead per write of metadata block (copy-on-write) and a smaller overhead (~1%) per write of data block (move-on-write).
+
+The most significant performance overhead of Next3 with snapshots is on large files truncate and re-write (up to 40% in worst case).
+
+The [[Bonnie++]] benchmark shows a comparison between Ext3 and Next3 performance on large file write and re-write with and without snapshots.
 
 === How is Next3 write performance affected by snapshots? ===
-Next3 with snapshots needs to access some extra metadata blocks per file system block write, so depending on the size of available memory, this can generate some synchronic read I/O events . The copy-on-write itself always copies the block from an up-to-date memory buffer and move-on-write doesn't read the block at all.
+Next3 with snapshots needs to access some extra metadata blocks per file system block write, so depending on the size of available memory, this can generate some synchronous read I/O events . The copy-on-write itself always copies the block from an up-to-date memory buffer and move-on-write doesn't read the block at all.
 
-The majority of the snapshot block writes are performed a-synchronically by the journal, so even though there are extra write I/O events per file system metadata block write, this introduces no extra delay to the original write operation.
+The majority of the snapshot block writes are performed a-asynchronously by the journal, so even though there are extra write I/O events per file system metadata block write, this introduces no extra delay to the original write operation.
 
 Next3 snapshots are incremental, so only the last snapshot is updated on block write events and the number of snapshots does not affect the file system write performance.
+
+=== How is Next3 truncate/re-write performance affected by snapshots? ===
+Next3 with snapshots needs to move some blocks to the active snapshot instead of freeing them, when truncating or re-writing a regular file. The move operation involves up to 3 times more I/O events, which may slow down the entire operation by as much as 40% in the worst case.
+
+However serious that overhead may sound, it is not a constant overhead and it is only dominant in truncate/re-write of files protected by the most recent snapshot. Files that were created or modified after the snapshot was taken (temp files for example) do not suffer from this performance overhead at all. Also, every file (more precisely every block) in the file system may pay the truncate performance overhead only once per snapshot.
 
 === How is Next3 read performance affected by snapshots? ===
 When writing to random offsets in a large pre-allocated file (such as a virtual disk image), the file will get fragmented by the move-on-write operations and that will decrease the sequential read performance from that file. This fragmentation can be avoided by setting the 'journaled' flag on that file, which will cause its data blocks to be journaled and to be copied-on-write, instead of being moved-on-write.
@@ -56,16 +68,18 @@ When writing to random offsets in a large pre-allocated file (such as a virtual 
 * Persistence: snapshots don't vanish when disk is full
 
 == Why use Next3 and not Btrfs? ==
-Next3 was designed to retain the proven stability of Ext3.
-Btrfs is a better fs, but it will take a while before it reaches the maturity level of Ext3.
+Next3 was designed to add snapshots support, while retaining the proven stability of Ext3.
+
+[http://btrfs.wiki.kernel.org Btrfs] is a new and complex file system with many features designed to rival Sun's ZFS, but it will take a while before it reaches the maturity level of Ext3.
 
 == Is Next3 related to Ext3cow? ==
-Ext3cow is another independent project that adds continuous versioning support to Ext3. It uses a move-on-write technique similar to the one used by Next3 for regular files data blocks.
-Its purpose, design goals and implementation details are completely different from those of Next3.
+[http://www.ext3cow.com Ext3cow] is another independent project that adds continuous versioning support to Ext3. It uses a move-on-write technique similar to the one used by Next3 for regular files data blocks. It is a research prototype and not part of a commercial product.
+
+In contrary to Next3, it does not retain backward compatibility with Ext3, nor does it retain the stability of Ext3 (recovery from crash is not guaranteed).
 
 == Can Next3 snapshot support be applied to Ext4? ==
-Most of the snapshot code can work on Ext4, but the move-on-write technology used for regular files data blocks is not applicable for extent mapped files.
+Most of the snapshot code can work on Ext4 as is, but the move-on-write technique used for regular files data blocks will require additional work before it can be applied to extent mapped files.
 
 == How can I get for more information? ==
-Please contact the project administrator directly with any question about Next3.
+Please contact the project administrator directly with any question about Next3 or post a message to the [https://lists.sourceforge.net/lists/listinfo/next3-devel next3-devel mailing list].
 
