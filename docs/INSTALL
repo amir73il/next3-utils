@@ -1,7 +1,7 @@
 Next3 INSTALL:
 ==============
 
-This INSTALL file contains instrcutions for building and installing next3.
+This INSTALL file contains instructions for building and installing next3.
 
 1. Add Next3 file system to the Linux kernel
 
@@ -38,7 +38,7 @@ get the e2fsprogs sources and apply the next3 patch:
 	# cd e2fsprogs-1.41.9
 	# patch -p1 < e2fsprogs-1.41.9-next3.patch
 
-build iand install e2fsprogs.
+build and install e2fsprogs.
 
 4. install the snapshot management script
 

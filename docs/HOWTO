@@ -3,13 +3,13 @@ Next3 HOWTO:
 
 This HOWTO file contains some basic examples of how to start working
 with next3 snapshots.
-For instrcutions how to build and install next3 see INSTALL file.
+For instructions how to build and install next3 see INSTALL file.
 
 Getting started with snapshots:
 ===============================
 
-1. Configure script paramerters
-===============================
+1. Configure script parameters
+==============================
 Run the "snapshot config" command with 3 parameters:
 <block-device>: the block device to format as next3
 <mount-point>: the mount point to mount next3
@@ -27,8 +27,7 @@ and will be used by the script from now on.
 2. Setup a next3 volume
 =======================
 Run the "snapshot mkfs" command to format the volume as next3.
-OR
-Run the "snapshot install" command to convert ani existing ext3 volume to next3.
+Alternatively, run the "snapshot install" command to convert an existing ext3 volume to next3.
 
 ~ # mount
 ...
@@ -47,8 +46,8 @@ NEXT3-fs: mounted filesystem with ordered data mode.
 3. Take a snapshot
 ==================
 To take a snapshot named "Monday", use the command "snapshot take Monday".
-To view the status of current snapshots, use the command "snapshot status".
 The snapshot "Monday" will be mounted with read-only access.
+To view the status of current snapshots, use the command "snapshot status".
 
 ~ # snapshot take Monday
 Taking snapshot Monday
@@ -63,14 +62,13 @@ Filesystem           1K-blocks      Used Available Use% Mounted on
 Snapshots list:
 id inode attributes disk-usage mtime filename
 ---------------------------------------------
-1 21184514 --Sna---o- 172.0K Feb 9 18:51 /var/vol/1/.ctera/snapshots/Monday
+1 21184514 Sna---o- 172.0K Feb 9 18:51 /var/vol/1/.ctera/snapshots/Monday
 .
 
 
 4. Mount snapshots
 ==================
 After reboot, the snapshots are still functional, but they are not mounted automatically.
-The snapshots status is shown as disabled.
 To mount all snapshots after reboot, use the command "snapshot mount".
 
 ~ # snapshot status
@@ -81,7 +79,7 @@ Filesystem           1K-blocks      Used Available Use% Mounted on
 Snapshots list:
 id inode attributes disk-usage mtime filename
 ---------------------------------------------
-1 21184514 --S-a----- 176.0K Feb 9 18:51 /var/vol/1/.ctera/snapshots/Monday
+1 21184514 S-a----- 176.0K Feb 9 18:51 /var/vol/1/.ctera/snapshots/Monday
 .
 ~ # snapshot mount
 snapshot-debug = 1
@@ -97,13 +95,13 @@ Filesystem           1K-blocks      Used Available Use% Mounted on
 Snapshots list:
 id inode attributes disk-usage mtime filename
 ---------------------------------------------
-1 21184514 --Sna---o- 176.0K Feb 9 18:51 /var/vol/1/.ctera/snapshots/Monday
+1 21184514 Sna---o- 176.0K Feb 9 18:51 /var/vol/1/.ctera/snapshots/Monday
 .
 
 
 5. Delete a snapshot
 ====================
-Finally, to delete snapshot Monday, use the command "snapshot remove Monday".
+Finally, to delete snapshot Monday, use the command "snapshot delete Monday".
 But first you must make sure that the snapshot is not mounted.
 To un-mount Monday, use the command "snapshot umount Monday".
 
@@ -123,7 +121,7 @@ Filesystem           1K-blocks      Used Available Use% Mounted on
 Snapshots list:
 id inode attributes disk-usage mtime filename
 ---------------------------------------------
-ls: /var/vol/1/.ctera/snapshots/*: No such file or directory
+1 21184514 ----s--- 0 Feb 9 18:51 /var/vol/1/.ctera/snapshots/Monday
 .
 
 
