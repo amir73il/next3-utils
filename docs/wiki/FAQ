@@ -13,7 +13,8 @@ Next3 is part of a new commercial product, so it has undergone extensive testing
 All the tests were limited to a specific hardware configuration (ARM, single core, 512MB RAM) with a specific Linux installation.
 
 Next3 version 1.0 was released on February 2009 and 1.0.y versions have been used by a closed group of beta testers since, with no serious issues found.
-Next3 had undergone independent code review by a file system research lab.
+
+Next3 had undergone independent code review by [http://www.cs.sunysb.edu/~ezk Erez Zadok].
 
 Next3 is now publicly available for beta testers with various platforms under the terms of the GNU public license.
 
