@@ -13,7 +13,7 @@ NEXT3(TM) is a flavor of the widely used Ext3 file system with built-in support 
 
 * [[FAQ]]
 * [[Getting started]]
-* [[Conversion from Ext3 and back]]
+* [[Moving from Ext3 and back]]
 * [http://sourceforge.net/projects/next3/files/Next3_Snapshots.pdf/download Snapshots design]
 * [[Diagrams]]
 * [[Code documentation]]

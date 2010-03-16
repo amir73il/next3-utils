@@ -23,14 +23,14 @@ No, it only uses some reserved fields in the super block and inode structs.
 Most of the snapshots data and metadata is stored in special snapshot files, which appear as regular sparse files to Ext3 and e2fsprogs.
 
 == Can an Ext3 file system be converted to Next3? ==
-Yes, in fact, it may be mounted as Next3 without conversion.
-However, for best snapshots performance, a patched tune2fs should be used to increase the journal size and to allocate the special "exclude" inode.
+Yes, in fact, it may be mounted as Next3 with no conversion.
+However, for best snapshots performance, a patched tune2fs should be used to optimize the file system (see [[Moving from Ext3 and back]]).
 
 == Can a Next3 file system be converted to Ext3? ==
 Yes, when the first snapshot is taken, Next3 sets the read-only-compatible file system feature "has_snapshot", 
 to prevent Ext3 and un-patched e2fsprogs from changing the file system without updating the snapshot.
 
-To "Convert" back to Ext3, a patched tune2fs should be used to clear the "has_snapshot" flag.
+To "Convert" back to Ext3, a patched tune2fs should be used to discard the snapshots and clear the "has_snapshot" feature (see [[Moving from Ext3 and back]]).
 
 == How is data inside Next3 snapshots viewed? ==
 The snapshot files are "half-transparent" read-only sparse files, which represent the file system block device at a certain time in the past. Mapped blocks represent changed blocks and holes represent unchanged blocks.
