@@ -102,22 +102,23 @@ The flags 0x1FF00000 are used in-memory, but only the flags 0x1F000000 are store
 * Set by next3_snapshot_set_flags() under snapshot_mutex and inode_mutex when changing a snapshot file's status.
 * Set by next3_snapshot_update() for all snapshots on the list under sb_lock on mount time and under snapshot_mutex after changing a snapshot file's status.
 
-=== struct next3_super_block.{s_last_snapshot,s_last_snapshot_id} ===
-The inode number and sequential id of last snapshot taken (also head of the on-disk snapshots list).
-Used to be 2 last DWORDS in s_reserved[].
+=== struct next3_super_block.s_snapshot_* ===
+# s_snapshot_inum - inode number of active snapshot.
+# s_snapshot_id - sequential ID of active snapshot.
+# s_snapshot_r_blocks_count - reserved blocks for active snapshot future use (metadata only).
+Used to be last 3 DWORDs of s_reserved[].
 
 * Reset to 0 by tune2fs -O ^has_snapshot on cleanly un-mounted fs when converting back to Ext3.
 * Set by next3_snapshot_take() under lock_super() and snapshot_mutex after a new snapshot was taken.
-* s_last_snapshot is reset to 0 by next3_snapshot_remove() under lock_super() and snapshot_mutex after the last snapshot was deleted.
+* s_snapshot_inum is reset to 0 by next3_snapshot_update() under lock_super() and snapshot_mutex after the last snapshot was deleted.
 
-=== struct next3_super_block.s_snapshot_r_blocks_count ===
-Reserved blocks for last snapshot future use (metadata only).
-Used to be 3rd DWORD from the end in s_reserved[].
+=== struct next3_super_block.s_last_snapshot ===
+The inode number of the head of the on-disk snapshots list.
+Used to be 4th DWORD from the end in s_reserved[].
 
 * Reset to 0 by tune2fs -O ^has_snapshot on cleanly un-mounted fs when converting back to Ext3.
-* Set by next3_snapshot_take() under lock_super() and snapshot_mutex after a new snapshot was taken.
-
-If there are not enough blocks in the file system for the reservation, next3_snapshot_take() will fail with error ENOSPC.
+* Set by next3_snapshot_create() under lock_super() and snapshot_mutex before taking a new snapshot.
+* Reset to 0 by next3_snapshot_remove() under lock_super() and snapshot_mutex after the last snapshot was deleted.
 
 === struct next3_super_block.s_feature_compat & 0x00003000 ===
 Features fully compatible with Ext3:
