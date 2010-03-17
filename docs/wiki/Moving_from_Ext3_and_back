@@ -1,28 +1,38 @@
-Next3 is fully compatible with Ext3, because it doesn't change on-disk format, so no conversion or migration are needed when moving from Ext3 to Next3 and back.
+Next3 makes minor changes to the on-disk Ext3 format, but in a backwards and forward compatible manner.
+No conversion or migration are needed to switch back and forth between Next3 and Ext3.
 
 ==The on-disk differences between Next3 and Ext3==
 * Next3 uses snapshot files, which appear as regular sparse files to Ext3 and e2fsprogs.
 * Next3 uses some reserved fields in the on-disk super block and in the on-disk inode structs of the snapshot files.
 * Next3 requires a bigger journal (2GB) for best concurrent writers performance.
-* Next3 requires the special "exclude" inode for best disk space reclamation from deleted snapshots.
+* Next3 requires the special "exclude" inode for proper disk space reclamation of deleted snapshots.
 
 ==Moving from Ext3 to Next3==
 Basically, any Ext3 volume can be mounted as Next3 (i.e., mount -t next3 /dev/xxx).
 However, for best snapshots performance, a patched tune2fs should be used to increase the journal size and to allocate the special "exclude" inode before mounting an Ext3 volume as Next3. For example:
 
 <pre>
-# Remove the journal
-tune2fs -O ^has_journal /dev/xxx
+# umount /dev/xxx
 
-# Create a big journal and allocate exclude inode
-tune2fs -O has_journal,big_journal,exclude_inode /dev/xxx
+# tune2fs -O ^has_journal /dev/xxx
+tune2fs 1.41.9-next3-1.0.8 (22-Feb-2010)
+...
+
+# tune2fs -O has_journal,big_journal,exclude_inode /dev/xxx
+tune2fs 1.41.9-next3-1.0.8 (22-Feb-2010)
+...
+
+# mount -t next3 /dev/xxx /mnt/yyy
 </pre>
 
 Note that the "big_journal" and "exclude_inode" features are compatible with Ext3, so there is no need to remove them when moving from Next3 back to Ext3. Also, an Ext3 volume can be formatted to be Next3 ready. For Example:
 
 <pre>
-# Format an Ext3 file system with big journal and exclude inode
-mke2fs -j -O big_journal,exclude_inode /dev/xxx
+# mke2fs -j -O big_journal,exclude_inode /dev/xxx
+mke2fs 1.41.9-next3-1.0.8 (22-Feb-2010)
+...
+
+# mount -t next3 /dev/xxx /mnt/yyy
 </pre>
 
 ==Moving from Next3 to Ext3==
@@ -34,11 +44,17 @@ to prevent Ext3 and un-patched e2fsprogs from changing the file system without u
 A Next3 volume with snapshots can be mounted as Next3 or as read-only Ext3 (i.e., mount -r -t ext3 /dev/xxx).
 When using the mount command without specifying the file system implicitly (i.e., mount /dev/xxx), a volume with the "has_snapshot" feature will be automatically  mounted as Next3.
 
-To move back to Ext3, a patched tune2fs should be used to truncate all snapshot files and clear the "has_snapshot" feature. For Example:
+To move back to Ext3, a patched tune2fs should first be used to truncate all snapshot files and clear the "has_snapshot" feature. For Example:
 
 <pre>
-# Discard all snapshots
-tune2fs -O ^has_snapshot /dev/xxx
+# umount /dev/xxx
+
+# tune2fs -O ^has_snapshot /dev/xxx
+tune2fs 1.41.9-next3-1.0.8 (22-Feb-2010)
+...
+
+# mount -t ext3 /dev/xxx /mnt/yyy
 </pre>
 
+Note that any attempt to modify a Next3 volume with snapshots using un-patched e2fsprogs utils (i.e., tune2fs, fsck) will fail, because the library will not recognize the read-only-compatible flag "has_snapshot". There is no problem with using the patched e2fsprogs utils on Ext3 volumes.
 

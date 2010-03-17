@@ -16,9 +16,10 @@ Run the "snapshot config" command with 3 parameters:
 <volume-name>: descriptive name for the volume
 
 ~ # snapshot config /dev/1/vol1 /var/vol/1 vol1
-setting SNAPDEV=/dev/1/vol1
-setting SNAPROOT=/var/vol/1
-setting VOL=1
+export ROOTDEV=/dev/1/vol1
+export ROOTDIR=/var/vol/1
+export SNAPDIR=/var/vol/1/.snapshots
+export VOL=1
 
 The .snapshot.conf file will be created in your home and current directory
 and will be used by the script from now on.
@@ -62,7 +63,7 @@ Filesystem           1K-blocks      Used Available Use% Mounted on
 Snapshots list:
 id inode attributes disk-usage mtime filename
 ---------------------------------------------
-1 21184514 Sna---o- 172.0K Feb 9 18:51 /var/vol/1/.ctera/snapshots/Monday
+1 21184514 Sna---o- 172.0K Feb 9 18:51 /var/vol/1/.snapshots/Monday
 .
 
 
@@ -79,7 +80,7 @@ Filesystem           1K-blocks      Used Available Use% Mounted on
 Snapshots list:
 id inode attributes disk-usage mtime filename
 ---------------------------------------------
-1 21184514 S-a----- 176.0K Feb 9 18:51 /var/vol/1/.ctera/snapshots/Monday
+1 21184514 S-a----- 176.0K Feb 9 18:51 /var/vol/1/.snapshots/Monday
 .
 ~ # snapshot mount
 snapshot-debug = 1
@@ -95,7 +96,7 @@ Filesystem           1K-blocks      Used Available Use% Mounted on
 Snapshots list:
 id inode attributes disk-usage mtime filename
 ---------------------------------------------
-1 21184514 Sna---o- 176.0K Feb 9 18:51 /var/vol/1/.ctera/snapshots/Monday
+1 21184514 Sna---o- 176.0K Feb 9 18:51 /var/vol/1/.snapshots/Monday
 .
 
 
@@ -121,7 +122,7 @@ Filesystem           1K-blocks      Used Available Use% Mounted on
 Snapshots list:
 id inode attributes disk-usage mtime filename
 ---------------------------------------------
-1 21184514 ----s--- 0 Feb 9 18:51 /var/vol/1/.ctera/snapshots/Monday
+1 21184514 ----s--- 0 Feb 9 18:51 /var/vol/1/.snapshots/Monday
 .
 
 

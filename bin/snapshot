@@ -1,9 +1,14 @@
 #!/bin/sh
-# Copyright (C) Amir Goldstein <amir@ctera.com>, 2008-2010
-# Copyright (C) CTERA Networks, 2008-2010
 #
-# snapshot management script
+# Written by Amir Goldstein <amir73il@users.sf.net>, 2008
+# Copyright (C) 2008-2010 CTERA Networks
 #
+# Next3 snapshot management script
+#
+
+SCRIPT_NAME=snapshot
+SCRIPT_VER=1.0.9-WIP
+SCRIPT_DESC=Next3 snapshot management script
 
 # default snapshot-name is the <date-time> in shadow copy format
 if [ -z $2 ] ; then
@@ -73,7 +78,9 @@ mkdir -p $SNAPDEVDIR 2> /dev/null
 mkdir -p $SNAPMNTDIR 2> /dev/null
 modprobe next3 2> /dev/null
 
-SNAPDIR=$ROOTDIR/.ctera/snapshots
+if [ -z $SNAPDIR ] ; then
+	SNAPDIR=$ROOTDIR/.snapshots
+fi
 
 # See how we were called.
 case "$1" in
@@ -153,10 +160,12 @@ case "$1" in
 	fi
 	export ROOTDEV=$2
 	export ROOTDIR=$3
+	export SNAPDIR=$3/.snapshots
 	export VOL=$4
-	echo export ROOTDEV=$2 > $SNAPCONF
-	echo export ROOTDIR=$3 >> $SNAPCONF
-	echo export VOL=$4 >> $SNAPCONF
+	echo export ROOTDEV=$ROOTDEV > $SNAPCONF
+	echo export ROOTDIR=$ROOTDIR >> $SNAPCONF
+	echo export SNAPDIR=$SNAPDIR >> $SNAPCONF
+	echo export VOL=$VOL >> $SNAPCONF
 	cat $SNAPCONF
 	cp $SNAPCONF ~/
 	;;
@@ -713,6 +722,7 @@ case "$1" in
 	$0 st
 	;;
   *)
+	echo "$SCRIPT_NAME v$SCRIPT_VER ($SCRIPT_DESC)"
 	echo "usage: $0 help [cmd]"
 	echo "usage: $0 version"
 	echo "usage: $0 debug [debug-level]"

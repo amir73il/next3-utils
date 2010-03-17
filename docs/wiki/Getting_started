@@ -7,8 +7,8 @@ Get the Linux kernel sources and apply the next3 kernel patches:
 <pre>
 # tar xfj linux-2.6.31.11.tar.bz2
 # cd linux-2.6.31.11
-# patch -p2 < linux-2.6.31.y-next3_fs.patch
-# patch -p2 < next3_snapshot-1.0.8.patch
+# patch -p2 < ../linux-2.6.31.y-next3_fs.patch
+# patch -p2 < ../next3_snapshot-1.0.8.patch
 </pre>
 
 Build the Linux kernel and select the following configuration options:
@@ -33,7 +33,7 @@ Get the e2fsprogs sources and apply the next3 patch:
 <pre>
 # tar xfz e2fsprogs-1.41.9.tar.gz
 # cd e2fsprogs-1.41.9
-# patch -p1 < e2fsprogs-1.41.9-next3-1.0.8.patch
+# patch -p1 < ../e2fsprogs-1.41.9-next3-1.0.8.patch
 </pre>
 
 Build and install e2fsprogs.
@@ -42,8 +42,7 @@ Build and install e2fsprogs.
 Copy the 'snapshot' script to your system's binaries path:
 
 <pre>
-# cp snapshot /usr/sbin
-# chmod +x /usr/sbin/snapshot
+# install -m 755 snapshot /usr/sbin
 </pre>
 
 =Getting started with snapshots=
@@ -58,10 +57,11 @@ Run the "snapshot config" command with 3 parameters:
 
 Example:
 <pre>
-~ # snapshot config /dev/1/vol1 /var/vol/1 vol1
-setting SNAPDEV=/dev/1/vol1
-setting SNAPROOT=/var/vol/1
-setting VOL=1
+# snapshot config /dev/1/vol1 /var/vol/1 vol1
+export ROOTDEV=/dev/1/vol1
+export ROOTDIR=/var/vol/1
+export SNAPDIR=/var/vol/1/.snapshots
+export VOL=1
 </pre>
 
 Copies of the '.snapshot.conf' file will be created in your home directory and in the current directory
@@ -75,13 +75,13 @@ Alternatively, run the "snapshot install" command to convert an existing ext3 vo
 
 Example:
 <pre>
-~ # snapshot mkfs
+# snapshot mkfs
 mke2fs 1.41.9-next3-1.0.8 (22-Feb-2010)
 ...
 kjournald starting.  Commit interval 5 seconds
 NEXT3 FS on dm-0, internal journal
 NEXT3-fs: mounted filesystem with ordered data mode.
-~ # mount
+# mount
 ...
 /dev/1/vol1 on /var/vol/1 type next3 (rw,noatime,user_xattr,acl,data=ordered)
 </pre>
@@ -93,10 +93,10 @@ To view the status of current snapshots, use the command "snapshot status".
 
 Example:
 <pre>
-~ # snapshot take Monday
+# snapshot take Monday
 Taking snapshot Monday
 .
-~ # snapshot status
+# snapshot status
 Mounted snapshots:
 Filesystem           1K-blocks      Used Available Use% Mounted on
 /dev/1/vol1          480713424    203016 456091492   0% /var/vol/1
@@ -106,7 +106,7 @@ Filesystem           1K-blocks      Used Available Use% Mounted on
 Snapshots list:
 id inode attributes disk-usage mtime filename
 ---------------------------------------------
-1 21184514 Sna---o- 172.0K Feb 9 18:51 /var/vol/1/.ctera/snapshots/Monday
+1 21184514 Sna---o- 172.0K Feb 9 18:51 /var/vol/1/.snapshots/Monday
 .
 </pre>
 
@@ -116,7 +116,7 @@ To mount snapshot 'Monday', use the command "snapshot mount Monday".
 To mount all snapshots, use the command "snapshot mount".
 
 <pre>
-~ # snapshot status
+# snapshot status
 Mounted snapshots:
 Filesystem           1K-blocks      Used Available Use% Mounted on
 /dev/1/vol1          480713424    203020 456091488   0% /var/vol/1
@@ -124,13 +124,13 @@ Filesystem           1K-blocks      Used Available Use% Mounted on
 Snapshots list:
 id inode attributes disk-usage mtime filename
 ---------------------------------------------
-1 21184514 S-a----- 176.0K Feb 9 18:51 /var/vol/1/.ctera/snapshots/Monday
+1 21184514 S-a----- 176.0K Feb 9 18:51 /var/vol/1/.snapshots/Monday
 .
-~ # snapshot mount
+# snapshot mount
 snapshot-debug = 1
 mount: mounting /dev/1/vol1 on /var/vol/1 failed: Device or resource busy
 snapshot: snapshot (1) enabled
-~ # snapshot status
+# snapshot status
 Mounted snapshots:
 Filesystem           1K-blocks      Used Available Use% Mounted on
 /dev/1/vol1          480713424    203020 456091488   0% /var/vol/1
@@ -140,7 +140,7 @@ Filesystem           1K-blocks      Used Available Use% Mounted on
 Snapshots list:
 id inode attributes disk-usage mtime filename
 ---------------------------------------------
-1 21184514 Sna---o- 176.0K Feb 9 18:51 /var/vol/1/.ctera/snapshots/Monday
+1 21184514 Sna---o- 176.0K Feb 9 18:51 /var/vol/1/.snapshots/Monday
 .
 </pre>
 
@@ -150,15 +150,15 @@ But first you must make sure that the snapshot is not mounted.
 To un-mount snapshot 'Monday', use the command "snapshot umount Monday".
 
 <pre>
-~ # snapshot debug 1
+# snapshot debug 1
 snapshot-debug = 1
-~ # snapshot umount Monday
+# snapshot umount Monday
 snapshot: snapshot (1) disabled
-~ # snapshot remove Monday
+# snapshot remove Monday
 snapshot: snapshot (1) marked for deletion
 snapshot: snapshot (1) deactivated
 snapshot: snapshot (1) deleted
-~ # snapshot status
+# snapshot status
 Mounted snapshots:
 Filesystem           1K-blocks      Used Available Use% Mounted on
 /dev/1/vol1          480713424    202844 456091664   0% /var/vol/1
@@ -166,7 +166,7 @@ Filesystem           1K-blocks      Used Available Use% Mounted on
 Snapshots list:
 id inode attributes disk-usage mtime filename
 ---------------------------------------------
-1 21184514 ----s--- 0 Feb 9 18:51 /var/vol/1/.ctera/snapshots/Monday
+1 21184514 ----s--- 0 Feb 9 18:51 /var/vol/1/.snapshots/Monday
 .
 </pre>
 
