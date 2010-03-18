@@ -120,8 +120,8 @@ series: next3_fs next3
 	make ID=42 KEY=ctl_fix
 	make ID=41 KEY=ctl_init
 	make ID=40 KEY=ctl
-	make ID=33 KEY=block_move
-	make ID=32 KEY=block_bitmap
+	make ID=33 KEY=block_bitmap
+	make ID=32 KEY=block_move
 	make ID=31 KEY=block_cow
 	make ID=30 KEY=block
 	make ID=23 KEY=file_store
@@ -183,10 +183,10 @@ next3_ext4.sed:
 	echo "s/EXT4/NEXT3/g" >> $@
 
 next3_fs.sed:
-	echo "s/linux\/include\/linux\/next3_fs\.h/next3\.h/g" > $@
-	echo "s/linux\/include\/linux\/next3_fs_i\.h/next3_i\.h/g" >> $@
-	echo "s/linux\/include\/linux\/next3_fs_sb\.h/next3_sb\.h/g" >> $@
-	echo "s/linux\/include\/linux\/next3_jbd\.h/next3_jbd\.h/g" >> $@
+	echo "s/linux\/include\/linux\/next3_fs\.h/linux\/fs\/next3\/next3\.h/g" > $@
+	echo "s/linux\/include\/linux\/next3_fs_i\.h/linux\/fs\/next3\/next3_i\.h/g" >> $@
+	echo "s/linux\/include\/linux\/next3_fs_sb\.h/linux\/fs\/next3\/next3_sb\.h/g" >> $@
+	echo "s/linux\/include\/linux\/next3_jbd\.h/linux\/fs\/next3\/next3_jbd\.h/g" >> $@
 	echo "s/_LINUX_NEXT3_FS_H/_LINUX_NEXT3_H/g" >> $@
 	echo "s/_LINUX_NEXT3_FS_I/_LINUX_NEXT3_I/g" >> $@
 	echo "s/_LINUX_NEXT3_FS_SB/_LINUX_NEXT3_SB/g" >> $@
