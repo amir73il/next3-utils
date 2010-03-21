@@ -5,13 +5,12 @@ Next3 is a clone of the Ext3 file system with the addition of snapshot support
 
 What is this file?
 this INDEX file serves as a cross reference to the next3 snapshot code.
-it aims to help developers follow the changes from ext3 to next3
-by dividing them into categories and sub categories.
+it aims to help developers follow the changes from ext3 to next3.
 
 Next3 patches:
 
 next3_fs.patch - adds the next3 file system to the kernel
-e2fsprogs_snapshot.patch - adds snapshot awareness to e2fsck resize2fs tune2fs lsattr and chattr
+e2fsprogs_next3.patch - adds next3 awareness to e2fsck resize2fs tune2fs lsattr and chattr
 next3_snapshot.patch - adds snapshot support to a fresh ext3 clone (see following files list)
 
 
@@ -46,13 +45,5 @@ fs/next3/next3_jbd.c - snapshot meta data write hooks
 include/linux/next3_jbd.h - snapshot meta data write hooks
 include/linux/next3.h - add snapshot fields to next3 on-disk structs
 include/linux/next3_sb.h - add snapshot fields to next3 in-memory structs
-
-
-Next3 patch categories:
-
-all changes to ext3 files in next3_snapshot.patch are ifdef'ed 
-with one of the macros defined in fs/next3/Kconfig.
-each macro is associated with one of the main patch categories.
-in addition the that a macro may define a sub patch category.
 
 

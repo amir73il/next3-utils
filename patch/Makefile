@@ -19,16 +19,22 @@ SUFFIX=${shell (test _${ID} = _00 || echo _${KEY})}
 
 # patches signed-off-by
 SIGNATURE=Amir Goldstein <amir73il@users.sf.net>
+SIGNEDOFF=Signed-off-by: ${SIGNATURE}
+DELIMITER="--------------------------------------------------------------------------------"
 
-N3_PATCH=next3_snapshot.patch
-N3_BASEPATCH=next3_fs.patch
+#N3_VERSION=next3-1.0.9
+N3_VERSION?=${DATE}
+N3_PKGNAME=next3-${N3_VERSION}
+N3_TARBALL=${N3_PKGNAME}.tar.gz
+N3_RELEASE=${RELEASE}/${N3_PKGNAME}
+N3_SUBTARBALL=next3_snapshot_patch_series.tar.gz
+N3_PATCH=next3_snapshot-${N3_VERSION}.patch
 N3_SUBPATCH=${ID}_next3_snapshot${SUFFIX}.patch
 N3_ID0PATCH=${ID0}_next3_snapshot${SUFFIX}.patch
 DATE=${shell date +%d%m%y}
-N3_RELEASE=${RELEASE}/next3_snapshot-${DATE}.patch
 N3_WIKI=../docs/wiki/Next3_snapshot_patches
-N3_TARBALL=next3_snapshot_patch_series.tar.gz
 LINUX=linux-2.6.31.11
+N3_BASEPATCH=${LINUX}-next3_fs.patch
 ORIG=origin
 BASE=branch
 STRIP=./strip_ifdefs
@@ -60,6 +66,12 @@ E3_INC_FILES=${INC}/ext3_fs.h ${INC}/ext3_fs_i.h ${INC}/ext3_jbd.h ${INC}/ext3_f
 
 N3_FILES=${INC_FILES} ${FS_FILES} ${MOD_FILES} ${NEW_FILES} ${OLD_FILES}
 
+BIN=../bin
+DOC=../docs
+BIN_FILES=${BIN}/snapshot
+DOC_FILES=${DOC}/README ${DOC}/COPYING ${DOC}/INSTALL ${DOC}/HOWTO ${DOC}/CHANGELOG \
+	  ${DOC}/INDEX ${DOC}/BUGS ${DOC}/TODO
+
 all: next3 e2fs
 
 clean: clean_next3
@@ -67,7 +79,7 @@ clean: clean_next3
 distclean: clean_next3 clean_e2fs
 	rm -rf ${ORIG} ${BASE}
 
-.PHONY: next3 next3_fs series wiki
+.PHONY: next3 next3_fs series wiki release
 next3: ${STRIP} rotate_dirs ${BASE} ${N3_FILES} ${N3_PATCH}~
 	@test -z ${ID} || diff -Nuarp ${SRC_PREV} ${SRC_HEAD} > ${N3_SUBPATCH}+ || test 1 = 1
 	@test -z ${ID} || (diff -Nuarp ${PREV} ${HEAD} >> ${N3_SUBPATCH} ; \
@@ -77,10 +89,10 @@ next3: ${STRIP} rotate_dirs ${BASE} ${N3_FILES} ${N3_PATCH}~
 			((echo -n ${ID} ${N3_ID0PATCH} , ; \
 			(diffstat ${N3_ID0PATCH}|tail -n 1)) >> next3_series0))
 	@diff -Nuarp ${BASE} ${SRC_PREV} > _${N3_PATCH}+ || test 1 = 1
-	@(cat ${N3_PATCH}~ ; echo "Signed-off-by: ${SIGNATURE}") > _${N3_PATCH}
+	@(cat ${N3_PATCH}~ ; echo "${SIGNEDOFF}" ; echo ; echo ${DELIMITER}) > _${N3_PATCH}
 	@diff -Nuarp ${BASE} ${PREV} >> _${N3_PATCH} || test 1 = 1
-	@test ! -z ${KEY} || (cp _${N3_PATCH}+ ${N3_RELEASE}+ ; cp _${N3_PATCH}+ ${N3_PATCH}+)
-	@test _${KEY} != _HEAD || (cp _${N3_PATCH} ${N3_RELEASE} ; cp _${N3_PATCH} ${N3_PATCH})
+	@test ! -z ${KEY} || cp _${N3_PATCH}+ ${N3_PATCH}+
+	@test _${KEY} != _HEAD || cp _${N3_PATCH} ${N3_PATCH}
 	@test _${ID} != _00 || (cp _${N3_PATCH} ${N3_SUBPATCH} ; \
 				cp _${N3_PATCH} ${N3_ID0PATCH} ; \
 				cp ${N3_PATCH}~ ${N3_SUBPATCH}~)
@@ -90,8 +102,19 @@ ${N3_PATCH}~:
 	(echo "next3_snapshot.patch adds snapshot support to Next3 (after it was cloned from Ext3)." ; echo ) > $@
 	(echo "The next3_snapshot patch aggregates all next3_snapshot_X sub-patches and next3_snapshot_X_Y sub-sub-patches." ; echo ) >> $@
 
+release: e2fs next3_fs series
+	mkdir -p ${N3_RELEASE}/scripts
+	cp ${DOC_FILES} ${N3_RELEASE}
+	cp ${BIN_FILES} ${N3_RELEASE}/scripts
+	mkdir -p ${N3_RELEASE}/patches
+	cp ${E2FS_PATCH} ${N3_RELEASE}/patches
+	cp ${N3_BASEPATCH} ${N3_RELEASE}/patches
+	cp ${N3_PATCH} ${N3_RELEASE}/patches
+	cp ${N3_SUBTARBALL} ${N3_RELEASE}/patches
+	cd ${RELEASE} ; tar cfz ${N3_TARBALL} ${N3_PKGNAME}
+
 next3_fs: ${BASE}
-	diff -Nuarp ${ORIG} ${BASE} > ${N3_BASEPATCH} || cp ${N3_BASEPATCH} ${RELEASE}
+	diff -Nuarp ${ORIG} ${BASE} > ${N3_BASEPATCH} || cp ${N3_BASEPATCH} next3_fs.patch
 
 series: next3_fs next3
 	make KEY=exclude_files
@@ -137,11 +160,10 @@ series: next3_fs next3
 	make ID0=0 ID=01 KEY=debug
 	make ID0=0 ID=00 KEY=base
 	sort next3_series | ( while read id patch info ; do echo $$patch ; done ) > series
-	tar cfz ${N3_TARBALL} series ${shell cat series} ; cp ${N3_TARBALL} ${RELEASE}
+	tar cfz ${N3_SUBTARBALL} series ${shell cat series}
 
 wiki:
 	cat series | ( while read patch ; do cat $$patch~ ; done ) > ${N3_WIKI}
-	cp ${N3_WIKI} ${RELEASE}
 
 ${BASE}: next3.sed next3_fs.sed next3_ext4.sed
 	rm -rf ${LINUX} ${BASE} ${ORIG}
@@ -229,7 +251,7 @@ ${N3}/%:
 ${N3}/Kconfig:
 	@test ! -z ${KEY} || cp ${SRC}/$@ ${SRC_PREV}/$@
 	@test -z ${KEY} || ((${STRIP} ${SRC_HEAD}/$@ ${SRC_PREV}/$@ ${KEY} > ${N3_SUBPATCH}~) && \
-			(cat ${N3_SUBPATCH}~ ; echo "Signed-off-by: ${SIGNATURE}") > ${N3_SUBPATCH})
+			(cat ${N3_SUBPATCH}~ ; echo "${SIGNEDOFF}" ; echo ; echo ${DELIMITER}) > ${N3_SUBPATCH})
 	@${STRIP} ${SRC_PREV}/$@ ${PREV}/$@
 
 ${INC}/magic.h: ${BASE}/${INC}/magic.h
@@ -250,8 +272,7 @@ clean_next3:
 #
 E2FS=e2fsprogs-1.41.9
 E2FS_ORIG=${E2FS}.orig
-E2FS_PATCH=e2fs_next3.patch
-E2FS_RELEASE=${RELEASE}/${E2FS}-next3-${DATE}.patch
+E2FS_PATCH=${E2FS}-next3-${N3_VERSION}.patch
 E2LIB=${E2FS}/lib
 E2LIB_FILES=${E2LIB}/e2p/pf.c ${E2LIB}/e2p/feature.c ${E2LIB}/e2p/ls.c \
 	${E2LIB}/ext2fs/res_gdt.c ${E2LIB}/ext2fs/swapfs.c ${E2LIB}/ext2fs/mkjournal.c \
@@ -268,7 +289,7 @@ E2FS_FILES=${E2LIB_FILES} ${FSCK_FILES} ${MISC_FILES} ${E2FS}/version.h
 e2fs: ${E2FS_PATCH}
 
 ${E2FS_PATCH}: ${E2FS} ${E2FS_FILES}
-	diff -Nuarp ${E2FS_ORIG} ${E2FS} > ${E2FS_PATCH} || cp ${E2FS_PATCH} ${E2FS_RELEASE}
+	diff -Nuarp ${E2FS_ORIG} ${E2FS} > ${E2FS_PATCH} || cp ${E2FS_PATCH} e2fs_next3.patch
 
 ${E2FS}:
 	rm -rf ${E2FS} ${E2FS_ORIG}

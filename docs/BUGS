@@ -1,7 +1,7 @@
 Bug #1: buffer credits lower limit is not accurate
 ==================================================
 Next3-version: 1.0.7
-Submited-by: Amir Goldstein <amir@ctera.com>
+Submited-by: Amir Goldstein <amir73il@users.sf.net>
 Side-effects: could lead to JBD OOPS if buffer credits drop to 0
 Test:
 # snapshot debug 2 ...
@@ -12,8 +12,8 @@ Creating /20M
 snapshot: __next3_journal_stop(0): credits=416, limit=417/420, user=23/23, ref=1, caller=next3_create
 snapshot: COW stats: moved/copied=0/0, mapped/clear/cached=4/0/2, bitmaps/cleared=0/0
 
-Bug #2: exclude inode i_blocks count wrong after resize
-=======================================================
+Bug #2: exclude inode i_blocks count wrong after online resize
+==============================================================
 Next3-version: 1.0.9
-Submited-by: Amir Goldstein <amir@ctera.com>
+Submited-by: Amir Goldstein <amir73il@users.sf.net>
 Inode 10, i_blocks is 1000, should be 816.

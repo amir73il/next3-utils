@@ -81,6 +81,8 @@ In contrary to Next3, it does not retain backward compatibility with Ext3, nor d
 == Can Next3 snapshot support be applied to Ext4? ==
 Most of the snapshot code can work on Ext4 as is, but the move-on-write technique used for regular files data blocks will require additional work before it can be applied to extent mapped files.
 
-== How can I get for more information? ==
-Please contact the project administrator directly with any question about Next3 or post a message to the [https://lists.sourceforge.net/lists/listinfo/next3-devel next3-devel mailing list].
+== Where can I get for more information? ==
+Please post support questions to the [https://lists.sourceforge.net/lists/listinfo/next3-users next3-users mailing list].
+
+Please post bugs and technical questions to the [https://lists.sourceforge.net/lists/listinfo/next3-devel next3-devel mailing list].
 

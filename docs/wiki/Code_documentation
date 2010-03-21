@@ -89,7 +89,7 @@ The in-memory version of snapshot file is their snapshot id. We use lsattr -v to
 
 * Set by next3_do_update_inode() under inode_mutex when writing a snapshot inode to disk.
 
-=== struct next3_inode.i_snapshot_blocks ===
+=== struct next3_inode.i_snapshot_blocks_count ===
 Size in blocks of snapshot image block device, which is the size of the file system at the time the snapshot was taken.
 Used to be osd2.linux2.l_i_reserved2.
 

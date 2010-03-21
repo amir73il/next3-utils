@@ -1,5 +1,5 @@
-Next3 package release version is noted by 1.0.y and it consists of the following components,
-which will be available for download on the project page soon. 
+Next3 source package is available for download on the project [http://sourceforge.net/projects/next3/files/ download page].
+The package next3-1.0.y.tar.gz consists of the following components. 
 
 ==linux-2.6.x.y-next3_fs.patch==
 Adds a cloned Next3 file system to the kernel (cloned from Ext3 in kernel 2.6.x.y, but may be applied to other kernels as well).

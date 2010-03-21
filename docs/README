@@ -1,0 +1,21 @@
+The Next3 file system is a clone of the Ext3 file system with built-in support for snapshots.
+
+This package is available for download on the Next3 project download page [http://sourceforge.net/projects/next3/files/].
+
+The package consists of the following files:
+README - This file.
+COPYING - GPL License.
+CHANGELOG - Release notes.
+INSTALL - Build and install instructions.
+HOWTO - Getting started with snapshots.
+INDEX - Reference to Next3 source files.
+BUGS - Open issues.
+TODO - Development road map.
+scripts/snapshot - Snapshots management script.
+patches/linux-2.6.x.y-next3_fs.patch - Adds a cloned Next3 file system to the kernel.
+patches/next3_snapshot-1.0.y.patch - Adds snapshot support to cloned Next3.
+patches/e2fsprogs-1.41.x-next3-1.0.y.patch - Adds snapshot awareness to e2fsprogs utils.
+patches/next3_snapshot_patch_series.tar.gz - Patch series of Next3 snapshot support sub-patches.
+
+For more information, please visit the Next3 project page [http://sourceforge.net/apps/mediawiki/next3].
+

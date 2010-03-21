@@ -1,23 +1,25 @@
 ==v1.0.9-WIP (??? 2010)==
-* Free snapshot blocks when discarding snapshots (tune2fs).
+* First public release.
+* Next3 wiki.
+* Free snapshot blocks when discarding snapshots (tune2fs -O ^has_snapshot).
 * Cleanup after reboot in the middle of snapshot take.
 
 ==v1.0.8 (Feb 2010)==
-===Bug fixes:===
+Bug fixes:
 * Incorrect cached data in new snapshot (fix COW-read race).
 * Unused blocks moved to snapshot (fix test COW bitmap blocks count).
 * Used blocks freed from snapshot (fix shrink blocks count).
 Performance:
 * Fast read of data in new snapshot (copy from cache on COW-read race).
-===Stability:===
+Stability:
 * Atomic move-on-write.
 * Code review by [http://www.cs.sunysb.edu/~ezk Erez Zadok]
-===Sanity tests:===
+Sanity tests:
 * Clean fsck of snapshot image.
 * Trigger f/s error on exclude bitmap in-consistencies.
 * Trigger f/s error if snapshot load fails.
 * Warn on read through of non-allocated block.
-===Compatibility:===
+Compatibility:
 * requires e2fsprogs v1.41.9-next3-1.0.8.
 
 ==v1.0.7 (Jan 2010)==

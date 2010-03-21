@@ -1,21 +1,23 @@
 v1.0.9-WIP
 ------
 ???, 2010
-- free snapshot blocks when discarding snapshots (tune2fs)
+- first public release of next3
+- next3 wiki [http://sourceforge.net/apps/mediawiki/next3]
+- free snapshot blocks when discarding snapshots (tune2fs -O ^has_snapshot)
 - cleanup after reboot in the middle of snapshot take
 
 v1.0.8
 ------
 Feb 21, 2010
 Bug fixes:
-- corrupted read of data in new snapshot (fix COW-read race)
+- incorrect cached data in new snapshot (fix COW-read race)
 - unused blocks moved to snapshot (fix test COW bitmap blocks count)
 - used blocks freed from snapshot (fix shrink blocks count)
 Performance:
 - fast read of data in new snapshot (copy from cache on COW-read race)
 Stability:
 - atomic move-on-write hook
-- code review by Erez Zadok <ezk@cs.sunysb.edu>
+- code review by Erez Zadok [http://www.cs.sunysb.edu/~ezk]
 Sanity tests:
 - clean fsck of snapshot image
 - trigger f/s error on exclude bitmap in-consistencies
@@ -38,16 +40,16 @@ Dec 17, 2009
 v1.0.5
 ------
 Oct 27, 2009
-- cache test_and_cow result in journal_head (JOURNAL_CACHE)
-- count COW credits in handle (JOURNAL_CREDITS)
-- trace journal transactions and credits status (JOURNAL_TRACE)
-- implement journal_release (JOURNAL_RELEASE)
-- clean old snapshot files from COW bitmap (FILE_EXCLUDE)
+- cache test_and_cow result in journal_head
+- count COW credits in handle
+- trace journal transactions and credits status
+- implement journal_release
+- clean old snapshot files from COW bitmap
 
 v1.0.4
 ------
 Oct 4, 2009
-- snapshot merge (FILE_MERGE)
+- snapshot merge
 - snapshot shrink/merge after file system resize
 - disallow snapshot create on a non empty file
 

@@ -1,4 +1,4 @@
-NEXT3(TM) is a flavor of the widely used Ext3 file system with built-in support for snapshots.
+NEXT3™ is a flavor of the widely used Ext3 file system with built-in support for snapshots.
 
 == Features ==
 * Backward and forward compatible to Ext3
@@ -21,20 +21,29 @@ NEXT3(TM) is a flavor of the widely used Ext3 file system with built-in support 
 * [[License]]
 
 == Source Code ==
-[[Next3 patches]] will be published on the project page soon.
+[[Next3 patches]] are available for download on the project [http://sourceforge.net/projects/next3/files/ download page].
 
-Please contact the project administrator if you would like to get a copy of the source code.
+Please contact the project administrator if you would like to contribute to the project by reviewing the patches.
 
 == Beta Testing ==
-Next3 was tested on X86 and ARM platforms with 512MB RAM.
+Next3 is being tested by a group of beta testers on an ARM platforms with 512MB RAM.
+It has also undergone basic testing on X86.
 
-Please contact the project administrator if you would like to become a beta tester.
+Please post bugs to the [https://lists.sourceforge.net/lists/listinfo/next3-devel next3-devel mailing list].
+
+Please contact the project administrator if you would like to contribute to the project by testing on your platform.
 
 == Benchmarks ==
 [[Bonnie++]]
 
-Please contact the project administrator if you would like to run benchmarks.
+Please post benchmark results to the [https://lists.sourceforge.net/lists/listinfo/next3-devel next3-devel mailing list].
 
-== Contact ==
-Please contact the project administrator directly or post a message to the [https://lists.sourceforge.net/lists/listinfo/next3-devel next3-devel mailing list].
+Please contact the project administrator if you would like to contribute to the project by running benchmarks.
+
+== Help and support ==
+Please post support questions to the [https://lists.sourceforge.net/lists/listinfo/next3-users next3-users mailing list].
+
+Please post bugs and technical questions to the [https://lists.sourceforge.net/lists/listinfo/next3-devel next3-devel mailing list].
+
+Please contact the project administrator if you would like to contribute to the project in any way.
 

@@ -9,26 +9,25 @@ get the Linux kernel sources and apply the next3 fs patch:
 
 	# tar xfj linux-2.6.31.10.tar.bz2
 	# cd linux-2.6.31.10
-	# patch -p1 < linux-2.6.31-next3_fs.patch
+	# patch -p2 < ../linux-2.6.31-next3_fs.patch
 
 build the Linux kernel.
 when prompted to select NEXT3_FS configuration, choose y or m.
 when prompted to select NEXT3_FS_SNAPSHOT configuration, choose y.
-when prompted to select other NEXT3_FS_SNAPSHOT_* configurations,
-keep the default value.
+when prompted to select NEXT3_FS_DEBUG configuration, choose y.
 
 install the new kernel and reboot your machine,
 or better yet, reboot after step 2.
 
 2. Increase the limit on number of loop devices in the kernel
 
-snapshots use loop devices, so if you want to have more than 8 snapshots
-it would be wise to increase the kernel limit on number of loop devices.
-hints on how to do this:
-- add 'max_loop=256' to boot parameters
-- add 'options loop max_loop=256' to /etc/modules.conf
-- create missing /dev/loopXXX devices
-- google 'linux max_loop'
+Next3 uses loop devices to mount snapshots, so if you want to be able to mount more than 8 snapshots,
+you need to increase the kernel limit on number of loop devices.
+
+Following are some tips on how to do this:
+- Add 'options loop max_loop=256' to /etc/modules.conf and reload the loop module (if loop device is built as a module).
+- Add 'max_loop=256' to boot parameters and reboot (if loop device is built statically).
+- Follow this old HOWTO [http://tldp.org/HOWTO/CDServer-HOWTO/addloops.html].
 
 3. Add Next3 support to e2fsprogs
 
@@ -36,13 +35,12 @@ get the e2fsprogs sources and apply the next3 patch:
 
 	# tar xfz e2fsprogs-1.41.9.tar.gz
 	# cd e2fsprogs-1.41.9
-	# patch -p1 < e2fsprogs-1.41.9-next3.patch
+	# patch -p1 < ../e2fsprogs-1.41.9-next3.patch
 
 build and install e2fsprogs.
 
 4. install the snapshot management script
 
-	# cp snapshot /usr/sbin
-	# chmod +x /usr/sbin/snapshot
+	# install -m 755 snapshot /usr/sbin
 
 see HOWTO file for some usage examples of the snapshot script.
