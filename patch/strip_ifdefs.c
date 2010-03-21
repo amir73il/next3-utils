@@ -7,7 +7,7 @@
 #define MAINKEY_LEN 24
 #define MAX_KEY 20
 
-#define LINE_SIZE 120
+#define LINE_SIZE 1024
 #define LINE_LIMIT 80
 
 static void usage(void)
@@ -122,6 +122,15 @@ int main(int argc, char *argv[])
 		if (len > LINE_SIZE && line[len-1] != '\n')
 			exit_error("line buffer overflow",
 					filename, lineno, line);
+		
+		/* strip off code review comments */
+		if (!strncmp(line, "//", 2))
+			continue;
+		/* strip off warnings and pragmas */
+		if ((!strncmp(line, "#warning", 8) ||
+			!strncmp(line, "#pragma", 7)))
+			continue;
+
 		if (snapshot && len > LINE_LIMIT+1)
 			exit_error("line too long inside snapshot patch",
 					filename, lineno, line);
@@ -174,6 +183,10 @@ int main(int argc, char *argv[])
 		} else if (debug) {
 			/* strip lines with "snapshot_debug" */
 			if (strstr(line, "snapshot_debug"))
+				continue;
+		} else if (!strncmp(line, "//", 2)) {
+			/* strip off code review comments */
+			if (!key)
 				continue;
 		} else if (line[0] == '#') {
 			char *ifdef = NULL;

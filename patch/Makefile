@@ -15,17 +15,19 @@ E2FS_PKG?=../../pkg
 
 # xlate "X0" -> "X", "XY" -> ""
 ID0?=${shell (echo ${ID}|grep 0|tr -d 0)}
+SUFFIX=${shell (test _${ID} = _00 || echo _${KEY})}
 
 # patches signed-off-by
 SIGNATURE=Amir Goldstein <amir73il@users.sf.net>
 
 N3_PATCH=next3_snapshot.patch
 N3_BASEPATCH=next3_fs.patch
-N3_SUBPATCH=${ID}_next3_snapshot_${KEY}.patch
-N3_ID0PATCH=${ID0}_next3_snapshot_${KEY}.patch
+N3_SUBPATCH=${ID}_next3_snapshot${SUFFIX}.patch
+N3_ID0PATCH=${ID0}_next3_snapshot${SUFFIX}.patch
 DATE=${shell date +%d%m%y}
 N3_RELEASE=${RELEASE}/next3_snapshot-${DATE}.patch
 N3_WIKI=../docs/wiki/Next3_snapshot_patches
+N3_TARBALL=next3_snapshot_patch_series.tar.gz
 LINUX=linux-2.6.31.11
 ORIG=origin
 BASE=branch
@@ -135,6 +137,7 @@ series: next3_fs next3
 	make ID0=0 ID=01 KEY=debug
 	make ID0=0 ID=00 KEY=base
 	sort next3_series | ( while read id patch info ; do echo $$patch ; done ) > series
+	tar cfz ${N3_TARBALL} series ${shell cat series} ; cp ${N3_TARBALL} ${RELEASE}
 
 wiki:
 	cat series | ( while read patch ; do cat $$patch~ ; done ) > ${N3_WIKI}
