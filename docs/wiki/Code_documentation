@@ -61,7 +61,30 @@ The locking semantics SHOULD guarantee that data structure are manipulated by th
 # The [[#New snapshot file flags]] MAY ONLY be set on snapshot files.
 # Snapshot code MAY indirectly change [[#File system global bitmaps and counters]], when allocating blocks for active snapshot.
 # Snapshot code MAY directly change [[#Blocks mapped to special snapshot inodes]].
-# Snapshot code MAY change the inode mapping of [[#Blocks moved to snapshot files]], given that the data of these blocks is about to become obsolete (overwritten or truncated).
+# Snapshot code MAY change the inode mapping of [[#Blocks moved to snapshot files]], given that the data of these blocks is about to become obsolete (overwritten or truncated completely).
+
+==General locking semantics==
+Following are general rules about manipulating snapshot structures.
+Each individual structure in the sections below may have it's own specific rules.
+
+===Snapshot control operations===
+The majority of the code in the snapshot_{ctl,debug}.c files is called from very few entry points in the code:
+# {init,exit}_next3_fs() - calls {init,exit}_next3_snapshot() under BGL.
+# next3_{fill,put}_super() - calls next3_snapshot_{load,destroy}() under VFS sb_lock, while the file system is not accessible to users.
+# next3_ioctl() - only place that takes snapshot_mutex (after i_mutex) and only entry point to snapshot control functions.
+
+From the rules above it follows that all fields accessed inside snapshot_{ctl,debug}.c are protected by one of the following:
+* snapshot_mutex during snapshot control operations.
+* VFS sb_lock during file system mount/umount time.
+* Big kernel lock during module init time.
+Needless to say, either of the above is sufficient, so it should be generally safe to access a snapshot structure inside snapshot_*.c.
+
+===Snapshot COW operations===
+Snapshot COW code (in snapshot.c) is called from block access hooks during a transaction (with a transaction handle).
+This guaranties safe read access to s_active_snapshot, without taking snapshot_mutex, because the later is only
+changed under lock_journal_updates() (while no transaction handles exist).
+
+The transaction handle is a per task struct, so there is no need to protect fields on that struct (i.e. h_cowing, h_cow_*).
 
 ==Reserved fields and bits in on-disk structures==
 
@@ -294,10 +317,9 @@ In that case, they are not cleared from block bitmap and they are set in the exc
 
 ===Regular files data blocks moved to active snapshot===
 Before writing to a regular file, missing data blocks are allocated and mapped to the file's inode.
-Before overwriting an allocated data block, the block may be mapped to the active snapshot inode.
+Before overwriting an entire allocated data block, the block may be mapped to the active snapshot inode.
 In that case, a new data block is allocated and mapped to the file's inode in place of the moved block.
 
 * The mapping of the new block and remapping of the old block to the active snapshot is journaled together in the same transaction.
 * If new block allocation fails, the old block is not moved to active snapshot and the write operation fails.
-* ''need to verify there is no race condition between concurrent next3_snapshot_get_move_access() on the same data block.''
 
