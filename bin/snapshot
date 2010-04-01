@@ -641,8 +641,8 @@ case "$1" in
 	echo Appending $F zeros to $F.$n
 	dd if=/dev/zero bs=1M count=$M >> $ROOTDIR/$F.1 2> /dev/null || exit 1
 	#$0 take $s.2 || exit 1
-	echo Removing $n x $F files
-	rm $ROOTDIR/$F.? $ROOTDIR/md5list || exit 1
+	#echo Removing $n x $F files
+	#rm $ROOTDIR/$F.? $ROOTDIR/md5list || exit 1
 	#$0 take $s.3 || exit 1
 	case "$n" in
   	  1)
@@ -664,6 +664,8 @@ case "$1" in
 	  3)
 		echo Remove test:
 		echo ------------
+		echo 'Truncating c.txt (to size 4)'
+		truncate $ROOTDIR/C/c.txt 4
 		echo 'Removing d.txt'
 		rm $ROOTDIR/D/d.txt
 	  ;;

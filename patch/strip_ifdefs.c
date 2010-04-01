@@ -127,8 +127,9 @@ int main(int argc, char *argv[])
 		if (!strncmp(line, "//", 2))
 			continue;
 		/* strip off warnings and pragmas */
-		if ((!strncmp(line, "#warning", 8) ||
-			!strncmp(line, "#pragma", 7)))
+		if (!strncmp(line, "#warning", 8) ||
+			!strncmp(line, "#pragma", 7) ||
+			!strncmp(line, "__attribute__", 13))
 			continue;
 
 		if (snapshot && len > LINE_LIMIT+1)
