@@ -1,0 +1,18 @@
+==Unsupported and untested features==
+The following features have not been tested in Next3 or have been disabled due to known issues with snapshots implementation:
+* User/group quotas were not tested (uses extra COW buffer credits).
+* Direct I/O is not supported.
+* File system block size other than PAGE_SIZE (4K) is not supported.
+* Mount option data=journal is not supported (nor is the 'Journaled_Data' file attribute).
+* Mount option data=writeback was not tested.
+
+==Sub-optimal performance==
+The following issues may cause performance degradation and should be further optimized:
+* Move-on-write with random in-place writes to a large file causes file fragmentation and degrades sequential read performance.
+* Next3 with N snapshots may use up to N+1 address spaces and N+1 pages to map the same unmodified block.
+
+==Worst case scenarios==
+Next3 should handle most use cases properly, but some extreme use cases will cause file system failures:
+* Disk space reservation for metadata COW is based on average file system metadata/data ratio. A Next3 volume full with metadata (directories, special inodes, etc.) may abort with "snapshot out of space" error.
+* Transaction buffer credits reservation for COW operations is based on average COW overhead. Block allocation races on a full Next3 volume may result in failures to claim found blocks. Such failures cause extra COW operations and may result in "out of buffer credits" OOPS.
+

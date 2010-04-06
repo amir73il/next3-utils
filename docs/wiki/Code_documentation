@@ -82,9 +82,9 @@ Needless to say, either of the above is sufficient, so it should be generally sa
 ===Snapshot COW operations===
 Snapshot COW code (in snapshot.c) is called from block access hooks during a transaction (with a transaction handle).
 This guaranties safe read access to s_active_snapshot, without taking snapshot_mutex, because the later is only
-changed under lock_journal_updates() (while no transaction handles exist).
+changed under journal_lock_updates() (while no transaction handles exist).
 
-The transaction handle is a per task struct, so there is no need to protect fields on that struct (i.e. h_cowing, h_cow_*).
+The transaction handle is a per task struct, so there is no need to protect fields on that struct (i.e., h_cowing, h_cow_*).
 
 ==Reserved fields and bits in on-disk structures==
 

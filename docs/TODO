@@ -7,6 +7,7 @@ Unsupported ext3 features:
 - user/group quotas (copy user/group quota blocks on snapshot take)
 - direct I/O
 - block size != PAGE_SIZE
+- data journaling
 
 Unsupported e2fsprogs features:
 -------------------------------
@@ -20,5 +21,5 @@ Performance:
 ------------
 - run file system benchmarks
 - improved block allocation strategies for snapshot file
-
+- use single page for unmodified blocks (via special snapshot loop device)
 
