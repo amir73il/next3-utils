@@ -22,7 +22,7 @@ SIGNATURE=Amir Goldstein <amir73il@users.sf.net>
 SIGNEDOFF=Signed-off-by: ${SIGNATURE}
 DELIMITER="--------------------------------------------------------------------------------"
 
-#N3_VERSION=next3-1.0.9
+N3_VERSION=1.0.9-rc1
 N3_VERSION?=${DATE}
 N3_PKGNAME=next3-${N3_VERSION}
 N3_TARBALL=${N3_PKGNAME}.tar.gz
@@ -103,6 +103,7 @@ ${N3_PATCH}~:
 	(echo "The next3_snapshot patch aggregates all next3_snapshot_X sub-patches and next3_snapshot_X_Y sub-sub-patches." ; echo ) >> $@
 
 release: e2fs next3_fs series
+	rm -rf ${N3_RELEASE}
 	mkdir -p ${N3_RELEASE}/scripts
 	cp ${DOC_FILES} ${N3_RELEASE}
 	cp ${BIN_FILES} ${N3_RELEASE}/scripts

@@ -1,8 +1,10 @@
-==v1.0.9-WIP (??? 2010)==
+==v1.0.9-rc1 (Apr 2010)==
 * First public release.
 * Next3 wiki.
 * Free snapshot blocks when discarding snapshots (tune2fs -O ^has_snapshot).
 * Cleanup after reboot in the middle of snapshot take.
+* Disable unsupported features: disk quota, data journaling, block size != 4K.
+* Handle partial page write and partial page truncate correctly.
 
 ==v1.0.8 (Feb 2010)==
 Bug fixes:
