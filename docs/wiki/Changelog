@@ -1,4 +1,4 @@
-==v1.0.9-rc1 (Apr 2010)==
+==v1.0.9 (Apr 2010)==
 * First public release.
 * Next3 wiki.
 * Free snapshot blocks when discarding snapshots (tune2fs -O ^has_snapshot).
@@ -60,4 +60,10 @@ Compatibility:
 * After formatting an hard disk and before "snapshot config", reboot is required.
 * After "snapshot config", reboot is required.
 * Use the command "snapshot take" without the <snapshot-name> argument to create a snapshot named "@GMT-<date>-<time>".
+
+==v1.0.0 (Jan 2009)==
+* First beta release.
+* Patch to kernel 2.6.28.
+* Patch to e2fsprogs v1.41.1.
+* 'snapshot' script.
 

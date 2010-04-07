@@ -1,4 +1,4 @@
-v1.0.9-rc1
+v1.0.9
 ------
 Apr 6, 2010
 - first public release of next3
@@ -67,22 +67,29 @@ Sep 14, 2009
 v1.0.2
 ------
 Mar 22, 2009
--	added "snapshot version" command
--	"snapshot start/stop" command calls storage mount/umount, so "snapshot clean/restart" works
-	<share-name> must be the same as <volume-name> or storage mount/umount will fail
--	"snapshot clean/mkfs" creates a journal of size 2G (smaller file systems are not supported)
--	fix journal credits in "snapshot create"
+- added "snapshot version" command
+- "snapshot start/stop" command calls storage mount/umount, so "snapshot clean/restart" works
+  <share-name> must be the same as <volume-name> or storage mount/umount will fail
+- "snapshot clean/mkfs" creates a journal of size 2G (smaller file systems are not supported)
+- fix journal credits in "snapshot create"
 
 v1.0.1
 ------
 Feb 2, 2009
+- After formatting an hard disk and before "snapshot config", reboot is required
+- "snapshot config" command takes a 3rd argument <share-name>
+  <share-name> is the name given to the share of the root folder of the volume, example:
+  # snapshot config /dev/1/vol1 /var/vol/1 public
+- After "snapshot config", reboot is required
+- Use the command "snapshot take" without the <snapshot-name> argument 
+  to create a snapshot named "@GMT-<date>-<time>"
+- "@GMT-<date>-<time>" snapshots are viewable via CIFS shadow copies
+  (don't forget to run "snapshot mount" after reboot)
 
--	After formatting an hard disk and before "snapshot config", reboot is required
--	"snapshot config" command takes a 3rd argument <share-name>
-	<share-name> is the name given to the share of the root folder of the volume, example:
-	~ # snapshot config /dev/1/vol1 /var/vol/1 public
--	After "snapshot config", reboot is required
--	Use the command "snapshot take" without the <snapshot-name> argument 
-	to create a snapshot named "@GMT-<date>-<time>"
--	"@GMT-<date>-<time>" snapshots are viewable via CIFS shadow copies
-	(don't forget to run "snapshot mount" after reboot)
+v1.0.0
+------
+Jan 8, 2009
+- first beta release
+- patch to kernel 2.6.28
+- patch to e2fsprogs v1.41.1
+- 'snapshot' script
