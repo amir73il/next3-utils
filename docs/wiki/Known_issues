@@ -16,6 +16,3 @@ Next3 should handle most use cases properly, but some extreme use cases will cau
 * Disk space reservation for metadata COW is based on average file system metadata/data ratio. A Next3 volume full with metadata (directories, special inodes, etc.) may abort with "snapshot out of space" error.
 * Transaction buffer credits reservation for COW operations is based on average COW overhead. Block allocation races on a full Next3 volume may result in failures to claim found blocks. Such failures cause extra COW operations and may result in "out of buffer credits" OOPS.
 
-==POSIX in-compliant==
-* When truncating a file to a shorter size, not on block boundary, old data remains at the end of the last block. When later this file is extended by truncate() or lseek()+write(), the old data is exposed, instead of null bytes ('\0').
-
