@@ -9,10 +9,6 @@ Unsupported ext3 features:
 - block size != PAGE_SIZE
 - data journaling
 
-Unsupported e2fsprogs features:
--------------------------------
-- fsck of COW/exclude bitmaps
-
 Stability
 --------------------
 - unit testing of post crash recovery

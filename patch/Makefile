@@ -22,7 +22,7 @@ SIGNATURE=Amir Goldstein <amir73il@users.sf.net>
 SIGNEDOFF=Signed-off-by: ${SIGNATURE}
 DELIMITER="--------------------------------------------------------------------------------"
 
-N3_VERSION=1.0.9-rc2
+N3_VERSION=1.0.9-rc4
 N3_VERSION?=${DATE}
 N3_PKGNAME=next3-${N3_VERSION}
 N3_TARBALL=${N3_PKGNAME}.tar.gz
@@ -275,9 +275,9 @@ E2FS=e2fsprogs-1.41.9
 E2FS_ORIG=${E2FS}.orig
 E2FS_PATCH=${E2FS}-next3-${N3_VERSION}.patch
 E2LIB=${E2FS}/lib
-E2LIB_FILES=${E2LIB}/e2p/pf.c ${E2LIB}/e2p/feature.c ${E2LIB}/e2p/ls.c \
+E2LIB_FILES=${E2LIB}/e2p/pf.c ${E2LIB}/e2p/feature.c ${E2LIB}/e2p/ls.c ${E2LIB}/e2p/e2p.h \
 	${E2LIB}/ext2fs/res_gdt.c ${E2LIB}/ext2fs/swapfs.c ${E2LIB}/ext2fs/mkjournal.c \
-	${E2LIB}/e2p/e2p.h ${E2LIB}/ext2fs/ext2fs.h ${E2LIB}/ext2fs/ext2_fs.h
+	${E2LIB}/ext2fs/rw_bitmaps.c ${E2LIB}/ext2fs/ext2fs.h ${E2LIB}/ext2fs/ext2_fs.h
 FSCK=${E2FS}/e2fsck
 FSCK_FILES=${FSCK}/problem.c ${FSCK}/unix.c ${FSCK}/super.c ${FSCK}/rehash.c \
 	${FSCK}/pass1.c ${FSCK}/pass5.c ${FSCK}/problem.h ${FSCK}/e2fsck.h

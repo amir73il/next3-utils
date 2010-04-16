@@ -9,7 +9,7 @@ No, Next3 was cloned from Ext3 as an independent development branch.
 The [[Next3 snapshot patches]] add snapshot support the the cloned Next3.
 
 == What is the development status of Next3? ==
-Next3 is part of a new commercial product, so it has undergone extensive testing.
+Next3 is part of [http://www.ctera.com/ CTERA]’s Cloud Attached Storage appliances and has undergone extensive testing.
 All the tests were limited to a specific hardware configuration (ARM, single core, 512MB RAM) with a specific Linux installation.
 
 Next3 version 1.0 was released on January 2009 and 1.0.y versions have been used by a closed group of beta testers since, with no serious issues found.

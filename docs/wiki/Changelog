@@ -5,6 +5,7 @@
 * Cleanup after reboot in the middle of snapshot take.
 * Disable unsupported features: disk quota, data journaling, block size != 4K.
 * Handle partial page write and partial page truncate correctly.
+* Fsck of exclude bitmap.
 
 ==v1.0.8 (Feb 2010)==
 Bug fixes:
