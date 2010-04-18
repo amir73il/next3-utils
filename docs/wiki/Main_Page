@@ -2,12 +2,12 @@ NEXT3™ is a flavor of the widely used Ext3 file system with built-in support f
 Developed by [http://www.ctera.com/ CTERA™ Networks], NEXT3 is licensed under the GPL.
 
 == Features ==
-* Backward and forward compatible to Ext3
+* Backward and forward compatible with Ext3
 * Incremental, volume level, read-only snapshots
 * Snapshots use available file system disk space
-* Snapshot deletion frees up disk space
+* Snapshot deletion automatically frees up disk space
 * Retains Ext3 stability including journaling and fsck
-* Small performance overhead (on average usage scenarios)
+* Minimal performance overhead (in average usage scenarios)
 * No upper limit on number or size of snapshots
 
 == Documentation ==
