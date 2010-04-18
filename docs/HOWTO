@@ -28,6 +28,19 @@ and will be used by the script from now on.
 2. Setup a next3 volume
 =======================
 Run the "snapshot mkfs" command to format the volume as next3.
+
+~ # snapshot mkfs
+mke2fs 1.41.9-next3-1.0.8 (22-Feb-2010)
+...
+kjournald starting.  Commit interval 5 seconds
+NEXT3 FS on dm-0, internal journal
+NEXT3-fs: mounted filesystem with ordered data mode.
+# mount
+...
+/dev/1/vol1 on /var/vol/1 type next3 (rw,noatime,user_xattr,acl,data=ordered)
+
+The format will fail if the volume is smaller than 4G.
+
 Alternatively, run the "snapshot install" command to convert an existing ext3 volume to next3.
 
 ~ # mount
@@ -35,6 +48,7 @@ Alternatively, run the "snapshot install" command to convert an existing ext3 vo
 /dev/1/vol1 on /var/vol/1 type ext3 (rw,noatime,user_xattr,acl,data=ordered)
 
 ~ # snapshot install
+tune2fs 1.41.9-next3-1.0.8 (22-Feb-2010)
 ...
 kjournald starting.  Commit interval 5 seconds
 NEXT3 FS on dm-0, internal journal
@@ -43,6 +57,9 @@ NEXT3-fs: mounted filesystem with ordered data mode.
 ...
 /dev/1/vol1 on /var/vol/1 type next3 (rw,noatime,user_xattr,acl,data=ordered)
 
+The conversion will fail if the volume is smaller than the 4G
+or if the existing ext3 volume has a block size other than 4K.
+It is recommended to remove the journal before converting to next3.
 
 3. Take a snapshot
 ==================

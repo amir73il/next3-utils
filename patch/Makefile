@@ -22,7 +22,7 @@ SIGNATURE=Amir Goldstein <amir73il@users.sf.net>
 SIGNEDOFF=Signed-off-by: ${SIGNATURE}
 DELIMITER="--------------------------------------------------------------------------------"
 
-N3_VERSION=1.0.9-rc4
+N3_VERSION=1.0.9
 N3_VERSION?=${DATE}
 N3_PKGNAME=next3-${N3_VERSION}
 N3_TARBALL=${N3_PKGNAME}.tar.gz
@@ -79,7 +79,7 @@ clean: clean_next3
 distclean: clean_next3 clean_e2fs
 	rm -rf ${ORIG} ${BASE}
 
-.PHONY: next3 next3_fs series wiki release
+.PHONY: next3 next3_fs wiki release
 next3: ${STRIP} rotate_dirs ${BASE} ${N3_FILES} ${N3_PATCH}~
 	@test -z ${ID} || diff -Nuarp ${SRC_PREV} ${SRC_HEAD} > ${N3_SUBPATCH}+ || test 1 = 1
 	@test -z ${ID} || (diff -Nuarp ${PREV} ${HEAD} >> ${N3_SUBPATCH} ; \
@@ -102,7 +102,10 @@ ${N3_PATCH}~:
 	(echo "next3_snapshot.patch adds snapshot support to Next3 (after it was cloned from Ext3)." ; echo ) > $@
 	(echo "The next3_snapshot patch aggregates all next3_snapshot_X sub-patches and next3_snapshot_X_Y sub-sub-patches." ; echo ) >> $@
 
-release: e2fs next3_fs series
+${N3_SUBTARBALL}: series
+	tar cfz ${N3_SUBTARBALL} series ${shell cat series}
+
+release: e2fs next3_fs ${N3_SUBTARBALL}
 	rm -rf ${N3_RELEASE}
 	mkdir -p ${N3_RELEASE}/scripts
 	cp ${DOC_FILES} ${N3_RELEASE}
@@ -114,8 +117,16 @@ release: e2fs next3_fs series
 	cp ${N3_SUBTARBALL} ${N3_RELEASE}/patches
 	cd ${RELEASE} ; tar cfz ${N3_TARBALL} ${N3_PKGNAME}
 
-next3_fs: ${BASE}
-	diff -Nuarp ${ORIG} ${BASE} > ${N3_BASEPATCH} || cp ${N3_BASEPATCH} next3_fs.patch
+${N3_BASEPATCH}~:
+	@echo "Adds a cloned Next3 file system to the kernel." > $@
+	@echo >> $@
+	@echo "Next3 was cloned from Ext3 in ${LINUX}, but this patch may be applied to other kernel versions." >> $@ 
+	@echo "next3_snapshot-1.0.y.patch applies on top of this patch." >> $@
+	@echo >> $@
+
+next3_fs: ${BASE} ${N3_BASEPATCH}~
+	@(cat ${N3_BASEPATCH}~ ; echo "${SIGNEDOFF}" ; echo ; echo ${DELIMITER}) > ${N3_BASEPATCH}
+	@diff -Nuarp ${ORIG} ${BASE} >> ${N3_BASEPATCH} || cp ${N3_BASEPATCH} next3_fs.patch
 
 series: next3_fs next3
 	make KEY=exclude_files
@@ -161,7 +172,6 @@ series: next3_fs next3
 	make ID0=0 ID=01 KEY=debug
 	make ID0=0 ID=00 KEY=base
 	sort next3_series | ( while read id patch info ; do echo $$patch ; done ) > series
-	tar cfz ${N3_SUBTARBALL} series ${shell cat series}
 
 wiki:
 	cat series | ( while read patch ; do cat $$patch~ ; done ) > ${N3_WIKI}
@@ -289,8 +299,19 @@ E2FS_FILES=${E2LIB_FILES} ${FSCK_FILES} ${MISC_FILES} ${E2FS}/version.h
 .PHONY: e2fs e2fs_clean
 e2fs: ${E2FS_PATCH}
 
-${E2FS_PATCH}: ${E2FS} ${E2FS_FILES}
-	diff -Nuarp ${E2FS_ORIG} ${E2FS} > ${E2FS_PATCH} || cp ${E2FS_PATCH} e2fs_next3.patch
+${E2FS_PATCH}~:
+	@echo "Adds Next3 snapshot awareness to e2fsck, mke2fs, dumpe2fs, debugfs, resize2fs, tune2fs, lsattr and chattr." > $@
+	@echo >> $@
+	@echo "There are no snapshot COW operations during offline processing," >> $@
+	@echo "only restrictions on changing a file system with snapshots offline." >> $@
+	@echo "Adds the compatible features 'exclude_inode' and 'big_journal'." >> $@
+	@echo "Adds the ro-compatible features 'has_snapshot' 'fix_exclude' and 'fix_snapshot'." >> $@
+	@echo "chattr is used to control Next3 snapshots and lsattr is used to display snapshots status." >> $@
+	@echo >> $@
+
+${E2FS_PATCH}: ${E2FS} ${E2FS_FILES} ${E2FS_PATCH}~
+	@(cat ${E2FS_PATCH}~ ; echo "${SIGNEDOFF}" ; echo ; echo ${DELIMITER}) > ${E2FS_PATCH}
+	@diff -Nuarp ${E2FS_ORIG} ${E2FS} >> ${E2FS_PATCH} || cp ${E2FS_PATCH} e2fs_next3.patch
 
 ${E2FS}:
 	rm -rf ${E2FS} ${E2FS_ORIG}

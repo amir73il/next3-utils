@@ -71,13 +71,32 @@ To manage multiple Next3 volumes, run the "snapshot config" command and subseque
 
 ==Setup a next3 volume==
 Run the "snapshot mkfs" command to format and mount the volume as next3.
-Alternatively, run the "snapshot install" command to convert an existing ext3 volume to next3.
 
 Example:
 <pre>
 # snapshot mkfs
 mke2fs 1.41.9-next3-1.0.8 (22-Feb-2010)
 ...
+kjournald starting.  Commit interval 5 seconds 
+NEXT3 FS on dm-0, internal journal
+NEXT3-fs: mounted filesystem with ordered data mode.
+# mount
+...
+/dev/1/vol1 on /var/vol/1 type next3 (rw,noatime,user_xattr,acl,data=ordered)
+</pre>
+
+<font color=red>The format will fail if the volume is smaller than 4G.</font>
+
+Alternatively, run the "snapshot install" command to convert an existing ext3 volume to next3.
+
+Example:
+<pre>
+# mount 
+...
+/dev/1/vol1 on /var/vol/1 type ext3 (rw,noatime,user_xattr,acl,data=ordered)
+# snapshot install
+tune2fs 1.41.9-next3-1.0.8 (22-Feb-2010)
+... 
 kjournald starting.  Commit interval 5 seconds
 NEXT3 FS on dm-0, internal journal
 NEXT3-fs: mounted filesystem with ordered data mode.
@@ -85,6 +104,8 @@ NEXT3-fs: mounted filesystem with ordered data mode.
 ...
 /dev/1/vol1 on /var/vol/1 type next3 (rw,noatime,user_xattr,acl,data=ordered)
 </pre>
+
+<font color=red>The conversion will fail if the volume is smaller than 4G or if the existing ext3 volume has a block size other than 4K. It is recommended to remove the journal before converting to next3.</font>
 
 ==Take a snapshot==
 To take a snapshot named 'Monday', use the command "snapshot take Monday".

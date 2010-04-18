@@ -1,4 +1,5 @@
-The Next3 file system is a clone of the Ext3 file system with built-in support for snapshots.
+NEXT3(TM) is a flavor of the widely used Ext3 file system with built-in support for snapshots. 
+Developed by CTERA Networks, NEXT3 is licensed under the GPL.
 
 This package is available for download on the Next3 project download page [http://sourceforge.net/projects/next3/files/].
 
@@ -18,4 +19,7 @@ patches/e2fsprogs-1.41.x-next3-1.0.y.patch - Adds snapshot awareness to e2fsprog
 patches/next3_snapshot_patch_series.tar.gz - Patch series of Next3 snapshot support sub-patches.
 
 For more information, please visit the Next3 project page [http://sourceforge.net/apps/mediawiki/next3].
+Please post support questions to the Next3-users mailing list [https://lists.sourceforge.net/lists/listinfo/next3-users].
+Please post bugs and technical questions to the Next3-devel mailing list [https://lists.sourceforge.net/lists/listinfo/next3-devel].
+For other requests please contact CTERA <next3@ctera.com>.
 
