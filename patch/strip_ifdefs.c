@@ -12,7 +12,7 @@
 
 static void usage(void)
 {
-	fprintf(stderr, "usage: strip_ifdefs <infile> <outfile> [key [=y|n]]\n");
+	fprintf(stderr, "usage: strip_ifdefs <infile> <outfile> [key [y|n]]\n");
 	exit(1);
 }
 
@@ -34,11 +34,12 @@ int main(int argc, char *argv[])
 	char line[LINE_SIZE+2];
 	char KEY[MAX_KEY+1];
 	FILE *infile, *outfile;
-	const char *filename, *filetype;
+	const char *filename, *filetype, *patchname;
 	char *key = NULL;
 	int len, keylen, keytokens;
 	int ifdefno = 0, lineno = 0, nested = 0;
 	int snapshot = 0, config = 0, debug = 0;
+	int stripmain = 0;
 	enum filter filter = 0, strip = 0;
 
 	if (argc < 3)
@@ -92,15 +93,18 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (!strcmp(filename, "Kconfig"))
+	if (!strcmp(filename+1, "config")) {
 		/* strip config NEXT3_FS_SNAPSHOT_xxx */
 		config = 1;
+		patchname = ((*filename == 'K') ? "next3_snapshot" :
+				"e2fs_next3");
+	}
 
 	if (!key && !strncmp(filename, "snapshot", 8) ||
-		(key && !strcmp(key, "SNAPSHOT"))) {
 		/* snapshot* files are ifdefed in Makefile */
-		nested = snapshot = 1;
+		(key && !strcmp(key, "SNAPSHOT"))) {
 		/* key == "snapshot" means strip all snapshot ifdefs */
+		stripmain = 1;
 		key = NULL;
 	}
 
@@ -166,9 +170,10 @@ int main(int argc, char *argv[])
 			} else if (snapshot) {
 				if (filter) {
 					if (!strncmp(line+1, "bool ", 5))
-						printf("%.*snext3_snapshot_%s.patch%.*s\n\n"
+						printf("%.*s%s_%s.patch%.*s\n\n"
 								"%.*s.\n\n",
 								keytokens+2, "====",
+								patchname,
 								argv[3],
 								keytokens+2, "====",
 								len-9, line+7);
@@ -228,7 +233,7 @@ int main(int argc, char *argv[])
 						filter = (line[3] == 'n' ? -strip : strip);
 					if (!key) {
 						/* no key - filter/trim all snapshot subkeys */
-						if (nested > snapshot) {
+						if (stripmain || nested > snapshot) {
 							filter = (line[3] == 'n' ? 
 									FILTER_UNDEFINED : FILTER_DEFINED);
 						} else {
