@@ -146,12 +146,13 @@ int main(int argc, char *argv[])
 					/* strip debug config */
 					filter = FILTER_UNDEFINED;
 				} else if (!strncmp(line+7, MAINKEY+7, MAINKEY_LEN-7)) {
-					if (!snapshot) {
+					if (!snapshot)
 						/* snapshot main config */
 						nested = snapshot = 1;
-					} else {
+					else
 						/* snapshot sub config */
 						nested = 2;
+					if (stripmain || nested > snapshot) {
 						if (!key)
 							/* discard all snapshot sub configs */
 							break;
@@ -277,7 +278,8 @@ int main(int argc, char *argv[])
 					if (nested < snapshot)
 						snapshot = 0;
 					if (filter) {
-						if (!key && snapshot && nested > snapshot)
+						if (!key && snapshot &&
+							(stripmain || nested > snapshot))
 							filter = FILTER_DEFINED;
 						else
 							filter = FILTER_NONE;

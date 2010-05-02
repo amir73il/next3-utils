@@ -239,23 +239,23 @@ rotate_dirs:
 ${INC}/%:
 	@test ! -z ${KEY} || cp ${SRC}/$@ ${SRC_PREV}/$@
 	@test -z ${KEY} || ${STRIP} ${SRC_HEAD}/$@ ${SRC_PREV}/$@ ${KEY}
-	@${STRIP} ${SRC_PREV}/$@ ${PREV}/$@
+	@${STRIP} ${SRC_PREV}/$@ ${PREV}/$@ snapshot y
 
 ${FS}/%:
 	@test ! -z ${KEY} || cp ${SRC}/$@ ${SRC_PREV}/$@
 	@test -z ${KEY} || ${STRIP} ${SRC_HEAD}/$@ ${SRC_PREV}/$@ ${KEY}
-	@${STRIP} ${SRC_PREV}/$@ ${PREV}/$@
+	@${STRIP} ${SRC_PREV}/$@ ${PREV}/$@ snapshot y
 
 ${N3}/%:
 	@test ! -z ${KEY} || cp ${SRC}/$@ ${SRC_PREV}/$@
 	@test -z ${KEY} || ${STRIP} ${SRC_HEAD}/$@ ${SRC_PREV}/$@ ${KEY}
-	@${STRIP} ${SRC_PREV}/$@ ${PREV}/$@
+	@${STRIP} ${SRC_PREV}/$@ ${PREV}/$@ snapshot y
 
 ${N3}/Kconfig:
 	@test ! -z ${KEY} || cp ${SRC}/$@ ${SRC_PREV}/$@
 	@test -z ${KEY} || ((${STRIP} ${SRC_HEAD}/$@ ${SRC_PREV}/$@ ${KEY} > ${N3_SUBPATCH}~) && \
 			(cat ${N3_SUBPATCH}~ ; echo "${SIGNEDOFF}" ; echo ; echo ${DELIMITER}) > ${N3_SUBPATCH})
-	@${STRIP} ${SRC_PREV}/$@ ${PREV}/$@
+	@${STRIP} ${SRC_PREV}/$@ ${PREV}/$@ snapshot y
 
 ${INC}/magic.h: ${BASE}/${INC}/magic.h
 	@cp $< ${SRC_PREV}/$@ ; cp $< ${PREV}/$@
@@ -273,7 +273,7 @@ clean_next3:
 #
 # e2fsprogs patch
 #
-E2FS=e2fsprogs-1.41.11
+E2FS=e2fsprogs-1.41.9
 E2FS_PATCH=${E2FS}-next3-${N3_VERSION}.patch
 E2FS_SUBTARBALL=${E2FS}-next3-${N3_VERSION}_patches.tar.gz
 E2FS_SUBPATCH=e2fs_next3_${SUFFIX}.patch
