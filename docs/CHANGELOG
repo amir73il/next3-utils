@@ -3,6 +3,7 @@ v1.0.10
 ???, 2010
 - record errors messages in journal super block
 - clear excluded blocks from COW bitmap
+- support disk quotas (not journaled)
 
 v1.0.9
 ------

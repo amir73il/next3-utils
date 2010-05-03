@@ -1,6 +1,6 @@
 ==Unsupported and untested features==
 The following features have not been tested in Next3 or have been disabled due to known issues with snapshots implementation:
-* User/group quotas were not tested (uses extra COW buffer credits).
+* Journaled disk quotas are not supported (uses extra COW buffer credits).
 * Direct I/O is not supported.
 * File system block size other than PAGE_SIZE (4K) is not supported.
 * Mount option data=journal is not supported (nor is the 'Journaled_Data' file attribute).
