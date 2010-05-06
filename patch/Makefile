@@ -293,7 +293,8 @@ E2FS_FILES=${E2LIB_FILES} ${FSCK_FILES} ${MISC_FILES} ${E2FS}/version.h
 .PHONY: e2fs e2fs_clean
 e2fs: ${STRIP} rotate_dirs ${ORIG}/${E2FS} ${E2FS_FILES} ${E2FS}/Sconfig ${E2FS_PATCH}~
 	@test -z ${ID0} || diff -Nuarp ${SRC_PREV} ${SRC_HEAD} > ${E2FS_SUBPATCH}+ || test 1 = 1
-	@test -z ${ID0} || (diff -Nuarp ${PREV} ${HEAD} >> ${E2FS_SUBPATCH} ; \
+	@test -z ${ID0} || (rm -f a b ; ln -sf ${PREV}/${E2FS} a ; ln -sf ${HEAD}/${E2FS} b)
+	@test -z ${ID0} || (diff -Nuarp a b >> ${E2FS_SUBPATCH} ; \
 			((echo -n ${ID} ${E2FS_SUBPATCH} , ; \
 			(diffstat ${E2FS_SUBPATCH}|tail -n 1)) >> e2fs_series))
 	@diff -Nuarp ${ORIG}/${E2FS} ${SRC_PREV}/${E2FS} > _${E2FS_PATCH}+ || test 1 = 1
@@ -332,7 +333,7 @@ e2fs_series: ${ORIG}/${E2FS} e2fs
 	make e2fs ID=3 KEY=exclude_inode
 	make e2fs ID=2 KEY=big_journal
 	make e2fs ID=1 KEY=on_disk
-	make e2fs ID=0 KEY=_
+	make e2fs ID=0 KEY=rebase
 	@sort $@ | ( while read id patch info ; do echo $$patch ; done ) > series
 	@tar cfz ${E2FS_SUBTARBALL}  series ${shell cat series}
 
@@ -342,7 +343,7 @@ ${E2FS}/version.h:
 ${E2FS}/Sconfig:
 	@test ! -z ${KEY} || cp ${SRC}/$@ ${SRC_PREV}/$@
 	@test -z ${KEY} || ((${STRIP} ${SRC_HEAD}/$@ ${SRC_PREV}/$@ ${KEY} > ${E2FS_SUBPATCH}~) && \
-		(cat ${E2FS_SUBPATCH}~ ; echo "${SIGNEDOFF}" ; echo ; echo ${DELIMITER}) > ${E2FS_SUBPATCH} && \
+		(cat ${E2FS_SUBPATCH}~ ; echo "${SIGNEDOFF}") > ${E2FS_SUBPATCH} && \
 		cp ${E2FS_SUBPATCH} ${E2FS_SUBPATCH}~)
 	@cp ${SRC_PREV}/$@ ${SRC_HEAD}/$@
 
