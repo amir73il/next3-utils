@@ -206,7 +206,7 @@ case "$1" in
 		exit 0
 	fi
 	$0 stop || exit 1
-	mke2fs -j -O has_snapshot,big_journal,exclude_inode $ROOTDEV
+	mke2fs -j -J big -O has_snapshot,exclude_inode $ROOTDEV
 	tune2fs -e remount-ro $ROOTDEV
 	$0 start
 	;;

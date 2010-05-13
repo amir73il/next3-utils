@@ -95,6 +95,8 @@ Used to be bg_reserved[0].
 * Set by mke2fs/tune2fs/resize2fs on un-mounted fs with no snapshots when allocating the "exclude" inode.
 * Set by next3_group_add() under snapshot_mutex for new block group added on online resize.
 * Set by next3_snapshot_init_bitmap_cache() under sb_lock on mount.
+
+'''<font color=red>TODO: Check if field value should be zero in Ext4.</font>'''
  
 === struct next3_group_desc.bg_cow_bitmap ===
 Caches the address of the block group COW bitmap block, which is mapped by the "active" snapshot file.
@@ -102,6 +104,8 @@ Used to be bg_reserved[1].
 
 * Set by next3_snapshot_read_cow_bitmap() under sb_bgl_lock() on first block group access after snapshot take.
 * Reset to 0 by next3_snapshot_reset_bitmap_cache() under lock_super() on snapshot take and under sb_lock on mount.
+
+'''<font color=red>TODO: Check if field value should be zero in Ext4.</font>'''
 
 === struct next3_inode.i_next_snapshot ===
 The inode number of next snapshot on the list.
@@ -112,11 +116,15 @@ The in-memory version of snapshot file is their snapshot id. We use lsattr -v to
 
 * Set by next3_do_update_inode() under inode_mutex when writing a snapshot inode to disk.
 
+'''<font color=red>TODO: Check if field may be overloaded in Ext4.</font>'''
+
 === struct next3_inode.i_snapshot_blocks_count ===
 Size in blocks of snapshot image block device, which is the size of the file system at the time the snapshot was taken.
 Used to be osd2.linux2.l_i_reserved2.
 
 * Set by next3_do_update_inode() under inode_mutex when writing a snapshot inode to disk.
+
+'''<font color=red>TODO: Read this value from snapshot's copy of the super block and don't store it in the inode struct.</font>'''
 
 === struct next3_inode.i_flags & NEXT3_FL_SNAPSHOT_MASK ===
 Snapshot file flags.
@@ -124,6 +132,8 @@ The flags 0x1FF00000 are used in-memory, but only the flags 0x1F000000 are store
 
 * Set by next3_snapshot_set_flags() under snapshot_mutex and inode_mutex when changing a snapshot file's status.
 * Set by next3_snapshot_update() for all snapshots on the list under sb_lock on mount time and under snapshot_mutex after changing a snapshot file's status.
+
+'''<font color=red>TODO: Move non-persistent flags to i_state and read them with new GET_STATE ioctl.</font>'''
 
 === struct next3_super_block.s_snapshot_* ===
 # s_snapshot_inum - inode number of active snapshot.
@@ -135,6 +145,8 @@ Used to be last 3 DWORDs of s_reserved[].
 * Set by next3_snapshot_take() under lock_super() and snapshot_mutex after a new snapshot was taken.
 * s_snapshot_inum is reset to 0 by next3_snapshot_update() under lock_super() and snapshot_mutex after the last snapshot was deleted.
 
+'''<font color=red>TODO: Get permanent assignment for fields in super block struct and migrate existing installations on mount time.</font>'''
+
 === struct next3_super_block.s_last_snapshot ===
 The inode number of the head of the on-disk snapshots list.
 Used to be 4th DWORD from the end in s_reserved[].
@@ -143,12 +155,18 @@ Used to be 4th DWORD from the end in s_reserved[].
 * Set by next3_snapshot_create() under lock_super() and snapshot_mutex before taking a new snapshot.
 * Reset to 0 by next3_snapshot_remove() under lock_super() and snapshot_mutex after the last snapshot was deleted.
 
+'''<font color=red>TODO: Get permanent assignment for fields in super block struct and migrate existing installations on mount time.</font>'''
+
 === struct next3_super_block.s_feature_compat & 0x00003000 ===
 Features fully compatible with Ext3:
 # NEXT3_FEATURE_COMPAT_BIG_JOURNAL - big journal to accommodate extra snapshot COW credits.
 # NEXT3_FEATURE_COMPAT_EXCLUDE_INODE - exclude inode that holds exclude bitmap blocks.
 
 * Set ON/OFF by mke2fs/tune2fs on cleanly un-mounted fs with no snapshots.
+
+'''<font color=green>WIP: Replace '-O big_journal' option with journal creation option '-J big' and set NEXT3_FLAGS_BIG_JOURNAL in s_flags.</font>'''
+
+'''<font color=red>TODO: Get permanent assignment for flags in super block struct and migrate existing installations on mount time.</font>'''
 
 === struct next3_super_block.s_feature_ro_compat & 0x0000F000 ===
 Features read-only compatible with Ext3:
@@ -162,7 +180,9 @@ Features read-only compatible with Ext3:
 * FIX_EXCLUDE is set by snapshot code when a snapshot file block is not marked in exclude bitmap or when a non-snapshot file block or free block are marked in exclude bitmap.
 * FIX_SNAPSHOT and FIX_EXCLUDE are cleared by tune2fs/e2fsck on a cleanly un-mounted fs.
 
-Currently, fsck of snapshot files and exclude bitmap is not implemented, but fsck/tune2fs do clear the FIX_XXX flags when there are no snapshots in the file system after resetting the exclude bitmap.
+Currently, fsck of snapshot files is not implemented, but "tune2fs -O ^has_snapshot" clears the FIX_SNAPSHOT flags after discarding all snapshots.
+
+'''<font color=red>TODO: Get permanent assignment for flags in super block struct and migrate existing installations on mount time.</font>'''
 
 ==New fields and bits in in-memory structures==
 
@@ -322,4 +342,3 @@ In that case, a new data block is allocated and mapped to the file's inode in pl
 
 * The mapping of the new block and remapping of the old block to the active snapshot is journaled together in the same transaction.
 * If new block allocation fails, the old block is not moved to active snapshot and the write operation fails.
-
