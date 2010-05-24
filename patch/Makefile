@@ -84,7 +84,7 @@ next3: ${STRIP} rotate_dirs ${BASE} ${N3_FILES} ${N3_PATCH}~
 	@test -z ${ID} || diff -Nuarp ${SRC_PREV} ${SRC_HEAD} > ${N3_SUBPATCH}+ || test 1 = 1
 	@test -z ${ID} || (rm -f a b ; ln -sf ${PREV}/${LINUX} a ; ln -sf ${HEAD}/${LINUX} b)
 	@test -z ${ID} || (diff -Nuarp a b >> ${N3_SUBPATCH} ; \
-			((echo -n ${ID} ${N3_SUBPATCH} , ; \
+			((echo -n ${ID} ${N3_SUBPATCH} ; \
 			(diffstat ${N3_SUBPATCH}|tail -n 1)) >> next3_series))
 	@diff -Nuarp ${BASE}/${LINUX} ${SRC_PREV}/${LINUX} > _${N3_PATCH}+ || test 1 = 1
 	@(cat ${N3_PATCH}~ ; echo "${SIGNEDOFF}" ; echo ; echo ${DELIMITER}) > _${N3_PATCH}
@@ -133,11 +133,11 @@ next3_series: next3_fs next3
 	make ID=90 KEY=cleanup
 	make ID=82 KEY=exclude_bitmap
 	make ID=81 KEY=exclude_inode
-	#make ID=80 KEY=exclude
+	make ID=80 KEY=exclude
 	make ID=73 KEY=race_read
 	make ID=72 KEY=race_cow
 	make ID=71 KEY=race_bitmap
-	#make ID=70 KEY=race
+	make ID=70 KEY=race
 	make ID=61 KEY=list_read
 	make ID=60 KEY=list
 	make ID=56 KEY=journal_trace
@@ -146,7 +146,7 @@ next3_series: next3_fs next3
 	make ID=53 KEY=journal_release
 	make ID=52 KEY=journal_credits
 	make ID=51 KEY=journal_error
-	#make ID=50 KEY=journal
+	make ID=50 KEY=journal
 	make ID=44 KEY=ctl_dump
 	make ID=43 KEY=ctl_reserve
 	make ID=42 KEY=ctl_fix
@@ -163,10 +163,11 @@ next3_series: next3_fs next3
 	make ID=13 KEY=hooks_data
 	make ID=12 KEY=hooks_delete
 	make ID=11 KEY=hooks_jbd
-	#make ID=10 KEY=hooks
+	make ID=10 KEY=hooks
 	make ID=01 KEY=debug
 	make ID=00 KEY=base
-	@sort next3_series | ( while read id patch info ; do echo $$patch ; done ) > series
+	@sort next3_series | ( while read id patch files info ; do (test _$$files != _0 || test _$$id == _00) \
+								&& echo $$patch ; done ) > series
 	@echo series > files
 	@cat series >> files
 	@tar cfz ${N3_SUBTARBALL} --files-from files
@@ -300,7 +301,7 @@ e2fs: ${STRIP} rotate_dirs ${ORIG}/${E2FS} ${E2FS_FILES} ${E2FS}/Sconfig ${E2FS_
 	@test -z ${ID0} || diff -Nuarp ${SRC_PREV} ${SRC_HEAD} > ${E2FS_SUBPATCH}+ || test 1 = 1
 	@test -z ${ID0} || (rm -f a b ; ln -sf ${PREV}/${E2FS} a ; ln -sf ${HEAD}/${E2FS} b)
 	@test -z ${ID0} || (diff -Nuarp a b >> ${E2FS_SUBPATCH} ; \
-			((echo -n ${ID} ${E2FS_SUBPATCH} , ; \
+			((echo -n ${ID} ${E2FS_SUBPATCH} ; \
 			(diffstat ${E2FS_SUBPATCH}|tail -n 1)) >> e2fs_series))
 	@diff -Nuarp ${ORIG}/${E2FS} ${SRC_PREV}/${E2FS} > _${E2FS_PATCH}+ || test 1 = 1
 	@rm -f a b ; ln -sf ${ORIG}/${E2FS} a ; ln -sf ${PREV}/${E2FS} b

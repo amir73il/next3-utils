@@ -9,6 +9,12 @@ next3: snapshot debugging support
 Control snapshot debug level via debugfs entry /next3/snapshot-debug.
 Control snapshot unit tests via debugfs entries /next3/test-XXX.
 
+==next3_snapshot_hooks.patch==
+
+next3: snapshot hooks
+
+Insert generic snapshot API calls inside Next3 file system.
+
 ===next3_snapshot_hooks_jbd.patch===
 
 next3: snapshot hooks - inside JBD hooks
@@ -144,6 +150,13 @@ next3: snapshot control - dump snapshot file blocks map
 Use chattr -d to print the blocks map of a snapshot file.
 Snapshot debugging should be enabled.
 
+==next3_snapshot_journal.patch==
+
+next3: snapshot journaled
+
+Next3 snapshot operations are journaled inside the same transaction
+with the file system operation that triggered them.
+
 ===next3_snapshot_journal_error.patch===
 
 next3: snapshot journaled - record errors in journal
@@ -232,6 +245,12 @@ snapshot file, the newer snapshots on the list are checked and the
 oldest found mapping is returned.  If the page is not mapped in any of
 the newer snapshots, a direct mapping to the block device is returned.
 
+==next3_snapshot_race.patch==
+
+next3: snapshot race conditions
+
+Resolve snapshot race conditions
+
 ===next3_snapshot_race_bitmap.patch===
 
 next3: snapshot race conditions - concurrent COW bitmap operations
@@ -278,6 +297,16 @@ readers count drops to zero, before the COW operation is completed.
 After a pending COW operation has started, reader tasks have to wait
 (again, in msleep(1) loop), until the pending COW operation is
 completed, so the COWing task cannot be starved by reader tasks.
+
+==next3_snapshot_exclude.patch==
+
+next3: snapshot exclude
+
+Mark all snapshot blocks excluded from COW bitmap (i.e., mark that
+they do not need to be COWed).  The excluded blocks appear as not
+allocated inside the snapshot image (no snapshots of snapshot files).
+Excluding snapshot file blocks is essential for efficient cleanup
+of deleted snapshot files.
 
 ===next3_snapshot_exclude_inode.patch===
 
