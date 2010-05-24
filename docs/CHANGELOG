@@ -1,6 +1,8 @@
 v1.0.10
-------
-???, 2010
+-------
+May 20, 2010
+- replace mke2fs/tune2fs option -O big_journal with -J big
+- fix snapshot shrink bug
 - record errors messages in journal super block
 - clear excluded blocks from COW bitmap
 - support disk quotas (not journaled)

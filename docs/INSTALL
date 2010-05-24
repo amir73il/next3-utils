@@ -7,13 +7,12 @@ This INSTALL file contains instructions for building and installing next3.
 
 get the Linux kernel sources and apply the next3 fs patch:
 
-	# tar xfj linux-2.6.31.10.tar.bz2
-	# cd linux-2.6.31.10
-	# patch -p2 < ../linux-2.6.31-next3_fs.patch
+	# tar xfj linux-2.6.31.11.tar.bz2
+	# cd linux-2.6.31.11
+	# patch -p1 < ../linux-2.6.31.11-next3_fs.patch
 
 build the Linux kernel.
 when prompted to select NEXT3_FS configuration, choose y or m.
-when prompted to select NEXT3_FS_SNAPSHOT configuration, choose y.
 when prompted to select NEXT3_FS_DEBUG configuration, choose y.
 
 install the new kernel and reboot your machine,

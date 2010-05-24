@@ -1,3 +1,11 @@
+==v1.0.10 (May 2010)==
+* Fix snapshot shrink bug (please run e2fsck -f to test for corrupted snapshot files).
+* Replace mke2fs/tune2fs option -O big_journal with -J big.
+* Record errors messages in journal super block.
+* Clear excluded blocks from COW bitmap.
+* Support disk quotas (not journaled).
+* Remove NEXT3FS_SNAPSHOT Kconfig option.
+
 ==v1.0.9 (Apr 2010)==
 * First public release.
 * Next3 wiki.

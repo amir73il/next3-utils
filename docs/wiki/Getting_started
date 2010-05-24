@@ -7,13 +7,12 @@ Get the Linux kernel sources and apply the next3 kernel patches:
 <pre>
 # tar xfj linux-2.6.31.11.tar.bz2
 # cd linux-2.6.31.11
-# patch -p2 < ../linux-2.6.31.y-next3_fs.patch
-# patch -p2 < ../next3_snapshot-1.0.8.patch
+# patch -p1 < ../linux-2.6.31.y-next3_fs.patch
+# patch -p1 < ../next3_snapshot-1.0.x.patch
 </pre>
 
 Build the Linux kernel and select the following configuration options to build Next3 statically or as a loadable module:
 * NEXT3_FS [y/m]
-* NEXT3_FS_SNAPSHOT [y]
 * NEXT3_FS_DEBUG [y]
 
 Install the new kernel and reboot your machine (or better yet, reboot after the next step).
@@ -33,7 +32,7 @@ Get the e2fsprogs sources and apply the next3 patch:
 <pre>
 # tar xfz e2fsprogs-1.41.9.tar.gz
 # cd e2fsprogs-1.41.9
-# patch -p1 < ../e2fsprogs-1.41.9-next3-1.0.8.patch
+# patch -p1 < ../e2fsprogs-1.41.9-next3-1.0.x.patch
 </pre>
 
 Build and install e2fsprogs.

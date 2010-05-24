@@ -22,14 +22,14 @@ SIGNATURE=Amir Goldstein <amir73il@users.sf.net>
 SIGNEDOFF=Signed-off-by: ${SIGNATURE}
 DELIMITER="--------------------------------------------------------------------------------"
 
-#N3_VERSION=1.0.10
+N3_VERSION=1.0.10
 N3_VERSION?=${DATE}
 N3_PKGNAME=next3-${N3_VERSION}
 N3_TARBALL=${N3_PKGNAME}.tar.gz
 N3_RELEASE=${RELEASE}/${N3_PKGNAME}
 N3_SUBTARBALL=next3_snapshot-${N3_VERSION}_patches.tar.gz
 N3_PATCH=next3_snapshot-${N3_VERSION}.patch
-N3_SUBPATCH=${ID}_next3_snapshot_${SUFFIX}.patch
+N3_SUBPATCH=next3_snapshot_${SUFFIX}.patch
 DATE=${shell date +%d%m%y}
 N3_WIKI=../docs/wiki/Next3_snapshot_patches
 LINUX=linux-2.6.31.11
@@ -74,6 +74,7 @@ DOC_FILES=${DOC}/README ${DOC}/COPYING ${DOC}/INSTALL ${DOC}/HOWTO ${DOC}/CHANGE
 all: next3
 
 clean: clean_next3 clean_e2fs
+	rm -f a b files series
 
 distclean: clean
 	rm -rf ${ORIG} ${BASE}
@@ -81,12 +82,14 @@ distclean: clean
 .PHONY: next3 next3_fs wiki release
 next3: ${STRIP} rotate_dirs ${BASE} ${N3_FILES} ${N3_PATCH}~
 	@test -z ${ID} || diff -Nuarp ${SRC_PREV} ${SRC_HEAD} > ${N3_SUBPATCH}+ || test 1 = 1
-	@test -z ${ID} || (diff -Nuarp ${PREV} ${HEAD} >> ${N3_SUBPATCH} ; \
+	@test -z ${ID} || (rm -f a b ; ln -sf ${PREV}/${LINUX} a ; ln -sf ${HEAD}/${LINUX} b)
+	@test -z ${ID} || (diff -Nuarp a b >> ${N3_SUBPATCH} ; \
 			((echo -n ${ID} ${N3_SUBPATCH} , ; \
 			(diffstat ${N3_SUBPATCH}|tail -n 1)) >> next3_series))
 	@diff -Nuarp ${BASE}/${LINUX} ${SRC_PREV}/${LINUX} > _${N3_PATCH}+ || test 1 = 1
 	@(cat ${N3_PATCH}~ ; echo "${SIGNEDOFF}" ; echo ; echo ${DELIMITER}) > _${N3_PATCH}
-	@diff -Nuarp ${BASE}/${LINUX} ${PREV}/${LINUX} >> _${N3_PATCH} || test 1 = 1
+	@rm -f a b ; ln -sf ${BASE}/${LINUX} a ; ln -sf ${PREV}/${LINUX} b
+	@diff -Nuarp a b >> _${N3_PATCH} || test 1 = 1
 	@test ! -z ${KEY} || cp _${N3_PATCH}+ ${N3_PATCH}+
 	@test _${KEY} != _HEAD || cp _${N3_PATCH} ${N3_PATCH}
 	@test _${ID} != _00 || (cp _${N3_PATCH} ${N3_SUBPATCH} ; \
@@ -97,17 +100,15 @@ ${N3_PATCH}~:
 	(echo "next3_snapshot.patch adds snapshot support to Next3 (after it was cloned from Ext3)." ; echo ) > $@
 	(echo "The next3_snapshot patch aggregates all next3_snapshot_X sub-patches and next3_snapshot_X_Y sub-sub-patches." ; echo ) >> $@
 
-release: next3_fs next3_series e2fs_series
+release:
 	rm -rf ${N3_RELEASE}
 	mkdir -p ${N3_RELEASE}/scripts
 	cp ${DOC_FILES} ${N3_RELEASE}
 	cp ${BIN_FILES} ${N3_RELEASE}/scripts
 	mkdir -p ${N3_RELEASE}/patches
 	cp ${E2FS_PATCH} ${N3_RELEASE}/patches
-	cp ${E2FS_SUBTARBALL} ${N3_RELEASE}/patches
 	cp ${N3_BASEPATCH} ${N3_RELEASE}/patches
 	cp ${N3_PATCH} ${N3_RELEASE}/patches
-	cp ${N3_SUBTARBALL} ${N3_RELEASE}/patches
 	cd ${RELEASE} ; tar cfz ${N3_TARBALL} ${N3_PKGNAME}
 
 ${N3_BASEPATCH}~:
@@ -119,7 +120,8 @@ ${N3_BASEPATCH}~:
 
 next3_fs: ${BASE} ${N3_BASEPATCH}~
 	@(cat ${N3_BASEPATCH}~ ; echo "${SIGNEDOFF}" ; echo ; echo ${DELIMITER}) > ${N3_BASEPATCH}
-	@diff -Nuarp ${ORIG}/${LINUX} ${BASE}/${LINUX} >> ${N3_BASEPATCH} || cp ${N3_BASEPATCH} next3_fs.patch
+	@rm -f a b ; ln -sf ${ORIG}/${LINUX} a ; ln -sf ${BASE}/${LINUX} b
+	@diff -Nuarp a b >> ${N3_BASEPATCH} || cp ${N3_BASEPATCH} next3_fs.patch
 
 next3_series: next3_fs next3
 	make KEY=exclude_files
@@ -131,11 +133,11 @@ next3_series: next3_fs next3
 	make ID=90 KEY=cleanup
 	make ID=82 KEY=exclude_bitmap
 	make ID=81 KEY=exclude_inode
-	make ID=80 KEY=exclude
+	#make ID=80 KEY=exclude
 	make ID=73 KEY=race_read
 	make ID=72 KEY=race_cow
 	make ID=71 KEY=race_bitmap
-	make ID=70 KEY=race
+	#make ID=70 KEY=race
 	make ID=61 KEY=list_read
 	make ID=60 KEY=list
 	make ID=56 KEY=journal_trace
@@ -144,7 +146,7 @@ next3_series: next3_fs next3
 	make ID=53 KEY=journal_release
 	make ID=52 KEY=journal_credits
 	make ID=51 KEY=journal_error
-	make ID=50 KEY=journal
+	#make ID=50 KEY=journal
 	make ID=44 KEY=ctl_dump
 	make ID=43 KEY=ctl_reserve
 	make ID=42 KEY=ctl_fix
@@ -161,14 +163,17 @@ next3_series: next3_fs next3
 	make ID=13 KEY=hooks_data
 	make ID=12 KEY=hooks_delete
 	make ID=11 KEY=hooks_jbd
-	make ID=10 KEY=hooks
+	#make ID=10 KEY=hooks
 	make ID=01 KEY=debug
 	make ID=00 KEY=base
-	@sort $@ | ( while read id patch info ; do echo $$patch ; done ) > series
-	@tar cfz ${N3_SUBTARBALL} series ${shell cat series}
+	@sort next3_series | ( while read id patch info ; do echo $$patch ; done ) > series
+	@echo series > files
+	@cat series >> files
+	@tar cfz ${N3_SUBTARBALL} --files-from files
+	cp ${N3_SUBTARBALL} ${RELEASE}
 
 wiki:
-	@cat next3_series | ( while read patch ; do cat $$patch~ ; done ) > ${N3_WIKI}
+	@sort next3_series | ( while read id patch info ; do cat $$patch~ ; done ) > ${N3_WIKI}
 
 ${BASE}: next3.sed next3_fs.sed next3_ext4.sed
 	rm -rf ${LINUX} ${BASE} ${ORIG}
@@ -267,7 +272,7 @@ ${FS}/Makefile: ${BASE}/${FS}/Makefile
 	@cp $< ${SRC_PREV}/$@ ; cp $< ${PREV}/$@
 
 clean_next3:
-	rm -rf ${STRIP} ${LINUX}* next3* series *.patch*
+	rm -rf ${STRIP} ${LINUX}* next3* *.patch*
 	rm -rf ${SRC_HEAD} ${SRC_PREV} ${HEAD} ${PREV}
 
 #
@@ -298,7 +303,8 @@ e2fs: ${STRIP} rotate_dirs ${ORIG}/${E2FS} ${E2FS_FILES} ${E2FS}/Sconfig ${E2FS_
 			((echo -n ${ID} ${E2FS_SUBPATCH} , ; \
 			(diffstat ${E2FS_SUBPATCH}|tail -n 1)) >> e2fs_series))
 	@diff -Nuarp ${ORIG}/${E2FS} ${SRC_PREV}/${E2FS} > _${E2FS_PATCH}+ || test 1 = 1
-	@diff -Nuarp ${ORIG}/${E2FS} ${PREV}/${E2FS} > _${E2FS_PATCH} || test 1 = 1
+	@rm -f a b ; ln -sf ${ORIG}/${E2FS} a ; ln -sf ${PREV}/${E2FS} b
+	@diff -Nuarp a b > _${E2FS_PATCH} || test 1 = 1
 	@test ! -z ${KEY} || cp _${E2FS_PATCH}+ ${E2FS_PATCH}+
 	@test _${KEY} != _HEAD || cat ${E2FS_PATCH}~ _${E2FS_PATCH} > ${E2FS_PATCH}
 	@test _${ID} != _0 || cat ${E2FS_SUBPATCH}~ _${E2FS_PATCH} > ${E2FS_SUBPATCH}
@@ -334,8 +340,11 @@ e2fs_series: ${ORIG}/${E2FS} e2fs
 	make e2fs ID=2 KEY=big_journal
 	make e2fs ID=1 KEY=on_disk
 	make e2fs ID=0 KEY=rebase
-	@sort $@ | ( while read id patch info ; do echo $$patch ; done ) > series
-	@tar cfz ${E2FS_SUBTARBALL}  series ${shell cat series}
+	@sort e2fs_series | ( while read id patch info ; do echo $$patch ; done ) > series
+	@echo series > files
+	@cat series >> files
+	@tar cfz ${E2FS_SUBTARBALL} --files-from files
+	@cp ${E2FS_SUBTARBALL} ${RELEASE}
 
 ${E2FS}/version.h:
 	@cp ${SRC}/$@ ${SRC_PREV}/$@ ; cp ${SRC}/$@ ${PREV}/$@

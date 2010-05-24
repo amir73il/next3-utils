@@ -7,7 +7,7 @@
 #
 
 SCRIPT_NAME=snapshot
-SCRIPT_VER=1.0.9
+SCRIPT_VER=1.0.10
 SCRIPT_DESC="Next3 snapshot management script"
 
 # default snapshot-name is the <date-time> in shadow copy format

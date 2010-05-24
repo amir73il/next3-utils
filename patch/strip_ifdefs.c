@@ -147,9 +147,14 @@ int main(int argc, char *argv[])
 
 		if (config) {
 			if (!strncmp(line, "config ", 7)) {
-				if (debug && !strncmp(line+7, "NEXT3_FS_DEBUG", 14)) {
-					/* strip debug config */
-					filter = FILTER_UNDEFINED;
+				if (debug) {
+					if (!strncmp(line+7, "NEXT3_FS_DEBUG", 14)) {
+						/* strip debug config */
+						filter = FILTER_UNDEFINED;
+					} else {
+						/* stop filtering debug config */
+						filter = FILTER_NONE;
+					}
 				} else if (!strncmp(line+7, MAINKEY+7, MAINKEY_LEN-7)) {
 					if (!snapshot)
 						/* snapshot main config */
@@ -173,7 +178,7 @@ int main(int argc, char *argv[])
 						}
 					}
 				}
-			} else if (snapshot) {
+			} else if (snapshot || debug) {
 				if (filter) {
 					if (!strncmp(line+1, "bool ", 5)) {
 						if (patchname)
