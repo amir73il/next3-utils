@@ -15,4 +15,3 @@ The following issues may cause performance degradation and should be further opt
 Next3 should handle most use cases properly, but some extreme use cases will cause file system failures:
 * Disk space reservation for metadata COW is based on average file system metadata/data ratio. A Next3 volume full with metadata (directories, special inodes, etc.) may abort with "snapshot out of space" error.
 * Transaction buffer credits reservation for COW operations is based on average COW overhead. Block allocation races on a full Next3 volume may result in failures to claim found blocks. Such failures cause extra COW operations and may result in "out of buffer credits" OOPS.
-

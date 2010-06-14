@@ -1,3 +1,11 @@
+v1.0.11
+-------
+Jun 9, 2010
+- finalized on-disk format
+- migrate old format to new format on e2fsck, tune2fs and resize2fs
+- migrate old format to new format on mount time
+- check snapshot list on fsck
+
 v1.0.10
 -------
 May 20, 2010

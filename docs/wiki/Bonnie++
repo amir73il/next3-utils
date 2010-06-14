@@ -34,4 +34,3 @@ The results verify the assumptions we have made about Next3 vs. Ext3 write perfo
 # Next3 w/o snapshots (NEXT3+W+RW) performs similar to Ext3 (EXT3+W+RW)
 # Next3 with old snapshot (NEXT3-S+W+RW) performs similar to Next3 w/o snapshots (NEXT3+W+RW) and better than Next3 with new snapshot (NEXT3+S+W+RW)
 # Re-write of file whose blocks are included in a snapshot (NEXT3+W+S+RW) is slower than re-write of file whose blocks are not included in a snapshot (NEXT3+S+W+RW)
-

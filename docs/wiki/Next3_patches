@@ -15,4 +15,3 @@ There are no snapshot COW operations during offline processing, only restriction
 
 ==snapshot script==
 The snapshot script uses patched e2fsprogs utils to manage Next3 snapshots and run snapshot tests.
-

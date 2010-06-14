@@ -1,3 +1,9 @@
+==v1.0.11 (Jun 2010)==
+* Finalized on-disk format.
+* Migrate old format to new format on e2fsck, tune2fs and resize2fs.
+* Migrate old format to new format on mount time.
+* Check snapshot list on fsck.
+
 ==v1.0.10 (May 2010)==
 * Fix snapshot shrink bug (please run e2fsck -f to test for corrupted snapshot files).
 * Replace mke2fs/tune2fs option -O big_journal with -J big.
@@ -75,4 +81,3 @@ Compatibility:
 * Patch to kernel 2.6.28.
 * Patch to e2fsprogs v1.41.1.
 * 'snapshot' script.
-

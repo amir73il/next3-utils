@@ -22,7 +22,7 @@ SIGNATURE=Amir Goldstein <amir73il@users.sf.net>
 SIGNEDOFF=Signed-off-by: ${SIGNATURE}
 DELIMITER="--------------------------------------------------------------------------------"
 
-N3_VERSION=1.0.10
+N3_VERSION=1.0.11-1
 N3_VERSION?=${DATE}
 N3_PKGNAME=next3-${N3_VERSION}
 N3_TARBALL=${N3_PKGNAME}.tar.gz
@@ -131,7 +131,8 @@ next3_series: next3_fs next3
 	make ID=92 KEY=cleanup_merge
 	make ID=91 KEY=cleanup_shrink
 	make ID=90 KEY=cleanup
-	make ID=82 KEY=exclude_bitmap
+	make ID=83 KEY=exclude_bitmap
+	make ID=82 KEY=exclude_inode_old
 	make ID=81 KEY=exclude_inode
 	make ID=80 KEY=exclude
 	make ID=73 KEY=race_read
@@ -156,6 +157,7 @@ next3_series: next3_fs next3
 	make ID=32 KEY=block_move
 	make ID=31 KEY=block_cow
 	make ID=30 KEY=block
+	make ID=24 KEY=file_old
 	make ID=23 KEY=file_store
 	make ID=22 KEY=file_perm
 	make ID=21 KEY=file_read
@@ -287,7 +289,8 @@ E2FS_SUBPATCH=e2fs_next3_${SUFFIX}.patch
 E2LIB=${E2FS}/lib
 E2LIB_FILES=${E2LIB}/e2p/pf.c ${E2LIB}/e2p/feature.c ${E2LIB}/e2p/ls.c ${E2LIB}/e2p/e2p.h \
 	${E2LIB}/ext2fs/res_gdt.c ${E2LIB}/ext2fs/swapfs.c ${E2LIB}/ext2fs/mkjournal.c \
-	${E2LIB}/ext2fs/rw_bitmaps.c ${E2LIB}/ext2fs/ext2fs.h ${E2LIB}/ext2fs/ext2_fs.h
+	${E2LIB}/ext2fs/openfs.c ${E2LIB}/ext2fs/rw_bitmaps.c \
+	${E2LIB}/ext2fs/ext2fs.h ${E2LIB}/ext2fs/ext2_fs.h
 FSCK=${E2FS}/e2fsck
 FSCK_FILES=${FSCK}/problem.c ${FSCK}/unix.c ${FSCK}/super.c ${FSCK}/rehash.c ${FSCK}/journal.c \
 	${FSCK}/pass1.c ${FSCK}/pass5.c ${FSCK}/problem.h ${FSCK}/e2fsck.h
@@ -332,10 +335,12 @@ ${ORIG}/${E2FS}:
 e2fs_series: ${ORIG}/${E2FS} e2fs
 	make e2fs KEY=HEAD
 	@rm -f $@
-	make e2fs ID=8 KEY=message_buffer
+	make e2fs ID=b KEY=on_disk_migrate
+	make e2fs ID=a KEY=message_buffer
+	make e2fs ID=8 KEY=check_list
 	make e2fs ID=7 KEY=exclude_bitmap
 	make e2fs ID=6 KEY=cleanup
-	make e2fs ID=5 KEY=ro_compat
+	make e2fs ID=5 KEY=has_snapshot
 	make e2fs ID=4 KEY=ctl
 	make e2fs ID=3 KEY=exclude_inode
 	make e2fs ID=2 KEY=big_journal

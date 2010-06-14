@@ -37,6 +37,7 @@ Get the e2fsprogs sources and apply the next3 patch:
 
 Build and install e2fsprogs.
 
+
 ==Install the snapshot management script==
 Copy the 'snapshot' script to your system's binaries path:
 
@@ -195,4 +196,3 @@ A few more useful commands:
 * "snapshot help <cmd>" - display help on snapshot commands.
 * "snapshot debug <n>" - set snapshot debug level (default=1).
 * "snapshot tests" - runs a few simple sanity tests.
-

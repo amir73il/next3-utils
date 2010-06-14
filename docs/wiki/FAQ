@@ -9,7 +9,7 @@ No, Next3 was cloned from Ext3 as an independent development branch.
 The [[Next3 snapshot patches]] add snapshot support the the cloned Next3.
 
 == What is the development status of Next3? ==
-Next3 is part of [http://www.ctera.com/ CTERA]’s Cloud Attached Storage appliances and has undergone extensive testing.
+Next3 is part of [http://www.ctera.com/ CTERA]'s Cloud Attached Storage appliances and has undergone extensive testing.
 All the tests were limited to a specific hardware configuration (ARM, single core, 512MB RAM) with a specific Linux installation.
 
 Next3 version 1.0 was released on January 2009 and 1.0.y versions have been used by a closed group of beta testers since, with no serious issues found.
@@ -19,8 +19,10 @@ Next3 had undergone independent code review by [http://www.cs.sunysb.edu/~ezk Er
 Next3 is now publicly available for beta testers with various platforms under the terms of the GNU public license.
 
 == Does Next3 change the on-disk format of Ext3? ==
-No, it only uses some reserved fields in the super block and inode structs.
-Most of the snapshots data and metadata is stored in special snapshot files, which appear as regular sparse files to Ext3 and e2fsprogs.
+Next3 [[On-disk format]] is fully compatible with the Ext2/3/4 on-disk format.
+Next3 uses only a few fields and flags in the super block struct and one special inode.
+
+The rest of the snapshots data and metadata is stored in special snapshot files, which appear as regular sparse files to Ext3 and e2fsprogs.
 
 == Can an Ext3 file system be converted to Next3? ==
 Yes, in fact, it may be mounted as Next3 with no conversion.
@@ -37,8 +39,8 @@ The snapshot files are "half-transparent" read-only sparse files, which represen
 
 When a snapshot file is mounted as a read-only Ext2 file system via a loop device, all file system data in the past can be viewed.
 
-== How fast is Next3 snapshot take? ==
-Same as LVM snapshot take, that is, as fast as ext3_freeze().
+== How fast is Next3 snapshot creation? ==
+Same as LVM snapshot creation, that is, as fast as ext3_freeze().
 
 == How is Next3 performance compared to Ext3? ==
 Without snapshots, Next3 performance is equivalent to Ext3 performance. With snapshots, there is a small overhead per write of metadata block (copy-on-write) and a smaller overhead (~1%) per write of data block (move-on-write).
@@ -85,4 +87,3 @@ Most of the snapshot code can work on Ext4 as is, but the move-on-write techniqu
 Please post support questions to the [https://lists.sourceforge.net/lists/listinfo/next3-users next3-users mailing list].
 
 Please post bugs and technical questions to the [https://lists.sourceforge.net/lists/listinfo/next3-devel next3-devel mailing list].
-
