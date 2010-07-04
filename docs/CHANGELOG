@@ -1,10 +1,20 @@
+v1.0.12-rc1
+-------
+Jul 4, 2010
+- support 16TB volume snapshots
+- snapshot image starts at offset 0 of snapshot file
+- fix segmentation fault at the end of mkfs.ext3
+- add next3 features when executing mkfs.next3
+- fix compilation warnings on 64bit kernel build
+
 v1.0.11
 -------
-Jun 9, 2010
+Jun 14, 2010
 - finalized on-disk format
 - migrate old format to new format on e2fsck, tune2fs and resize2fs
 - migrate old format to new format on mount time
 - check snapshot list on fsck
+- fix snapshot merge bug
 
 v1.0.10
 -------

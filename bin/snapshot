@@ -7,7 +7,7 @@
 #
 
 SCRIPT_NAME=snapshot
-SCRIPT_VER=1.0.10
+SCRIPT_VER=1.0.12
 SCRIPT_DESC="Next3 snapshot management script"
 
 # default snapshot-name is the <date-time> in shadow copy format
@@ -370,7 +370,7 @@ case "$1" in
 		$TIME chattr -X +n $SNAPDIR/$s || exit 1
 		mkdir -p $SNAPDEVDIR/$s
 		ln $(losetup -f) $SNAPDEVDIR/$s/$VOL
-  		losetup -r -o 4243456 $SNAPDEVDIR/$s/$VOL $SNAPDIR/$s
+  		losetup -r $SNAPDEVDIR/$s/$VOL $SNAPDIR/$s
 	else
 		echo snapshot $s not found!
 		exit 1
@@ -510,7 +510,7 @@ case "$1" in
 	$0 debug 0
 	if [ -z $2 ] ; then
 		$0 stop || exit 1
-		e2fsck -pf -C 0 $ROOTDEV && \
+		e2fsck -nf -C 0 $ROOTDEV && \
 			echo $ROOTDEV 'is healthy' || \
 			echo $ROOTDEV 'has errors' >&2
 		$0 start

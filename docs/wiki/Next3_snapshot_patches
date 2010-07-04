@@ -4,20 +4,20 @@ The next3_snapshot patch aggregates all next3_snapshot_X sub-patches and next3_s
 
 ==next3_snapshot_debug.patch==
 
-Next3 snapshot debugging support.
+next3: snapshot debugging support
 
 Control snapshot debug level via debugfs entry /next3/snapshot-debug.
 Control snapshot unit tests via debugfs entries /next3/test-XXX.
 
 ==next3_snapshot_hooks.patch==
 
-Next3 snapshot hooks.
+next3: snapshot hooks
 
 Insert generic snapshot API calls inside Next3 file system.
 
 ===next3_snapshot_hooks_jbd.patch===
 
-Next3 snapshot hooks - inside JBD hooks.
+next3: snapshot hooks - inside JBD hooks
 
 Before every meta data buffer write, the journal API is called,
 namely, one of the next3_journal_get_XXX_access() functions.
@@ -26,7 +26,7 @@ before every meta data buffer write.
 
 ===next3_snapshot_hooks_delete.patch===
 
-Next3 snapshot hooks - delete blocks.
+next3: snapshot hooks - delete blocks
 
 Before deleting file blocks in next3_free_blocks(),
 we call the snapshot API snapshot_get_delete_access(),
@@ -34,7 +34,7 @@ to optionally move the block to the snapshot file.
 
 ===next3_snapshot_hooks_data.patch===
 
-Next3 snapshot hooks - move data blocks.
+next3: snapshot hooks - move data blocks
 
 Before every regular file data buffer write,
 the function next3_get_block() is called to map the buffer to disk.
@@ -43,7 +43,7 @@ to optionally move the block to the snapshot file.
 
 ==next3_snapshot_file.patch==
 
-Next3 snapshot file.
+next3: snapshot file
 
 Next3 snapshot implementation as a file inside the file system.
 Snapshot files are marked with the snapfile flag and have special
@@ -51,7 +51,7 @@ read-only address space ops.
 
 ===next3_snapshot_file_read.patch===
 
-Next3 snapshot file - read through to block device.
+next3: snapshot file - read through to block device
 
 On active snapshot file page read, the function next3_get_block()
 is called to map the page to a disk block.  If the page is not mapped
@@ -59,22 +59,42 @@ in the snapshot file a direct mapping to the block device is returned.
 
 ===next3_snapshot_file_perm.patch===
 
-Next3 snapshot file - permissions.
+next3: snapshot file - permissions
 
 Enforce snapshot file permissions.
 Write, truncate and unlink of snapshot inodes is not allowed.
 
 ===next3_snapshot_file_store.patch===
 
-Next3 snapshot file - store on disk.
+next3: snapshot file - store on disk
 
 Snapshot inode is stored differently in memory and on disk.
 During store and load of snapshot inode, some of the inode flags
 and fields are converted.
 
+===next3_snapshot_file_huge.patch===
+
+next3: snapshot file - increase maximum file size limit to 16TB
+
+Files larger than 2TB use Ext4 huge_file flag to store i_blocks
+in file system blocks units, so the upper limit on snapshot actual
+size is increased from 512*2^32 = 2TB to 4K*2^32 = 16TB,
+which is also the upper limit on file system size.
+To map 2^32 logical blocks, 4 triple indirect blocks are used instead
+of just one.  The extra 3 triple indirect blocks are stored in-place
+of direct blocks, which are not in use by snapshot files.
+
+===next3_snapshot_file_old.patch===
+
+next3: snapshot file - migrate old on-disk format
+
+Snapshot flags and super block field positions have changed.
+When old has_snapshot flag is set, copy fields to new position,
+clear old flags and fields and set new flags on mount time.
+
 ==next3_snapshot_block.patch==
 
-Next3 snapshot block operations.
+next3: snapshot block operations
 
 Core implementation of special snapshot file block operations.
 The argument @create to the function next3_get_blocks_handle()
@@ -85,31 +105,31 @@ transaction handle is used to prevent COW recursions.
 
 ===next3_snapshot_block_cow.patch===
 
-Next3 snapshot block operation - copy blocks to snapshot.
+next3: snapshot block operation - copy blocks to snapshot
 
 Implementation of copying blocks into a snapshot file.
 This mechanism is used to copy-on-write metadata blocks to snapshot.
 
-===next3_snapshot_block_bitmap.patch===
-
-Next3 snapshot block operation - copy block bitmap to snapshot.
-
-The snapshot copy of the file system block bitmap is called the COW
-bitmap and it is used to check if a block was allocated at the time
-that the snapshot was taken.
-
 ===next3_snapshot_block_move.patch===
 
-Next3 snapshot block operation - move blocks to snapshot.
+next3: snapshot block operation - move blocks to snapshot
 
 Implementation of moving blocks into a snapshot file.
 The move block command maps an allocated blocks to the snapshot file,
 allocating only the indirect blocks when needed.
 This mechanism is used to move-on-write data blocks to snapshot.
 
+===next3_snapshot_block_bitmap.patch===
+
+next3: snapshot block operation - copy block bitmap to snapshot
+
+The snapshot copy of the file system block bitmap is called the COW
+bitmap and it is used to check if a block was allocated at the time
+that the snapshot was taken.
+
 ==next3_snapshot_ctl.patch==
 
-Next3 snapshot control.
+next3: snapshot control
 
 Snapshot control with chattr -X.
 Take/delete snapshot with chattr -X +/-S.
@@ -117,7 +137,7 @@ Enable/disable snapshot with chattr -X +/-n.
 
 ===next3_snapshot_ctl_init.patch===
 
-Next3 snapshot control - init new snapshot.
+next3: snapshot control - init new snapshot
 
 On snapshot create, a few special blocks (i.e., the super block and
 group descriptors) are pre-allocated and on snapshot take, they are
@@ -127,7 +147,7 @@ snapshot becomes active.
 
 ===next3_snapshot_ctl_fix.patch===
 
-Next3 snapshot control - fix new snapshot.
+next3: snapshot control - fix new snapshot
 
 On snapshot take, after copying the pre-allocated blocks, some are
 fixed to make the snapshot image appear as a valid Ext2 file system.
@@ -137,7 +157,7 @@ All snapshot inodes are cleared (to appear as empty inodes).
 
 ===next3_snapshot_ctl_reserve.patch===
 
-Next3 snapshot control - reserve disk space for snapshot.
+next3: snapshot control - reserve disk space for snapshot
 
 Ensure there is enough disk space for snapshot file future use.
 Reserve disk space on snapshot take based on file system overhead
@@ -145,23 +165,24 @@ size, number of directories and number of blocks/inodes in use.
 
 ===next3_snapshot_ctl_dump.patch===
 
-Next3 snapshot control - dump snapshot file blocks map.
+next3: snapshot control - dump snapshot file blocks map
 
 Use chattr -d to print the blocks map of a snapshot file.
 Snapshot debugging should be enabled.
 
 ==next3_snapshot_journal.patch==
 
-Next3 snapshot journaled.
+next3: snapshot journaled
 
 Next3 snapshot operations are journaled inside the same transaction
 with the file system operation that triggered them.
 
 ===next3_snapshot_journal_error.patch===
 
-Next3 snapshot journaled - record journal error.
+next3: snapshot journaled - record errors in journal
 
-Snapshot errors are recorded as journal errors.
+Next3 error state is recorded in the journal super block and error
+messages are recorder in free space after the journal super block.
 Next3 should be mounted with errors=remount-ro.
 After a snapshot error, the file system will be in read-only mode.
 The administrator must un-mount the file system and run fsck
@@ -171,7 +192,7 @@ JBD functions.  Check for snapshot/journal errors in those places.
 
 ===next3_snapshot_journal_credits.patch===
 
-Next3 snapshot journaled - increase transaction credits.
+next3: snapshot journaled - increase transaction credits
 
 Snapshot operations are journaled as part of the running transaction.
 The amount of requested credits is multiplied with a factor, to ensure
@@ -179,7 +200,7 @@ that enough buffer credits are reserved in the running transaction.
 
 ===next3_snapshot_journal_release.patch===
 
-Next3 snapshot journaled - implement journal_release_buffer().
+next3: snapshot journaled - implement journal_release_buffer()
 
 The API journal_release_buffer() is called to cancel a previous call
 to journal_get_write_access() and to recall the used buffer credit.
@@ -192,7 +213,7 @@ credits too soon.
 
 ===next3_snapshot_journal_bypass.patch===
 
-Next3 snapshot journaled - bypass to save credits.
+next3: snapshot journaled - bypass to save credits
 
 Don't journal COW bitmap indirect blocks to save journal credits.
 On very few COW operations (i.e., first block group access after
@@ -205,7 +226,7 @@ COW bitmap operations and wait until they are synced to disk.
 
 ===next3_snapshot_journal_cache.patch===
 
-Next3 snapshot journaled - cache last COW tid in journal_head.
+next3: snapshot journaled - cache last COW tid in journal_head
 
 Cache last COW transaction id in buffer's journal_head.
 The cache suppresses COW tests until the transaction in committed.
@@ -217,13 +238,13 @@ invalidated (as it should be).
 
 ===next3_snapshot_journal_trace.patch===
 
-Next3 snapshot journaled - trace COW/buffer credits.
+next3: snapshot journaled - trace COW/buffer credits
 
 Extra debug prints to trace snapshot usage of buffer credits.
 
 ==next3_snapshot_list.patch==
 
-Next3 snapshot list support.
+next3: snapshot list support
 
 Implementation of multiple incremental snapshots.
 Snapshot inodes are chained on a list starting at the super block,
@@ -236,7 +257,7 @@ next3_inode_info.i_orphan for the chaining of snapshots.
 
 ===next3_snapshot_list_read.patch===
 
-Next3 snapshot list - read through to previous snapshot.
+next3: snapshot list - read through to previous snapshot
 
 On snapshot page read, the function next3_get_block() is called
 to map the page to a disk block.  If the page is not mapped in the
@@ -246,13 +267,13 @@ the newer snapshots, a direct mapping to the block device is returned.
 
 ==next3_snapshot_race.patch==
 
-Next3 snapshot race conditions.
+next3: snapshot race conditions
 
 Resolve snapshot race conditions
 
 ===next3_snapshot_race_bitmap.patch===
 
-Next3 snapshot race conditions - concurrent COW bitmap operations.
+next3: snapshot race conditions - concurrent COW bitmap operations
 
 Wait for pending COW bitmap creations to complete.
 When concurrent tasks try to COW buffers from the same block group
@@ -264,7 +285,7 @@ and updates the COW bitmap cache with the new block number.
 
 ===next3_snapshot_race_cow.patch===
 
-Next3 snapshot race conditions - concurrent COW operations.
+next3: snapshot race conditions - concurrent COW operations
 
 Wait for pending COW operations to complete.
 When concurrent tasks try to COW the same buffer, the task that takes
@@ -283,7 +304,7 @@ into the snapshot file page.
 
 ===next3_snapshot_race_read.patch===
 
-Next3 snapshot race conditions - tracked reads.
+next3: snapshot race conditions - tracked reads
 
 Wait for pending read I/O requests to complete.
 When a snapshot file readpage reads through to the block device,
@@ -299,7 +320,7 @@ completed, so the COWing task cannot be starved by reader tasks.
 
 ==next3_snapshot_exclude.patch==
 
-Next3 snapshot exclude.
+next3: snapshot exclude
 
 Mark all snapshot blocks excluded from COW bitmap (i.e., mark that
 they do not need to be COWed).  The excluded blocks appear as not
@@ -309,7 +330,7 @@ of deleted snapshot files.
 
 ===next3_snapshot_exclude_inode.patch===
 
-Next3 snapshot exclude - the exclude inode.
+next3: snapshot exclude - the exclude inode
 
 The exclude inode owns all the exclude bitmap blocks.
 The exclude inode is pre-allocated by 'tune2fs -O exclude_inode'.
@@ -317,9 +338,18 @@ The location of exclude bitmap blocks is read on mount time and cached
 in the group descriptors.  The exclude inode is extended upon online
 and offline resize operations when block groups are added.
 
+====next3_snapshot_exclude_inode_old.patch====
+
+next3: snapshot exclude - migrate old exclude inode
+
+Exclude inode number has changed from 10 to 9.  The exclude_inode
+flag has also changed.  When old exclude_inode flag is set,
+copy inode 10 to 9, clear inode 10 and clear old exclude_inode flag.
+(new exclude_inode flag is set during migration of super block).
+
 ===next3_snapshot_exclude_bitmap.patch===
 
-Next3 snapshot exclude - the exclude bitmap.
+next3: snapshot exclude - the exclude bitmap
 
 Excluding blocks is done by setting their bit in the exclude bitmap.
 There is one exclude bitmap block per block group and its location
@@ -327,7 +357,7 @@ is cached in the group descriptor.
 
 ==next3_snapshot_cleanup.patch==
 
-Next3 snapshot cleanup.
+next3: snapshot cleanup
 
 Cleanup snapshots list and reclaim unused blocks of deleted snapshots.
 Oldest snapshot can be removed from list and its blocks can be freed.
@@ -337,7 +367,7 @@ to properly shrink/merge deleted old snapshots.
 
 ===next3_snapshot_cleanup_shrink.patch===
 
-Next3 snapshot cleanup - shrink deleted snapshots.
+next3: snapshot cleanup - shrink deleted snapshots
 
 Free blocks of deleted snapshots, which are not in use by an older
 non-deleted snapshot.  Shrinking helps reclaiming disk space
@@ -345,8 +375,9 @@ while older snapshots are currently in use (enabled).
 
 ===next3_snapshot_cleanup_merge.patch===
 
-Next3 snapshot cleanup - merge shrunk snapshots.
+next3: snapshot cleanup - merge shrunk snapshots
 
 Move blocks of deleted and shrunk snapshots to an older non-deleted
 and disabled snapshot.  Merging helps removing snapshots from list
 while older snapshots are not currently in use (disabled).
+
