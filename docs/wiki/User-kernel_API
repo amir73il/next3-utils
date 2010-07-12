@@ -1,0 +1,67 @@
+This page was created to help simplifying the user-kernel API for Next3 snapshots, according to suggestion from Ted T'so.
+
+== Taking a snapshot ==
+Script command: "snapshot take <name>"
+
+Current API:
+<pre>
+# chattr +x <snapdir>
+# touch <snapdir>/<snapfile>
+# chattr -X +S <snapdir>/<snapfile>
+</pre>
+
+Simlified API:
+<pre>
+# chattr +x <snapdir>
+# touch <snapdir>/<snapfile>
+</pre>
+
+'''<font color=red>TODO: Invoke snapshot take from create command.</font>'''
+
+== Mounting a snapshot ==
+Script command: "snapshot mount <name>"
+
+Current API:
+<pre>
+# chattr -X +n <snapdir>/<snapfile>
+# losetup -r <loopdev> <snapdir>/<snapfile>
+# mount -r -t ext2 <loopdev> <snapmnt>
+</pre>
+
+Simplified API:
+<pre>
+# mount -r -t ext2 -o loop <snapdir>/<snapfile> <snapmnt>
+</pre>
+
+'''<font color=red>TODO: Auto-enable snapshot on snapshot file open.</font>'''
+
+'''<font color=red>TODO: Translate snapshot image offset in next3_snapshot_readpage().</font>'''
+
+== Deleting a snapshot ==
+Script command: "snapshot delete <name>"
+
+Current API:
+<pre>
+# umount <snapmnt>
+# chattr -X -n <snapdir>/<snapfile>
+# chattr -X -S <snapdir>/<snapfile>
+# rm <snapdir>/<snapfile> (may fail if snapshot file is in use)
+</pre>
+
+Simplified API:
+<pre>
+# umount <snapmnt>
+# rm <snapdir>/<snapfile> (queue snapshot for deletion and return EBUSY)
+</pre>
+
+'''<font color=red>TODO: Auto-disable snapshot on last snapshot file close.</font>'''
+
+'''<font color=red>TODO: Invoke snapshot delete from unlink command.</font>'''
+
+== Listing snapshots ==
+Script command: "snapshot status"
+
+Current API:
+<pre>
+# lsattr -X <snapdir>
+</pre>

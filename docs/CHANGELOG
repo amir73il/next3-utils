@@ -6,6 +6,7 @@ Jul 4, 2010
 - fix segmentation fault at the end of mkfs.ext3
 - add next3 features when executing mkfs.next3
 - fix compilation warnings on 64bit kernel build
+- e2fsck -x deletes all snapshots
 
 v1.0.11
 -------

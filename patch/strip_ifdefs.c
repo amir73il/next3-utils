@@ -16,10 +16,15 @@ static void usage(void)
 	exit(1);
 }
 
-static void exit_error(const char *str, const char *filename, int lineno, const char *line)
+static void print_error(const char *str, const char *filename, int lineno, const char *line)
 {
 	fprintf(stderr, "%s:%d: %s:\n%s\n",
 			filename, lineno, str, line);
+}
+
+static void exit_error(const char *str, const char *filename, int lineno, const char *line)
+{
+	print_error(str, filename, lineno, line);
 	exit(1);
 }
 
@@ -38,10 +43,9 @@ int main(int argc, char *argv[])
 	const char *patchname = NULL, *module = NULL;
 	char *key = NULL;
 	int len, keylen, keytokens;
-	int ifdefno = 0, lineno = 0, nested = 0;
-	int snapshot = 0, config = 0, debug = 0;
-	int stripmain = 0;
-	enum filter filter = 0, strip = 0;
+	int ifdefno = 0, lineno = 0, nested = 0, hold = 0;
+	int snapshot = 0, config = 0, debug = 0, makefile = 0;
+	enum filter filter = 0, strip = FILTER_DEFINED;
 
 	if (argc < 3)
 		usage();
@@ -105,13 +109,17 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (!key && !strncmp(filename, "snapshot", 8) ||
-		/* snapshot* files are ifdefed in Makefile */
-		(key && !strcmp(key, "SNAPSHOT"))) {
-		/* key == "snapshot" means strip all snapshot ifdefs */
-		stripmain = 1;
+	if (!strcmp(key, "SNAPSHOT") || !strcmp(key, "MAIN"))
+		/* strip all snapshot ifdefs */
 		key = NULL;
+
+	if (!strncmp(filename, "snapshot", 8)) {
+		if (!key && strip < 0)
+			exit(0);
 	}
+
+	if (!strcmp(filename, "Makefile"))
+		makefile = 1;
 
 	if (key && !strcmp(key, "DEBUG")) {
 		debug = 1;
@@ -142,30 +150,34 @@ int main(int argc, char *argv[])
 			continue;
 
 		if (snapshot && len > LINE_LIMIT+1)
-			exit_error("line too long inside snapshot patch",
+			print_error("line too long inside snapshot patch",
 					filename, lineno, line);
 
 		if (config) {
-			if (!strncmp(line, "config ", 7)) {
+			if (!hold && *line == '\n') {
+				hold = 1;
+				continue;
+			} else if (!strncmp(line, "config ", 7)) {
 				if (debug) {
 					if (!strncmp(line+7, "NEXT3_FS_DEBUG", 14)) {
 						/* strip debug config */
+						hold = 0;
 						filter = FILTER_UNDEFINED;
 					} else {
 						/* stop filtering debug config */
 						filter = FILTER_NONE;
 					}
 				} else if (!strncmp(line+7, MAINKEY+7, MAINKEY_LEN-7)) {
+					if (!key)
+						/* discard all snapshot sub configs */
+						break;
 					if (!snapshot)
 						/* snapshot main config */
 						nested = snapshot = 1;
 					else
 						/* snapshot sub config */
 						nested = 2;
-					if (stripmain || nested > snapshot) {
-						if (!key)
-							/* discard all snapshot sub configs */
-							break;
+					if (!key || nested > snapshot) {
 						if (!strncmp(line+MAINKEY_LEN+1, key, keylen)) {
 							/* start filtering snapshot sub config */
 							if (filter)
@@ -199,10 +211,34 @@ int main(int argc, char *argv[])
 								filename, lineno, line);
 				} 
 			}
+			if (hold && filter != FILTER_UNDEFINED) {
+				hold = 0;
+				fputs("\n", outfile);
+			}
 		} else if (debug) {
 			/* strip lines with "snapshot_debug" */
 			if (strstr(line, "snapshot_debug"))
 				continue;
+		} else if (makefile) {
+			/* strip snapshot files from makefile */
+			if (!key && strip < 0 && strstr(line, "snapshot.o"))
+				continue;
+		} else if (!strncmp(line, " *", 2) || !strncmp(line, "*/", 2)) {
+			if (!key && strip < 0) {
+				if (!hold && !strncmp(line, " *\n", 3)) {
+					/* hold 1 empty line */
+					hold = 1;
+					continue;
+				} else if (strstr(line+2, "Amir") || strstr(line+2, "CTERA")) {
+					/* strip off copyright */
+					hold = 0;
+					continue;
+				} else if (hold) {
+					/* output held empty line */
+					hold = 0;
+					fputs(" *\n", outfile);
+				}
+			}
 		} else if (!strncmp(line, "//", 2)) {
 			/* strip off code review comments */
 			if (!key)
@@ -212,6 +248,12 @@ int main(int argc, char *argv[])
 			/* strip off warnings and pragmas */
 			if (!key && (!strncmp(line+1, "warning", 7) ||
 					!strncmp(line+1, "pragma", 6)))
+				continue;
+
+			/* strip off snapshot file includes */
+			if (!key && strip < 0 &&
+					!strncmp(line+1, "include", 7) &&
+					!strncmp(line+10, "snapshot.h", 10))
 				continue;
 
 			/* filter ifdef/ifndef MAINKEY */
@@ -238,22 +280,13 @@ int main(int argc, char *argv[])
 					if (!snapshot)
 						/* set first snapshot nesting level */
 						snapshot = nested;
-					if (filter == FILTER_UNDEFINED)
+					if (filter == FILTER_UNDEFINED ||
+							(filter && !key && strip == FILTER_UNDEFINED))
 						exit_error("snapshot ifdef nested inside snapshot ifndef",
 								filename, lineno, line);
-					if (key && !strncmp(ifdef+MAINKEY_LEN+1, key, keylen))
+					if (!key || !strncmp(ifdef+MAINKEY_LEN+1, key, keylen))
 						/* filter snapshot ifdefs that match key */
 						filter = (line[3] == 'n' ? -strip : strip);
-					if (!key) {
-						/* no key - filter/trim all snapshot subkeys */
-						if (stripmain || nested > snapshot) {
-							filter = (line[3] == 'n' ? 
-									FILTER_UNDEFINED : FILTER_DEFINED);
-						} else {
-							ifdef[MAINKEY_LEN] = '\n';
-							ifdef[MAINKEY_LEN+1] = '\0';
-						}
-					}
 					if (filter)
 						/* strip the ifdef */
 						continue;
@@ -291,7 +324,7 @@ int main(int argc, char *argv[])
 						snapshot = 0;
 					if (filter) {
 						if (!key && snapshot &&
-							(stripmain || nested > snapshot))
+								(strip == FILTER_DEFINED || nested > snapshot))
 							filter = FILTER_DEFINED;
 						else
 							filter = FILTER_NONE;

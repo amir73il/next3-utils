@@ -4,6 +4,7 @@
 * Fix segmentation fault at the end of mkfs.ext3.
 * Add next3 features when executing mkfs.next3.
 * Fix compilation warnings on 64bit kernel build.
+* e2fsck -x deletes all snapshots.
 
 ==v1.0.11 (Jun 2010)==
 * Finalized on-disk format.

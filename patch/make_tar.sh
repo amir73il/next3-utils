@@ -9,5 +9,5 @@ TARFILE=~/$PKG-$DATE.tar.gz
 
 cd ../..
 test -e $PKG || ln -sf next3 $PKG
-tar cvhfz $TARFILE --exclude=.svn $PKG/{bin,docs,$LINUX,$E2FS,patch/Makefile,patch/*.{sh,c}}
+tar cvhfz $TARFILE --exclude=.svn $PKG/{bin,docs,$LINUX,$E2FS,rebase,patch/Makefile,patch/*.{sh,c}}
 

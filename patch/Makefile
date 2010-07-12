@@ -10,12 +10,14 @@ SRC?=..
 RELEASE?=~
 # location of kernel archive
 LINUX_PKG?=../../kernel/2.6.31
+#LINUX_PKG?=../../kernel/2.6.32
+#LINUX_PKG?=../../kernel/2.6.27
 # location of e2fsprogs archive
 E2FS_PKG?=../../pkg
 
 # xlate "X0" -> "X", "0" -> ""
 ID0?=${shell (echo ${ID}|tr -d 0)}
-SUFFIX=${shell (test _${ID} = _0 || echo ${KEY})}
+SUFFIX=${shell (test _${ID} = _0 || test _${ID} = _00 || echo ${KEY})}
 
 # patches signed-off-by
 SIGNATURE=Amir Goldstein <amir73il@users.sf.net>
@@ -33,16 +35,18 @@ N3_SUBPATCH=next3_snapshot_${SUFFIX}.patch
 DATE=${shell date +%d%m%y}
 N3_WIKI=../docs/wiki/Next3_snapshot_patches
 LINUX=linux-2.6.31.11
+#LINUX=linux-2.6.32.12
+#LINUX=linux-2.6.27.7
 N3_BASEPATCH=${LINUX}-next3_fs.patch
 ORIG=origin
 BASE=branch
+REBASE=../rebase
+UPDATE=./update_files.sh
 STRIP=./strip_ifdefs
 SRC_PREV=head^
 SRC_HEAD=head
-SRC_HEAD0=head~
 PREV=HEAD^
 HEAD=HEAD
-HEAD0=HEAD~
 
 CFLAGS=-g
 
@@ -79,7 +83,7 @@ clean: clean_next3 clean_e2fs
 distclean: clean
 	rm -rf ${ORIG} ${BASE}
 
-.PHONY: next3 next3_fs wiki release
+.PHONY: next3 next3_fs next3_snapshot wiki release
 next3: ${STRIP} rotate_dirs ${BASE} ${N3_FILES} ${N3_PATCH}~
 	@test -z ${ID} || diff -Nuarp ${SRC_PREV} ${SRC_HEAD} > ${N3_SUBPATCH}+ || test 1 = 1
 	@test -z ${ID} || (rm -f a b ; ln -sf ${PREV}/${LINUX} a ; ln -sf ${HEAD}/${LINUX} b)
@@ -119,9 +123,35 @@ ${N3_BASEPATCH}~:
 	@echo >> $@
 
 next3_fs: ${BASE} ${N3_BASEPATCH}~
+	@# rebase from sources
+	@test ! -d ${REBASE}/${LINUX} || ${UPDATE} ${REBASE}/${LINUX} ${BASE}/${LINUX}
+	@# create built-in patch (exclude fs/next3 files)
+	@rm -f a b ; ln -sf ${ORIG}/${LINUX} a ; ln -sf ${BASE}/${LINUX} b
+	@mkdir -p ${ORIG}/fs ${BASE}/fs
+	@mv ${BASE}/${LINUX}/fs/next3 ${BASE}/fs
+	@diff -Nuarp a b > next3_fs.built-in.patch || test 1 = 1
+	@# create module patch (only fs/next3 files)
+	@rm -f a b ; ln -sf ${ORIG} a ; ln -sf ${BASE} b
+	@diff -Nuarp a/fs b/fs > next3_fs.module.patch || test 1 = 1
+	@mv ${BASE}/fs/next3 ${BASE}/${LINUX}/fs
+	@rm -rf a b ${ORIG}/fs ${BASE}/fs
+	@# create full base+rebase/built-in+module patch
 	@(cat ${N3_BASEPATCH}~ ; echo "${SIGNEDOFF}" ; echo ; echo ${DELIMITER}) > ${N3_BASEPATCH}
 	@rm -f a b ; ln -sf ${ORIG}/${LINUX} a ; ln -sf ${BASE}/${LINUX} b
-	@diff -Nuarp a b >> ${N3_BASEPATCH} || cp ${N3_BASEPATCH} next3_fs.patch
+	@diff -Nuarp a b >> ${N3_BASEPATCH} || test 1 = 1
+
+next3_snapshot: next3_fs next3
+	make KEY=exclude_files
+	make KEY=file_goal
+	make KEY=HEAD
+	@rm -f a b ; ln -sf ${BASE}/${LINUX} a ; ln -sf ${PREV}/${LINUX} b
+	@mkdir -p ${PREV}/fs ${BASE}/fs
+	@mv ${PREV}/${LINUX}/fs/next3 ${PREV}/fs ; mv ${BASE}/${LINUX}/fs/next3 ${BASE}/fs
+	@diff -Nuarp a b > next3_snapshot.built-in.patch || test 1 = 1
+	@rm -f a b ; ln -sf ${BASE} a ; ln -sf ${PREV} b
+	@diff -Nuarp a/fs b/fs > next3_snapshot.module.patch || test 1 = 1
+	@mv ${PREV}/fs/next3 ${PREV}/${LINUX}/fs ; mv ${BASE}/fs/next3 ${BASE}/${LINUX}/fs
+	@rm -rf a b ${PREV}/fs ${BASE}/fs
 
 next3_series: next3_fs next3
 	make KEY=exclude_files
@@ -167,8 +197,9 @@ next3_series: next3_fs next3
 	make ID=12 KEY=hooks_delete
 	make ID=11 KEY=hooks_jbd
 	make ID=10 KEY=hooks
-	make ID=01 KEY=debug
-	make ID=00 KEY=base
+	make ID=02 KEY=debug
+	make ID=01 KEY=main
+	make ID=00 KEY=rebase
 	@sort next3_series | ( while read id patch files info ; do (test _$$files != _0 || test _$$id == _00) \
 								&& echo $$patch ; done ) > series
 	@echo series > files
@@ -179,7 +210,7 @@ next3_series: next3_fs next3
 wiki:
 	@sort next3_series | ( while read id patch info ; do cat $$patch~ ; done ) > ${N3_WIKI}
 
-${BASE}: next3.sed next3_fs.sed next3_ext4.sed
+${BASE}: next3.sed next3_include.sed next3_ext4.sed
 	rm -rf ${LINUX} ${BASE} ${ORIG}
 	mkdir -p ${BASE} ${ORIG}
 	tar xfj ${LINUX_PKG}/${LINUX}.tar.bz2 ${INC_FILES} ${FS_FILES} ${E3} ${E3_INC_FILES}
@@ -191,6 +222,7 @@ ${BASE}: next3.sed next3_fs.sed next3_ext4.sed
 	# clone next3 files from ext3
 	mv ${E3} ${N3}
 	mv ${E3_INC_FILES} ${N3}
+	touch ${N3}/Kconfig
 	sed -i -f next3.sed ${N3}/*
 	# rename ext3_* files
 	mv ${N3}/ext3_fs.h ${N3}/next3.h
@@ -198,7 +230,7 @@ ${BASE}: next3.sed next3_fs.sed next3_ext4.sed
 	mv ${N3}/ext3_fs_sb.h ${N3}/next3_sb.h
 	mv ${N3}/ext3_jbd.h ${N3}/next3_jbd.h
 	mv ${N3}/ext3_jbd.c ${N3}/next3_jbd.c
-	sed -i -f next3_fs.sed ${N3}/*
+	sed -i -f next3_include.sed ${N3}/*
 	# add next3 to linux file systems
 	grep -v EXT4 ${INC}/magic.h > x
 	diff x ${INC}/magic.h | sed -f next3_ext4.sed > y
@@ -216,12 +248,13 @@ next3.sed:
 	echo "s/ext3/next3/g" > $@
 	echo "s/Ext3/Next3/g" >> $@
 	echo "s/EXT3/NEXT3/g" >> $@
+	echo "s/__FUNCTION__/__func__/g" >> $@
 
 next3_ext4.sed:
 	echo "s/ext4/next3/g" > $@
 	echo "s/EXT4/NEXT3/g" >> $@
 
-next3_fs.sed:
+next3_include.sed:
 	echo "s/linux\/include\/linux\/next3_fs\.h/linux\/fs\/next3\/next3\.h/g" > $@
 	echo "s/linux\/include\/linux\/next3_fs_i\.h/linux\/fs\/next3\/next3_i\.h/g" >> $@
 	echo "s/linux\/include\/linux\/next3_fs_sb\.h/linux\/fs\/next3\/next3_sb\.h/g" >> $@
@@ -264,6 +297,7 @@ ${N3}/Kconfig:
 	@test ! -z ${KEY} || cp ${SRC}/$@ ${SRC_PREV}/$@
 	@test -z ${KEY} || ((${STRIP} ${SRC_HEAD}/$@ ${SRC_PREV}/$@ ${KEY} > ${N3_SUBPATCH}~) && \
 			(cat ${N3_SUBPATCH}~ ; echo "${SIGNEDOFF}" ; echo ; echo ${DELIMITER}) > ${N3_SUBPATCH})
+	@test -z ${KEY} || test ! -z ${ID} || rm ${N3_SUBPATCH} ${N3_SUBPATCH}~
 	@${STRIP} ${SRC_PREV}/$@ ${PREV}/$@ snapshot y
 
 ${INC}/magic.h: ${BASE}/${INC}/magic.h
@@ -333,12 +367,17 @@ ${ORIG}/${E2FS}:
 	@rm -rf ${ORIG}/${E2FS}
 	@tar xkfz ${E2FS_PKG}/${E2FS}.tar.gz -C ${ORIG} ${E2FS_FILES}
 
+e2fs_next3: ${ORIG}/${E2FS} e2fs
+	make e2fs KEY=HEAD
+	@diff -Nuarp a b > $@.patch || test 1 = 1
+
 e2fs_series: ${ORIG}/${E2FS} e2fs
 	make e2fs KEY=HEAD
 	@rm -f $@
-	make e2fs ID=b KEY=on_disk_migrate
-	make e2fs ID=a KEY=message_buffer
-	make e2fs ID=9 KEY=huge_snapshot
+	make e2fs ID=c KEY=on_disk_migrate
+	make e2fs ID=b KEY=message_buffer
+	make e2fs ID=a KEY=huge_snapshot
+	make e2fs ID=9 KEY=fix_snapshot
 	make e2fs ID=8 KEY=check_list
 	make e2fs ID=7 KEY=exclude_bitmap
 	make e2fs ID=6 KEY=cleanup

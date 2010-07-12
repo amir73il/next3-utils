@@ -1,0 +1,36 @@
+The following on-disk format changes have been accepted by Ted T'so.
+
+Next3 release 1.0.11 automatically migrates old on-disk format on mount and on fsck.
+
+== Super block ==
+=== New fields ===
+* s_snapshot_inum (@0x360) - 32bit inode number of active snapshot.
+* s_snapshot_id (@0x364) - 32bit sequential ID of active snapshot.
+* s_snapshot_r_blocks_count (@0x368) - 64bit reserved blocks for active snapshot future use (metadata only).
+* s_snapshot_list (@0x370) - 32bit inode number of the head of the on-disk snapshots list.
+
+=== New features ===
+* EXT2_FEATURE_COMPAT_EXCLUDE_INODE (0x0080) - exclude inode is allocated (compatible).
+* EXT2_FEATURE_RO_COMPAT_HAS_SNAPSHOT (0x0080) - file system has snapshots (read-only compatible).
+
+=== New flags ===
+* EXT2_FLAGS_IS_SNAPSHOT (0x0010) - signal fsck that this is a read-only ext2 snapshot image.
+* EXT2_FLAGS_FIX_SNAPSHOT (0x0020) - signal fsck that snapshot files needs to be checked.
+* EXT2_FLAGS_FIX_EXCLUDE (0x0040) - signal fsck that exclude bitmap needs to be checked.
+
+== Special inodes ==
+=== Exclude inode ===
+* EXT2_EXCLUDE_INO (9) - inode number of special inode to hold exclude bitmap blocks.
+
+=== Snapshot inode flags ===
+* NEXT3_SNAPFILE_FL (0x1000000) - identifies a special snapshot file (or its parent directory).
+* NEXT3_SNAPFILE_DELETED_FL (0x4000000) - marks that the snapshot file is queued for deletion.
+* NEXT3_SNAPFILE_SHRUNK_FL (0x8000000) - marks that the deleted snapshot file has been shrunk (and not yet merged).
+
+=== Snapshot inode fields ===
+* i_next_snapshot - inode number of next snapshot on the on-disk list.
+
+Overloads the Ext4 persistent inode version osd1.linux1.l_i_version, but the next snapshot inode is a valid value for version
+and the snapshot inode is not modifiable by users, so there is no need for a real progressing version for snapshot inodes.
+
+In the future merge to Ext4, i_version should not be progressed for snapshot files.
