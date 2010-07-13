@@ -8,12 +8,21 @@
 SRC?=..
 # location of release dir for patches
 RELEASE?=~
+KERNEL?=2.6.31
 # location of kernel archive
-LINUX_PKG?=../../kernel/2.6.31
-#LINUX_PKG?=../../kernel/2.6.32
-#LINUX_PKG?=../../kernel/2.6.27
+LINUX_PKG?=../../kernel/${KERNEL}
 # location of e2fsprogs archive
 E2FS_PKG?=../../pkg
+
+ifeq ($(KERNEL),2.6.31)
+LINUX?=linux-2.6.31.11
+endif
+ifeq ($(KERNEL),2.6.32)
+LINUX=linux-2.6.32.12
+endif
+ifeq ($(KERNEL),2.6.27)
+LINUX=linux-2.6.27.7
+endif
 
 # xlate "X0" -> "X", "0" -> ""
 ID0?=${shell (echo ${ID}|tr -d 0)}
@@ -34,9 +43,6 @@ N3_PATCH=next3_snapshot-${N3_VERSION}.patch
 N3_SUBPATCH=next3_snapshot_${SUFFIX}.patch
 DATE=${shell date +%d%m%y}
 N3_WIKI=../docs/wiki/Next3_snapshot_patches
-LINUX=linux-2.6.31.11
-#LINUX=linux-2.6.32.12
-#LINUX=linux-2.6.27.7
 N3_BASEPATCH=${LINUX}-next3_fs.patch
 ORIG=origin
 BASE=branch
@@ -51,15 +57,16 @@ HEAD=HEAD
 CFLAGS=-g
 
 INC=${LINUX}/include/linux
-INC_FILES=${INC}/jbd.h ${INC}/buffer_head.h ${INC}/journal-head.h ${INC}/magic.h
+INC_FILES=${INC}/jbd.h ${INC}/journal-head.h ${INC}/magic.h
 FS=${LINUX}/fs
-FS_FILES=${FS}/Makefile ${FS}/Kconfig ${FS}/buffer.c
+JBD=${FS}/jbd
+FS_FILES=${FS}/Makefile ${FS}/Kconfig ${JBD}/journal.c
 N3=${LINUX}/fs/next3
 MOD_FILES=${N3}/Kconfig ${N3}/Makefile \
 	  ${N3}/balloc.c ${N3}/file.c ${N3}/ialloc.c ${N3}/inode.c ${N3}/ioctl.c \
 	  ${N3}/namei.c ${N3}/next3_jbd.c ${N3}/resize.c ${N3}/super.c ${N3}/xattr.c \
 	  ${N3}/next3.h ${N3}/next3_i.h ${N3}/next3_jbd.h ${N3}/next3_sb.h
-NEW_FILES=${N3}/snapshot.c ${N3}/snapshot_ctl.c ${N3}/snapshot.h \
+NEW_FILES=${N3}/buffer.c ${N3}/snapshot.c ${N3}/snapshot_ctl.c ${N3}/snapshot.h \
 	  ${N3}/snapshot_debug.c ${N3}/snapshot_debug.h
 OLD_FILES=${N3}/acl.c ${N3}/acl.h ${N3}/bitmap.c ${N3}/dir.c ${N3}/fsync.c \
 	  ${N3}/hash.c ${N3}/namei.h ${N3}/symlink.c ${N3}/xattr.h \
@@ -67,7 +74,7 @@ OLD_FILES=${N3}/acl.c ${N3}/acl.h ${N3}/bitmap.c ${N3}/dir.c ${N3}/fsync.c \
 E3=${LINUX}/fs/ext3
 E3_INC_FILES=${INC}/ext3_fs.h ${INC}/ext3_fs_i.h ${INC}/ext3_jbd.h ${INC}/ext3_fs_sb.h
 
-N3_FILES=${INC_FILES} ${FS_FILES} ${MOD_FILES} ${NEW_FILES} ${OLD_FILES}
+N3_FILES=${INC_FILES} ${FS_FILES} ${JBD_FILES} ${MOD_FILES} ${NEW_FILES} ${OLD_FILES}
 
 BIN=../bin
 DOC=../docs
@@ -84,7 +91,7 @@ distclean: clean
 	rm -rf ${ORIG} ${BASE}
 
 .PHONY: next3 next3_fs next3_snapshot wiki release
-next3: ${STRIP} rotate_dirs ${BASE} ${N3_FILES} ${N3_PATCH}~
+next3: ${STRIP} rotate_dirs ${BASE}/${LINUX} ${N3_FILES} ${N3_PATCH}~
 	@test -z ${ID} || diff -Nuarp ${SRC_PREV} ${SRC_HEAD} > ${N3_SUBPATCH}+ || test 1 = 1
 	@test -z ${ID} || (rm -f a b ; ln -sf ${PREV}/${LINUX} a ; ln -sf ${HEAD}/${LINUX} b)
 	@test -z ${ID} || (diff -Nuarp a b >> ${N3_SUBPATCH} ; \
@@ -122,17 +129,17 @@ ${N3_BASEPATCH}~:
 	@echo "next3_snapshot-1.0.y.patch applies on top of this patch." >> $@
 	@echo >> $@
 
-next3_fs: ${BASE} ${N3_BASEPATCH}~
+next3_fs: ${BASE}/${LINUX} ${N3_BASEPATCH}~
 	@# rebase from sources
 	@test ! -d ${REBASE}/${LINUX} || ${UPDATE} ${REBASE}/${LINUX} ${BASE}/${LINUX}
 	@# create built-in patch (exclude fs/next3 files)
 	@rm -f a b ; ln -sf ${ORIG}/${LINUX} a ; ln -sf ${BASE}/${LINUX} b
 	@mkdir -p ${ORIG}/fs ${BASE}/fs
 	@mv ${BASE}/${LINUX}/fs/next3 ${BASE}/fs
-	@diff -Nuarp a b > next3_fs.built-in.patch || test 1 = 1
+	@diff -Nuarp a b > $@.built-in.patch || cp $@.built-in.patch ${LINUX_PKG}
 	@# create module patch (only fs/next3 files)
 	@rm -f a b ; ln -sf ${ORIG} a ; ln -sf ${BASE} b
-	@diff -Nuarp a/fs b/fs > next3_fs.module.patch || test 1 = 1
+	@diff -Nuarp a/fs b/fs > $@.module.patch || cp $@.module.patch ${LINUX_PKG}
 	@mv ${BASE}/fs/next3 ${BASE}/${LINUX}/fs
 	@rm -rf a b ${ORIG}/fs ${BASE}/fs
 	@# create full base+rebase/built-in+module patch
@@ -147,9 +154,9 @@ next3_snapshot: next3_fs next3
 	@rm -f a b ; ln -sf ${BASE}/${LINUX} a ; ln -sf ${PREV}/${LINUX} b
 	@mkdir -p ${PREV}/fs ${BASE}/fs
 	@mv ${PREV}/${LINUX}/fs/next3 ${PREV}/fs ; mv ${BASE}/${LINUX}/fs/next3 ${BASE}/fs
-	@diff -Nuarp a b > next3_snapshot.built-in.patch || test 1 = 1
+	@diff -Nuarp a b > $@.built-in.patch || cp $@.built-in.patch ${LINUX_PKG}
 	@rm -f a b ; ln -sf ${BASE} a ; ln -sf ${PREV} b
-	@diff -Nuarp a/fs b/fs > next3_snapshot.module.patch || test 1 = 1
+	@diff -Nuarp a/fs b/fs > $@.module.patch || cp $@.module.patch ${LINUX_PKG}
 	@mv ${PREV}/fs/next3 ${PREV}/${LINUX}/fs ; mv ${BASE}/fs/next3 ${BASE}/${LINUX}/fs
 	@rm -rf a b ${PREV}/fs ${BASE}/fs
 
@@ -210,7 +217,7 @@ next3_series: next3_fs next3
 wiki:
 	@sort next3_series | ( while read id patch info ; do cat $$patch~ ; done ) > ${N3_WIKI}
 
-${BASE}: next3.sed next3_include.sed next3_ext4.sed
+${BASE}/${LINUX}: next3.sed next3_include.sed next3_ext4.sed
 	rm -rf ${LINUX} ${BASE} ${ORIG}
 	mkdir -p ${BASE} ${ORIG}
 	tar xfj ${LINUX_PKG}/${LINUX}.tar.bz2 ${INC_FILES} ${FS_FILES} ${E3} ${E3_INC_FILES}
@@ -271,19 +278,19 @@ next3_include.sed:
 rotate_dirs:
 	@test ! -e ${SRC_HEAD} || rm -rf ${SRC_HEAD}
 	@test ! -e ${SRC_PREV} || mv ${SRC_PREV} ${SRC_HEAD}
-	@mkdir -p ${SRC_PREV}/{${INC},${N3},${E2FS}/{debugfs,misc,resize},${FSCK},${E2LIB}/{e2p,ext2fs}}
-	@mkdir -p ${SRC_HEAD}/{${INC},${N3},${E2FS}/{debugfs,misc,resize},${FSCK},${E2LIB}/{e2p,ext2fs}}
+	@mkdir -p ${SRC_PREV}/{${INC},${N3},${JBD},${E2FS}/{debugfs,misc,resize},${FSCK},${E2LIB}/{e2p,ext2fs}}
+	@mkdir -p ${SRC_HEAD}/{${INC},${N3},${JBD},${E2FS}/{debugfs,misc,resize},${FSCK},${E2LIB}/{e2p,ext2fs}}
 	@test ! -e ${HEAD} || rm -rf ${HEAD}
 	@test ! -e ${PREV} || mv ${PREV} ${HEAD}
-	@mkdir -p ${PREV}/{${INC},${N3},${E2FS}/{debugfs,misc,resize},${FSCK},${E2LIB}/{e2p,ext2fs}}
-	@mkdir -p ${HEAD}/{${INC},${N3},${E2FS}/{debugfs,misc,resize},${FSCK},${E2LIB}/{e2p,ext2fs}}
+	@mkdir -p ${PREV}/{${INC},${N3},${JBD},${E2FS}/{debugfs,misc,resize},${FSCK},${E2LIB}/{e2p,ext2fs}}
+	@mkdir -p ${HEAD}/{${INC},${N3},${JBD},${E2FS}/{debugfs,misc,resize},${FSCK},${E2LIB}/{e2p,ext2fs}}
 
 ${INC}/%:
 	@test ! -z ${KEY} || cp ${SRC}/$@ ${SRC_PREV}/$@
 	@test -z ${KEY} || ${STRIP} ${SRC_HEAD}/$@ ${SRC_PREV}/$@ ${KEY}
 	@${STRIP} ${SRC_PREV}/$@ ${PREV}/$@ snapshot y
 
-${FS}/%:
+${JBD}/%:
 	@test ! -z ${KEY} || cp ${SRC}/$@ ${SRC_PREV}/$@
 	@test -z ${KEY} || ${STRIP} ${SRC_HEAD}/$@ ${SRC_PREV}/$@ ${KEY}
 	@${STRIP} ${SRC_PREV}/$@ ${PREV}/$@ snapshot y
