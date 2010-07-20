@@ -20,6 +20,9 @@ endif
 ifeq ($(KERNEL),2.6.32)
 LINUX=linux-2.6.32.12
 endif
+ifeq ($(KERNEL),2.6.29)
+LINUX=linux-2.6.29.3
+endif
 ifeq ($(KERNEL),2.6.27)
 LINUX=linux-2.6.27.7
 endif
@@ -376,7 +379,7 @@ ${ORIG}/${E2FS}:
 
 e2fs_next3: ${ORIG}/${E2FS} e2fs
 	make e2fs KEY=HEAD
-	@diff -Nuarp a b > $@.patch || test 1 = 1
+	@diff -Nuarp a b > $@.patch || cp $@.patch ${E2FS_PKG}
 
 e2fs_series: ${ORIG}/${E2FS} e2fs
 	make e2fs KEY=HEAD

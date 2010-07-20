@@ -1,12 +1,15 @@
-v1.0.12-rc1
+v1.0.12-WIP
 -------
-Jul 4, 2010
+Jul 20, 2010
 - support 16TB volume snapshots
 - snapshot image starts at offset 0 of snapshot file
+- snapshot image contains the journal inode
 - fix segmentation fault at the end of mkfs.ext3
 - add next3 features when executing mkfs.next3
 - fix compilation warnings on 64bit kernel build
 - e2fsck -x deletes all snapshots
+- fix exclude bitmap errors after online resize
+- build next3 as a stand-alone kernel module
 
 v1.0.11
 -------
