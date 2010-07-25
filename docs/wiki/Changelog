@@ -8,6 +8,7 @@
 * e2fsck -x deletes all snapshots.
 * Fix exclude bitmap errors after online resize.
 * Build next3 as a stand-alone kernel module.
+* Alternative snapshot flags with lssnap/chsnap.
 
 ==v1.0.11 (Jun 2010)==
 * Finalized on-disk format.

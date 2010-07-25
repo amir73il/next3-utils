@@ -1,6 +1,6 @@
-v1.0.12-WIP
+v1.0.12
 -------
-Jul 20, 2010
+Jul 25, 2010
 - support 16TB volume snapshots
 - snapshot image starts at offset 0 of snapshot file
 - snapshot image contains the journal inode
@@ -10,6 +10,7 @@ Jul 20, 2010
 - e2fsck -x deletes all snapshots
 - fix exclude bitmap errors after online resize
 - build next3 as a stand-alone kernel module
+- alternative snapshot flags with lssnap/chsnap
 
 v1.0.11
 -------
