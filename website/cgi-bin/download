@@ -1,0 +1,73 @@
+#!/bin/sh
+
+# Save the old internal field separator.
+OIFS="$IFS"
+
+# Set the field separator to & and parse the QUERY_STRING at the ampersand.
+IFS="${IFS}&"
+set $QUERY_STRING
+Args="$*"
+IFS="$OIFS"
+
+# Next parse the individual "name=value" tokens.
+
+REL="1.0.12"
+KREL=""
+KVER=""
+MACH=""
+FILE=""
+
+for i in $Args ;do
+
+#       Set the field separator to =
+        IFS="${OIFS}="
+        set $i
+        IFS="${OIFS}"
+
+        case $1 in
+                v) REL="`echo $2 | sed 's|%20| |g'`"
+                       ;;
+                r) KREL="`echo $2 | sed 's|%20| |g'`"
+                       ;;
+                m) MACH="`echo $2 | sed 's|%20| |g'`"
+                       ;;
+                f) FILE="`echo $2 | sed 's|%20| |g'`"
+                       ;;
+                *)     echo "<hr>Warning:"\
+                            "<br>Unrecognized variable \'$1\' passed by FORM in QUERY_STRING.<hr>"
+                       ;;
+
+        esac
+done
+
+if [ ! -z $KREL ] ; then
+	IFS="${IFS}.-"
+	set $KREL
+	IFS="$OIFS"
+	KVER="`[ _$1 = _2 ] && [ _$2 = _6 ] && echo $1.$2.$3`"
+fi
+
+#echo Kernel Release: $KREL
+#echo Kernel Version: $KVER
+#echo Machine: $MACH
+
+BASE=/home/groups/n/ne/next3
+
+KERNEL=linux-$KVER
+URL="files/$REL/$KERNEL/$FILE"
+if [ ! -f "$BASE/htdocs/$URL" ]  ; then
+	URL="files/$REL/$FILE"
+fi
+if [ ! -f "$BASE/htdocs/$URL" ]  ; then
+	echo Status: 404 Not Found
+	ERR="NOT FOUND"
+	echo
+else
+	# redirect to download file
+	echo Status: 301 Moved
+	echo "Location: http://next3.sourceforge.net/$URL"
+	echo
+fi
+
+DATE="`date '+%b %e %T'`"
+echo $DATE $QUERY_STRING $REL $KREL $MACH $FILE $KVER $URL $ERR >> $BASE/persistent/download.log

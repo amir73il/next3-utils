@@ -1,0 +1,22 @@
+#!/bin/sh
+
+echo Content-type: text/html
+echo ""
+
+/bin/cat << EOM
+<HTML>
+<HEAD><TITLE>Next3 downloads statistics</TITLE>
+</HEAD>
+<BODY bgcolor="#cccccc" text="#000000">
+<P>
+<PRE>
+EOM
+
+cat /home/groups/n/ne/next3/persistent/download.log
+
+CAT << EOM
+</PRE>
+<P>
+</BODY>
+</HTML>
+EOM
