@@ -1,4 +1,7 @@
 #!/bin/sh
 
-rs exec /proc/storage mount name $3 || exit 1
+if [ -z $VOL ] ; then
+	VOL=vol1
+fi
+rs exec /proc/storage mount name $VOL || exit 1
 sleep 1
