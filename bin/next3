@@ -37,11 +37,11 @@ fi
 if [ -f $dir/tunefs.next3 ] ; then
 	TUNEFS=$dir/tunefs.next3
 fi
-if [ -f $dir/lssnap ] ; then
-	LSSNAP=$dir/lssnap
+if [ -f $dir/lsattr.next3 ] ; then
+	LSSNAP=$dir/lsattr.next3
 fi
-if [ -f $dir/chsnap ] ; then
-	CHSNAP=$dir/chsnap
+if [ -f $dir/chattr.next3 ] ; then
+	CHSNAP=$dir/chattr.next3
 fi
 done 
 
@@ -661,7 +661,7 @@ case "$1" in
 		echo Remove test:
 		echo ------------
 		echo 'Truncating c.txt (to size 4)'
-		truncate $NEXT3MNT/C/c.txt 4
+		truncate $NEXT3MNT/C/c.txt -s 4
 		echo 'Removing d.txt'
 		rm $NEXT3MNT/D/d.txt
 	  ;;

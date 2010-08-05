@@ -31,7 +31,7 @@ for i in $Args ;do
                        ;;
                 m) MACH="`echo $2 | sed 's|%20| |g'`"
                        ;;
-                f) FILE="`echo $2 | sed 's|%20| |g'`"
+                f) FILE="`echo $2 | sed 's|[\]||g' | sed 's|%20| |g'`"
                        ;;
                 *)     echo "<hr>Warning:"\
                             "<br>Unrecognized variable \'$1\' passed by FORM in QUERY_STRING.<hr>"
@@ -54,9 +54,15 @@ fi
 BASE=/home/groups/n/ne/next3
 
 KERNEL=linux-$KVER
+# look for file in kernel specific dir...
 URL="files/$REL/$KERNEL/$FILE"
 if [ ! -f "$BASE/htdocs/$URL" ]  ; then
+	# then in release specific dir...
 	URL="files/$REL/$FILE"
+fi
+if [ ! -f "$BASE/htdocs/$URL" ]  ; then
+	# then in root dir
+	URL="files/$FILE"
 fi
 if [ ! -f "$BASE/htdocs/$URL" ]  ; then
 	echo Status: 404 Not Found
