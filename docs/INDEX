@@ -19,8 +19,6 @@ Next3 files:
 Changed kernel files:
 fs/Kconfig - add generic snapshot and next3
 fs/Makefile - add generic snapshot and next3
-fs/buffer.c - tracked read functions
-include/linux/buffer_head.h - tracked read macros
 include/linux/journal_head.h - add COW tid cache to journal_head
 include/linux/jbd.h - add recursion level to handle_t
 include/linux/magic.h - add next3 file system
@@ -31,6 +29,7 @@ fs/next3/snapshot.c - next3 snapshot core functions
 fs/next3/snapshot_ctl.c - next3 snapshot control functions
 fs/next3/snapshot_debug.h - next3 snapshot debug macros
 fs/next3/snapshot_debug.c - next3 snapshot debugfs
+fs/next3/buffer.c - tracked read functions
 
 Changed ext3 files:
 fs/next3/Kconfig - add next3 snapshot support

@@ -12,11 +12,9 @@ The following kernel files have been changed to add the next3 file system:
 The following kernel files have been changed to support the next3 snapshot feature:
 *include/linux/jbd.h - add task COW state, COW credits and COW statistic counters to transaction handle struct.
 *include/linux/journal_head.h - add COW transaction id and modified bit to journal_head struct.
-*include/linux/buffer_head.h - add tracked read macros.
-*fs/buffer.c - add tracked read functions.
 
 ==Cloned and changed Next3 files==
-All files under fs/next3 folder (except for the snapshot* files) have been cloned from fs/ext3 folder and from include/linux/ext3*.h include files.
+Most files under fs/next3 folder (except for the "Added Next3 snapshot files") have been cloned from fs/ext3 folder and from include/linux/ext3*.h include files.
 
 The following files have been changed after they were cloned to support the next3 snapshot feature.
 *fs/next3/Kconfig - add next3 snapshot support kernel configuration option.
@@ -35,11 +33,12 @@ The following files have been changed after they were cloned to support the next
 
 ==Added Next3 snapshot files==
 The following files were added to the cloned next3 file system to implement the snapshot feature:
-*fs/next3/snapshot.h - next3 snapshot macros and API
-*fs/next3/snapshot.c - next3 snapshot block access and COW functions
-*fs/next3/snapshot_ctl.c - next3 snapshot load, destroy and control functions
-*fs/next3/snapshot_debug.h - next3 snapshot debug macros
-*fs/next3/snapshot_debug.c - next3 snapshot debug functions
+*fs/next3/snapshot.h - next3 snapshot macros and API.
+*fs/next3/snapshot.c - next3 snapshot block access and COW functions.
+*fs/next3/snapshot_ctl.c - next3 snapshot load, destroy and control functions.
+*fs/next3/snapshot_debug.h - next3 snapshot debug macros.
+*fs/next3/snapshot_debug.c - next3 snapshot debug functions.
+*fs/next3/buffer.c - add tracked read functions.
 
 
 

@@ -11,8 +11,6 @@ SCRIPT_VER=1.0.12
 SCRIPT_DESC="Next3 snapshot management script"
 
 # generic e2fs progs
-MOUNT="mount -t next3"
-UMOUNT=umount
 FSCK=e2fsck
 MKFS=mke2fs
 TUNEFS=tune2fs
@@ -22,12 +20,6 @@ CHSNAP=chattr
 # override generic e2fs progs with installed e2fs.next3 progs in /sbin fodler
 # and override those with private built e2fs.next3 progs in ./bin folder
 for dir in /sbin ./bin ; do
-if [ -f $dir/mount.next3 ] ; then
-	MOUNT=$dir/mount.next3
-fi
-if [ -f $dir/umount.next3 ] ; then
-	UMOUNT=$dir/umount.next3
-fi
 if [ -f $dir/fsck.next3 ] ; then
 	FSCK=$dir/fsck.next3
 fi
@@ -120,7 +112,7 @@ if [ -z $NEXT3DEV ] && [ -z $NEXT3MNT ] ; then
 fi
 
 if [ ! -z $1 ] && [ $1 != help ] && [ $1_$2 != $1_help ] && [ $1 != config ] && \
-	[ $1 != version ] && [ $1 != debug ] && [ $1 != delay ] ; then
+	[ $1 != version ] && [ $1 != debug ] && [ $1 != delay ] && [ _$1 != _test ] && [ $1 != tests ] ; then
 	if [ $1 != mkfs ] && [ $1 != fsck ] && [ $1 != on ] && [ $1 != off ] ; then
 	if [ -z $NEXT3MNT ] ; then
 		echo "$0: ambigous or missing next3 mount point"
@@ -146,8 +138,6 @@ if [ ! -z $1 ] && [ $1 != help ] && [ $1_$2 != $1_help ] && [ $1 != config ] && 
 	export NEXT3DEV
 	S=$NEXT3MNT@$s
 fi
-
-modprobe next3 2> /dev/null
 
 if [ -z $SNAPDIR ] ; then
 	# directory inside next3 filesystem to store snapshot files
@@ -280,9 +270,6 @@ case "$1" in
 	echo .
 	;;
 
-  printst)
-	echo $2 $7 $3 $5 ${13} ${14} ${15} ${16}
-	;;
   stat)
 	if [ $1_$2 = $1_help ] ; then
 		echo "stat: display status of next3 filesystem and all its snapshots."
@@ -298,14 +285,12 @@ case "$1" in
 	echo "id inode attributes disk-usage mtime filename"
 	echo "---------------------------------------------"
 	for s in $( ls -vr $SNAPDIR/* ) ; do
-		echo -n "$0 printst "
-		echo -n "$( $LSSNAP -v -X $s ) "
-		echo -n "$( du -h $s ) "
-		echo -n "$( ls -lih --color=never $s ) "
-		echo
-	done > /tmp/lssnap 2> /dev/null
-	chmod a+x /tmp/lssnap
-	/tmp/lssnap
+		( echo -n "$( $LSSNAP -v -X $s ) " ; \
+		echo -n "$( du -h $s ) " ; \
+		echo -n "$( ls -lih --color=never $s ) " ; \
+		echo ) | ( read id attr a du b ino c d e f g mm dd tt fname h ; \
+				echo $id $ino $attr $du $mm $dd $tt $fname )
+	done 2> /dev/null
 	echo .
 	;;
   lsattr)
@@ -430,7 +415,7 @@ case "$1" in
 		fi
 		# we may be called from mount.next3 so add -i
 		mount -t next3 -i $MNTOPT $NEXT3DEV $NEXT3MNT || exit 1
-		echo next3 filesystem is mounted at $NEXT3MNT
+		echo next3 filesystem is mounted on $NEXT3MNT
 	else
   		$0 enable $s || exit 1
 		if grep $SNAPMNT$s /proc/mounts ; then
@@ -452,7 +437,7 @@ case "$1" in
 	fi
 	if [ -z $s ] ; then
 		# umount all snapshots
-		for s in $( ls $SNAPDIR/ ) ; do
+		for s in $( ls $SNAPDIR/ 2> /dev/null ) ; do
 			$0 umount $s 2> /dev/null
 		done
 		# umount next3 filesystem 
@@ -574,10 +559,10 @@ case "$1" in
 	fi
 	# disable read-ahead if test read is enabled
 	test $test_read = 0 || blockdev --setra 0 $NEXT3DEV
-	for s in $( ls $SNAPDIR/ ) ; do
+	for s in $( ls $SNAPDIR/ 2> /dev/null ) ; do
 		$0 delete $s 2> /dev/null
 	done
-	for s in $( ls $SNAPDIR/ ) ; do
+	for s in $( ls $SNAPDIR/ 2> /dev/null ) ; do
 		$0 remove $s 2> /dev/null
 	done
 	for n in $( seq 0 $N ) ; do

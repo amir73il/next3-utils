@@ -12,11 +12,9 @@ HOWTO - Getting started with snapshots.
 INDEX - Reference to Next3 source files.
 BUGS - Open issues.
 TODO - Development road map.
-scripts/snapshot - Snapshots management script.
-patches/linux-2.6.x.y-next3_fs.patch - Adds a cloned Next3 file system to the kernel.
-patches/next3_snapshot-1.0.y.patch - Adds snapshot support to cloned Next3.
-patches/e2fsprogs-1.41.x-next3-1.0.y.patch - Adds snapshot awareness to e2fsprogs utils.
-patches/next3_snapshot_patch_series.tar.gz - Patch series of Next3 snapshot support sub-patches.
+Makefile - Download, build, install and test next3 kernel module and utils.
+bin/next3 - Next3 snapshots management script.
+bin/{fsck,mkfs,tunefs,lsattr/chattr}.next3 - Pre-compiled (for x86) e2fsprogs utils with next3 support patches.
 
 For more information, please visit the Next3 project page [http://sourceforge.net/apps/mediawiki/next3].
 Please post support questions to the Next3-users mailing list [https://lists.sourceforge.net/lists/listinfo/next3-users].

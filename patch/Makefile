@@ -81,8 +81,9 @@ N3_FILES=${INC_FILES} ${FS_FILES} ${JBD_FILES} ${MOD_FILES} ${NEW_FILES} ${OLD_F
 
 BIN=../bin
 DOC=../docs
-BIN_FILES=${BIN}/snapshot
-DOC_FILES=${DOC}/README ${DOC}/COPYING ${DOC}/INSTALL ${DOC}/HOWTO ${DOC}/CHANGELOG \
+BIN_FILES=${BIN}/next3 ${BIN}/fsck.next3 ${BIN}/mkfs.next3 ${BIN}/tunefs.next3 \
+	  ${BIN}/lsattr.next3 ${BIN}/chattr.next3
+RELEASE_FILES=../Makefile ${DOC}/README ${DOC}/COPYING ${DOC}/INSTALL ${DOC}/HOWTO ${DOC}/CHANGELOG \
 	  ${DOC}/INDEX ${DOC}/BUGS ${DOC}/TODO
 
 all: next3
@@ -115,15 +116,13 @@ ${N3_PATCH}~:
 	(echo "The next3_snapshot patch aggregates all next3_snapshot_X sub-patches and next3_snapshot_X_Y sub-sub-patches." ; echo ) >> $@
 
 release:
-	rm -rf ${N3_RELEASE}
-	mkdir -p ${N3_RELEASE}/scripts
-	cp ${DOC_FILES} ${N3_RELEASE}
-	cp ${BIN_FILES} ${N3_RELEASE}/scripts
-	mkdir -p ${N3_RELEASE}/patches
-	cp ${E2FS_PATCH} ${N3_RELEASE}/patches
-	cp ${N3_BASEPATCH} ${N3_RELEASE}/patches
-	cp ${N3_PATCH} ${N3_RELEASE}/patches
+	mkdir -p ${N3_RELEASE}/bin
+	install -m 644 ${RELEASE_FILES} ${N3_RELEASE}
+	install -m 755 ${BIN_FILES} ${N3_RELEASE}/bin || \
+		(cp -f ${E2FS_PKG}/${E2FS}.tar.gz ${E2FS_PATCH} ${N3_RELEASE} && \
+		make -C ${N3_RELEASE} e2fsprogs && rm -rf ${N3_RELEASE}/${E2FS}*)
 	cd ${RELEASE} ; tar cfz ${N3_TARBALL} ${N3_PKGNAME}
+	cp -f ${DOC}/wiki/Changelog ${RELEASE}
 
 ${N3_BASEPATCH}~:
 	@echo "Adds a cloned Next3 file system to the kernel." > $@

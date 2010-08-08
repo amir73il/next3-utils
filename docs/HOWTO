@@ -8,74 +8,43 @@ For instructions how to build and install next3 see INSTALL file.
 Getting started with snapshots:
 ===============================
 
-1. Configure script parameters
-==============================
-Run the "snapshot config" command with 3 parameters:
-<block-device>: the block device to format as next3
-<mount-point>: the mount point to mount next3
-<volume-name>: descriptive name for the volume
+1. Setup a next3 filesystem
+===========================
+Run the "next3 mkfs" command to create a new next3 filesystem.
 
-~ # snapshot config /dev/1/vol1 /var/vol/1 vol1
-export ROOTDEV=/dev/1/vol1
-export ROOTDIR=/var/vol/1
-export SNAPDIR=/var/vol/1/.snapshots
-export VOL=1
-
-The .snapshot.conf file will be created in your home and current directory
-and will be used by the script from now on.
-
-
-2. Setup a next3 volume
-=======================
-Run the "snapshot mkfs" command to format the volume as next3.
-
-~ # snapshot mkfs
-mke2fs 1.41.9-next3-1.0.8 (22-Feb-2010)
+# next3 mkfs /dev/1/vol1
+mke2fs 1.41.9-next3-1.0.12 (25-Jul-2010)
 ...
-kjournald starting.  Commit interval 5 seconds
-NEXT3 FS on dm-0, internal journal
-NEXT3-fs: mounted filesystem with ordered data mode.
-# mount
+# mount -t next3 /dev/1/vol1 /var/vol/1
+
+The format will fail if the filesystem is smaller than 4G.
+
+Alternatively, run the "next3 on" command to convert an existing ext3 filesystem to next3.
+
+# umount /var/vol/1
+# next3 on /dev/1/vol1
+tune2fs 1.41.9-next3-1.0.12 (25-Jul-2010)
 ...
-/dev/1/vol1 on /var/vol/1 type next3 (rw,noatime,user_xattr,acl,data=ordered)
+snapshot feature added to /dev/1/vol1
+.
+# mount -t next3 /dev/1/vol1 /var/vol/1
 
-The format will fail if the volume is smaller than 4G.
-
-Alternatively, run the "snapshot install" command to convert an existing ext3 volume to next3.
-
-~ # mount
-...
-/dev/1/vol1 on /var/vol/1 type ext3 (rw,noatime,user_xattr,acl,data=ordered)
-
-~ # snapshot install
-tune2fs 1.41.9-next3-1.0.8 (22-Feb-2010)
-...
-kjournald starting.  Commit interval 5 seconds
-NEXT3 FS on dm-0, internal journal
-NEXT3-fs: mounted filesystem with ordered data mode.
-~ # mount
-...
-/dev/1/vol1 on /var/vol/1 type next3 (rw,noatime,user_xattr,acl,data=ordered)
-
-The conversion will fail if the volume is smaller than the 4G
-or if the existing ext3 volume has a block size other than 4K.
+The conversion will fail if the filesystem is smaller than the 4G
+or if the existing ext3 filesystem has a block size other than 4K.
 It is recommended to remove the journal before converting to next3.
 
-3. Take a snapshot
+2. Take a snapshot
 ==================
-To take a snapshot named "Monday", use the command "snapshot take Monday".
-The snapshot "Monday" will be mounted with read-only access.
-To view the status of current snapshots, use the command "snapshot status".
+To take a snapshot named "Monday", use the command "next3 take Monday".
+To view the status of current snapshots, use the command "next3 stat".
 
-~ # snapshot take Monday
-Taking snapshot Monday
+# next3 take Monday
+snapshot /var/vol/1@Monday was created
 .
-~ # snapshot status
-Mounted snapshots:
+# next3 stat
+Mounted next3 filesystem and snapshots:
 Filesystem           1K-blocks      Used Available Use% Mounted on
 /dev/1/vol1          480713424    203016 456091492   0% /var/vol/1
-/dev/snapshots/Monday/1
-                     480713424    203016 456091492   0% /var/vol/snapshots/Monday/1
 .
 Snapshots list:
 id inode attributes disk-usage mtime filename
@@ -84,13 +53,13 @@ id inode attributes disk-usage mtime filename
 .
 
 
-4. Mount snapshots
+3. Mount snapshots
 ==================
-After reboot, the snapshots are still functional, but they are not mounted automatically.
-To mount all snapshots after reboot, use the command "snapshot mount".
+To mount the snapshot Monday, use the command "next3 mount Monday".
+The snapshot will be mounted at "<next3-root>@Monday" with read-only access.
 
-~ # snapshot status
-Mounted snapshots:
+# next3 stat
+Mounted next3 filesystem and snapshots:
 Filesystem           1K-blocks      Used Available Use% Mounted on
 /dev/1/vol1          480713424    203020 456091488   0% /var/vol/1
 .
@@ -99,16 +68,15 @@ id inode attributes disk-usage mtime filename
 ---------------------------------------------
 1 21184514 S-a----- 176.0K Feb 9 18:51 /var/vol/1/.snapshots/Monday
 .
-~ # snapshot mount
-snapshot-debug = 1
-mount: mounting /dev/1/vol1 on /var/vol/1 failed: Device or resource busy
-snapshot: snapshot (1) enabled
-~ # snapshot status
-Mounted snapshots:
+# next3 mount Monday
+snapshot /var/vol/1@Monday is mounted
+.
+# next3 stat
+Mounted next3 filesystem and snapshots:
 Filesystem           1K-blocks      Used Available Use% Mounted on
 /dev/1/vol1          480713424    203020 456091488   0% /var/vol/1
-/dev/snapshots/Monday/1
-                     480713424    203016 456091492   0% /var/vol/snapshots/Monday/1
+/var/vol/1/.snapshots/Monday
+                     480713424    203016 456091492   0% /var/vol/1@Monday
 .
 Snapshots list:
 id inode attributes disk-usage mtime filename
@@ -117,22 +85,17 @@ id inode attributes disk-usage mtime filename
 .
 
 
-5. Delete a snapshot
+4. Delete a snapshot
 ====================
-Finally, to delete snapshot Monday, use the command "snapshot delete Monday".
-But first you must make sure that the snapshot is not mounted.
-To un-mount Monday, use the command "snapshot umount Monday".
+Finally, to delete snapshot Monday, use the command "next3 delete Monday".
 
-~ # snapshot debug 1
-snapshot-debug = 1
-~ # snapshot umount Monday
-snapshot: snapshot (1) disabled
-~ # snapshot remove Monday
-snapshot: snapshot (1) marked for deletion
-snapshot: snapshot (1) deactivated
-snapshot: snapshot (1) deleted
-~ # snapshot status
-Mounted snapshots:
+# next3 delete Monday
+snapshot /var/vol/1@Monday was unmounted
+.
+snapshot /var/vol/1@Monday is deleted
+.
+# next3 stat
+Mounted next3 filesystem and snapshots:
 Filesystem           1K-blocks      Used Available Use% Mounted on
 /dev/1/vol1          480713424    202844 456091664   0% /var/vol/1
 .
@@ -143,11 +106,11 @@ id inode attributes disk-usage mtime filename
 .
 
 
-6. What else?
+5. What else?
 =============
 A few more useful commands:
-"snapshot help <cmd>" - display help on snapshot commands
-"snapshot debug <n>" - set snapshot debug level (default=1)
-"snapshot tests" - runs a few simple sanity tests
+"next3 help <cmd>" - display help on next3 commands
+"next3 debug <n>" - set next3 debug level (default=1)
+"next3 tests" - runs a few simple sanity tests
 
 

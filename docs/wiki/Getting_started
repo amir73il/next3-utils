@@ -1,24 +1,73 @@
-=Install Next3=
-This section contains instructions for installing the [[Next3 patches]].
+=Install next3=
+This section contains instructions for installing the next3 kernel module and utils.
 
-==Add Next3 file system to the Linux kernel==
-Get the Linux kernel sources and apply the next3 kernel patches:
+The installer was tested on Ubuntu 9.10 and 10.4 distributions and on x86 and x86_64 machines,
+but should work on any distribution with kernel version between 2.6.27 and 2.6.32 and on any machine.
 
+Support for other kernel versions will be provided later on or per demand.
+
+==Download and build next3 kernel module and utils==
+Download the next3 package from the next3 project [http://sourceforge.net/projects/next3/files/ download page].
+
+The next3 kernel module has to match the kernel version on your system,
+so the next3 Makefile detects your kernel version and tries to download
+matching patches from the next3 website.
+
+Pre-compiled binaries (for x86) of the patched e2fsprogs utils are included in the next3 package.
+If those binaries fail to execute, the Makefile will build the utils for your system.
+
+To build the next3 kernel module and optionally the next3 utils, run:
 <pre>
-# tar xfj linux-2.6.31.11.tar.bz2
-# cd linux-2.6.31.11
-# patch -p1 < ../linux-2.6.31.y-next3_fs.patch
-# patch -p1 < ../next3_snapshot-1.0.x.patch
+# tar xfz next3-1.0.12.tar.gz
+# cd next3-1.0.12
+# make
+downloading next3 patches for kernel 2.6.29.3...
+...
+make -C /lib/modules/2.6.29.3/build M=/home/amir/next3-1.0.12/next3 modules
+...
+  LD [M]  /home/amir/next3-1.0.12/next3/next3.ko
+make[1]: Leaving directory `/usr/src/kernels/linux-2.6.29.3'
+bin/mkfs.next3 -V || make e2fsprogs
+mke2fs 1.41.9-next3-1.0.12 (25-Jul-2010)
+        Using EXT2FS Library version 1.41.9-next3-1.0.12
+bin/fsck.next3 -V
+e2fsck 1.41.9-next3-1.0.12 (25-Jul-2010)
+        Using EXT2FS Library version 1.41.9-next3-1.0.12, 25-Jul-2010
 </pre>
 
-Build the Linux kernel and select the following configuration options to build Next3 statically or as a loadable module:
-* NEXT3_FS [y/m]
-* NEXT3_FS_DEBUG [y]
+==Test next3 snapshots==
+At this point, you can test next3 snapshots without installing the module and utils on your system.
+To create a next3 filesystem on an image file and test snapshots, run:
+<pre>
+# sudo make test
+grep next3 /proc/modules || /sbin/insmod next3/next3.ko
+(test -f test.img && (bin/tunefs.next3 -l test.img | grep UUID)) || ( touch test.img ; yes | bin/mkfs.next3 test.img 1048576 )
+mke2fs 1.41.9-next3-1.0.12 (25-Jul-2010)
+...
+Running snapshot test 1:
+------------------------
+...
+</pre>
 
-Install the new kernel and reboot your machine (or better yet, reboot after the next step).
+==Install next3 kernel module and utils==
+To install the next3 kernel module and utils on your system, run:
+<pre>
+# sudo make install
+mkdir -p /lib/modules/2.6.29.3/fs/next3
+install -m 644 next3/next3.ko /lib/modules/2.6.29.3/fs/next3
+/sbin/depmod -a
+/sbin/modprobe next3
+install bin/next3 /sbin
+install bin/fsck.next3 /sbin
+install bin/mkfs.next3 /sbin
+install bin/tunefs.next3 /sbin
+install bin/lsattr.next3 /sbin
+install bin/chattr.next3 /sbin
+</pre>
+
 
 ==Increase the kernel limit on number of loop devices==
-Next3 uses loop devices to mount snapshots, so if you want to be able to mount more than 8 snapshots,
+Next3 uses loop devices to mount snapshots, so if you want to be able to mount more than 8 snapshots at a time,
 you need to increase the kernel limit on number of loop devices.
 
 Following are some tips on how to do this:
@@ -26,103 +75,51 @@ Following are some tips on how to do this:
 * Add 'max_loop=256' to boot parameters and reboot (if loop device is built statically).
 * Follow this old [http://tldp.org/HOWTO/CDServer-HOWTO/addloops.html HOWTO]
 
-==Add Next3 support to e2fsprogs==
-Get the e2fsprogs sources and apply the next3 patch:
-
-<pre>
-# tar xfz e2fsprogs-1.41.9.tar.gz
-# cd e2fsprogs-1.41.9
-# patch -p1 < ../e2fsprogs-1.41.9-next3-1.0.x.patch
-</pre>
-
-Build and install e2fsprogs.
-
-
-==Install the snapshot management script==
-Copy the 'snapshot' script to your system's binaries path:
-
-<pre>
-# install -m 755 snapshot /usr/sbin
-</pre>
-
 =Getting started with snapshots=
-Please follow the steps below to configure a Next3 volume and start using snapshots.
+Please follow the steps below to setup a next3 filesystem and start using snapshots.
 
-==Configure script parameters==
-The 'snapshot' script is used to manage snapshots on a single Next3 volume.
-Run the "snapshot config" command with 3 parameters:
-* <block-device>: the block device to format as next3
-* <mount-point>: the mount point to mount next3
-* <volume-name>: descriptive name for the volume
+==Setup a next3 filesystem==
+Run the "next3 mkfs" command to create a new next3 filesystem.
 
 Example:
 <pre>
-# snapshot config /dev/1/vol1 /var/vol/1 vol1
-export ROOTDEV=/dev/1/vol1
-export ROOTDIR=/var/vol/1
-export SNAPDIR=/var/vol/1/.snapshots
-export VOL=1
+# next3 mkfs /dev/1/vol1
+mke2fs 1.41.9-next3-1.0.12 (25-Jul-2010)
+...
+# mount -t next3 /dev/1/vol1 /var/vol/1
 </pre>
 
-Copies of the '.snapshot.conf' file will be created in your home directory and in the current directory
-and will be used by the script from now on.
+<font color=red>The format will fail if the filesystem is smaller than 4G.</font>
 
-To manage multiple Next3 volumes, run the "snapshot config" command and subsequent snapshot control commands from the root of each Next3 volume.
-
-==Setup a next3 volume==
-Run the "snapshot mkfs" command to format and mount the volume as next3.
+Alternatively, run the "next3 on" command to convert an existing ext3 filesystem to next3.
 
 Example:
 <pre>
-# snapshot mkfs
-mke2fs 1.41.9-next3-1.0.8 (22-Feb-2010)
+# umount /var/vol/1
+# next3 on /dev/1/vol1
+tune2fs 1.41.9-next3-1.0.12 (25-Jul-2010)
 ...
-kjournald starting.  Commit interval 5 seconds 
-NEXT3 FS on dm-0, internal journal
-NEXT3-fs: mounted filesystem with ordered data mode.
-# mount
-...
-/dev/1/vol1 on /var/vol/1 type next3 (rw,noatime,user_xattr,acl,data=ordered)
+snapshot feature added to /dev/1/vol1
+.
+# mount -t next3 /dev/1/vol1 /var/vol/1
+
 </pre>
 
-<font color=red>The format will fail if the volume is smaller than 4G.</font>
-
-Alternatively, run the "snapshot install" command to convert an existing ext3 volume to next3.
-
-Example:
-<pre>
-# mount 
-...
-/dev/1/vol1 on /var/vol/1 type ext3 (rw,noatime,user_xattr,acl,data=ordered)
-# snapshot install
-tune2fs 1.41.9-next3-1.0.8 (22-Feb-2010)
-... 
-kjournald starting.  Commit interval 5 seconds
-NEXT3 FS on dm-0, internal journal
-NEXT3-fs: mounted filesystem with ordered data mode.
-# mount
-...
-/dev/1/vol1 on /var/vol/1 type next3 (rw,noatime,user_xattr,acl,data=ordered)
-</pre>
-
-<font color=red>The conversion will fail if the volume is smaller than 4G or if the existing ext3 volume has a block size other than 4K. It is recommended to remove the journal before converting to next3.</font>
+<font color=red>The conversion will fail if the filesystem is smaller than 4G or if the existing ext3 filesystem has a block size other than 4K. It is recommended to remove the journal before converting to next3.</font>
 
 ==Take a snapshot==
-To take a snapshot named 'Monday', use the command "snapshot take Monday".
-The snapshot 'Monday' will be mounted with read-only access.
-To view the status of current snapshots, use the command "snapshot status".
+To take a snapshot named 'Monday', use the command "next3 take Monday".
+To view the status of current snapshots, use the command "next3 stat".
 
 Example:
 <pre>
-# snapshot take Monday
-Taking snapshot Monday
+# next3 take Monday
+snapshot /var/vol/1@Monday was created
 .
-# snapshot status
-Mounted snapshots:
+# next3 stat
+Mounted next3 filesystem and snapshots:
 Filesystem           1K-blocks      Used Available Use% Mounted on
 /dev/1/vol1          480713424    203016 456091492   0% /var/vol/1
-/dev/snapshots/Monday/1
-                     480713424    203016 456091492   0% /var/vol/snapshots/Monday/1
 .
 Snapshots list:
 id inode attributes disk-usage mtime filename
@@ -132,13 +129,12 @@ id inode attributes disk-usage mtime filename
 </pre>
 
 ==Mount a snapshot==
-After reboot, the snapshots are still functional, but they are not mounted automatically.
-To mount snapshot 'Monday', use the command "snapshot mount Monday".
-To mount all snapshots, use the command "snapshot mount".
+To mount snapshot 'Monday', use the command "next3 mount Monday".
+The snapshot will be mounted at "<next3-root>@Monday" with read-only access.
 
 <pre>
-# snapshot status
-Mounted snapshots:
+# next3 stat
+Mounted next3 filesystem and snapshots:
 Filesystem           1K-blocks      Used Available Use% Mounted on
 /dev/1/vol1          480713424    203020 456091488   0% /var/vol/1
 .
@@ -147,16 +143,15 @@ id inode attributes disk-usage mtime filename
 ---------------------------------------------
 1 21184514 S-a----- 176.0K Feb 9 18:51 /var/vol/1/.snapshots/Monday
 .
-# snapshot mount
-snapshot-debug = 1
-mount: mounting /dev/1/vol1 on /var/vol/1 failed: Device or resource busy
-snapshot: snapshot (1) enabled
-# snapshot status
-Mounted snapshots:
+# next3 mount Monday
+snapshot /var/vol/1@Monday is mounted
+.
+# next3 stat
+Mounted next3 filesystem and snapshots:
 Filesystem           1K-blocks      Used Available Use% Mounted on
 /dev/1/vol1          480713424    203020 456091488   0% /var/vol/1
-/dev/snapshots/Monday/1
-                     480713424    203016 456091492   0% /var/vol/snapshots/Monday/1
+/var/vol/1/.snapshots/Monday
+                     480713424    203016 456091492   0% /var/vol/1@Monday
 .
 Snapshots list:
 id inode attributes disk-usage mtime filename
@@ -166,21 +161,16 @@ id inode attributes disk-usage mtime filename
 </pre>
 
 ==Delete a snapshot==
-Finally, to delete snapshot 'Monday', use the command "snapshot delete Monday".
-But first you must make sure that the snapshot is not mounted.
-To un-mount snapshot 'Monday', use the command "snapshot umount Monday".
+Finally, to delete snapshot 'Monday', use the command "next3 delete Monday".
 
 <pre>
-# snapshot debug 1
-snapshot-debug = 1
-# snapshot umount Monday
-snapshot: snapshot (1) disabled
-# snapshot remove Monday
-snapshot: snapshot (1) marked for deletion
-snapshot: snapshot (1) deactivated
-snapshot: snapshot (1) deleted
-# snapshot status
-Mounted snapshots:
+~ # next3 delete Monday
+snapshot /var/vol/1@Monday was unmounted
+.
+snapshot /var/vol/1@Monday is deleted
+.
+~ # next3 stat
+Mounted next3 filesystem and snapshots:
 Filesystem           1K-blocks      Used Available Use% Mounted on
 /dev/1/vol1          480713424    202844 456091664   0% /var/vol/1
 .
@@ -193,6 +183,6 @@ id inode attributes disk-usage mtime filename
 
 ==What else?==
 A few more useful commands:
-* "snapshot help <cmd>" - display help on snapshot commands.
-* "snapshot debug <n>" - set snapshot debug level (default=1).
-* "snapshot tests" - runs a few simple sanity tests.
+* "next3 help <cmd>" - display help on next3 commands.
+* "next3 debug <n>" - set next3 debug level (default=1).
+* "next3 tests" - runs a few simple sanity tests.
