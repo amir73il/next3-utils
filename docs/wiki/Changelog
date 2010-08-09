@@ -1,5 +1,6 @@
 ==v1.0.12 (Aug 2010)==
-* Installer supports several kernel versions.
+* Installer supports kernel versions 2.6.27-2.6.33.
+* Tested on Ubuntu desktop releases 9.10 and 10.4.
 * Build next3 as a stand-alone kernel module.
 * Support 16TB volume snapshots.
 * Snapshot image starts at offset 0 of snapshot file.

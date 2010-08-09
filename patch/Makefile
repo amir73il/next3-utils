@@ -122,7 +122,7 @@ release:
 		(cp -f ${E2FS_PKG}/${E2FS}.tar.gz ${E2FS_PATCH} ${N3_RELEASE} && \
 		make -C ${N3_RELEASE} e2fsprogs && rm -rf ${N3_RELEASE}/${E2FS}*)
 	cd ${RELEASE} ; tar cfz ${N3_TARBALL} ${N3_PKGNAME}
-	cp -f ${DOC}/wiki/Changelog ${RELEASE}
+	cp -f ${DOC}/wiki/Changelog ${RELEASE}/Release-notes.txt
 
 ${N3_BASEPATCH}~:
 	@echo "Adds a cloned Next3 file system to the kernel." > $@

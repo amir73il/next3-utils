@@ -338,7 +338,7 @@ The location of exclude bitmap blocks is read on mount time and cached
 in the group descriptors.  The exclude inode is extended upon online
 and offline resize operations when block groups are added.
 
-====next3_snapshot_exclude_inode_old.patch====
+===next3_snapshot_exclude_inode_old.patch===
 
 next3: snapshot exclude - migrate old exclude inode
 
@@ -380,4 +380,3 @@ next3: snapshot cleanup - merge shrunk snapshots
 Move blocks of deleted and shrunk snapshots to an older non-deleted
 and disabled snapshot.  Merging helps removing snapshots from list
 while older snapshots are not currently in use (disabled).
-

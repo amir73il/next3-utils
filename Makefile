@@ -39,8 +39,7 @@ test:
 	/sbin/rmmod next3
 	
 next3: ${BASE_PATCH} ${SNAPSHOT_PATCH}
-	@patch -v > /dev/null || \
-		echo "Please install the patch utility, i.e.: [apt-get|yum] install patch"
+	@patch -v || echo "Please install the patch utility, i.e.: sudo apt-get install patch"
 	patch -p2 < ${BASE_PATCH}
 	patch -p2 < ${SNAPSHOT_PATCH}
 
@@ -61,8 +60,7 @@ e2fsprogs: ${E2FSPROGS}
 	install -T ${E2FSPROGS}/misc/chattr bin/chattr.next3
 
 ${E2FSPROGS}: ${E2FSPROGS}.tar.gz ${E2FSPROGS_PATCH}
-	@patch -v > /dev/null || \
-		echo "Please install the patch utility, i.e.: [apt-get|yum] install patch"
+	@patch -v || echo "Please install the patch utility, i.e.: sudo apt-get install patch"
 	tar xfz ${E2FSPROGS}.tar.gz
 	cat ${E2FSPROGS_PATCH} | patch -p1 -d $@
 	cd ${E2FSPROGS} ; ./configure \

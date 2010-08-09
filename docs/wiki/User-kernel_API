@@ -1,57 +1,57 @@
-This page was created to help simplifying the user-kernel API for Next3 snapshots, according to suggestion from Ted T'so.
+This page was created to help simplifying the user-kernel API for Next3 snapshots, according to suggestions of Ted T'so.
 
 == Taking a snapshot ==
-Script command: "snapshot take <name>"
+Script command: "next3 take <name>"
 
 Current API:
 <pre>
-# chattr +x <snapdir>
-# touch <snapdir>/<snapfile>
-# chattr -X +S <snapdir>/<snapfile>
+# chattr +x <mntdir>/.snapshots
+# touch <mntdir>/.snapshots/<snapfile>
+# chattr -X +S <mntdir>/.snapshots/<snapfile>
 </pre>
 
-Simlified API:
+Simplified API:
 <pre>
-# chattr +x <snapdir>
-# touch <snapdir>/<snapfile>
+# touch <mntdir>/.snapshots/<snapfile>
 </pre>
+
+'''<font color=red>TODO: Create .snapshots directory on mkfs.next3.</font>'''
 
 '''<font color=red>TODO: Invoke snapshot take from create command.</font>'''
 
 == Mounting a snapshot ==
-Script command: "snapshot mount <name>"
+Script command: "next3 mount <name>"
 
 Current API:
 <pre>
-# chattr -X +n <snapdir>/<snapfile>
-# losetup -r <loopdev> <snapdir>/<snapfile>
-# mount -r -t ext2 <loopdev> <snapmnt>
+# chattr -X +n <mntdir>/.snapshots/<snapfile>
+# mount -r -t ext2 -o loop <mntdir>/.snapshots/<snapfile> <snapmnt>
 </pre>
 
 Simplified API:
 <pre>
-# mount -r -t ext2 -o loop <snapdir>/<snapfile> <snapmnt>
+# mount -r -o loop <mntdir>/.snapshots/<snapfile> <snapmnt>
 </pre>
 
 '''<font color=red>TODO: Auto-enable snapshot on snapshot file open.</font>'''
 
-'''<font color=red>TODO: Translate snapshot image offset in next3_snapshot_readpage().</font>'''
+'''<font color=red>TODO: Suppress JBD I/O errors on unmount of read-only ext3.</font>'''
 
 == Deleting a snapshot ==
-Script command: "snapshot delete <name>"
+Script command: "next3 remove <name>"
 
 Current API:
 <pre>
-# umount <snapmnt>
-# chattr -X -n <snapdir>/<snapfile>
-# chattr -X -S <snapdir>/<snapfile>
-# rm <snapdir>/<snapfile> (may fail if snapshot file is in use)
+# umount -d <snapmnt>
+# chattr -X -n <mntdir>/.snapshots>/<snapfile>
+# chattr -X -S <mntdir>/.snapshots/<snapfile>
+# rm <mntdir>/.snapshots/<snapfile> (may fail if snapshot file is in use)
 </pre>
 
 Simplified API:
 <pre>
 # umount <snapmnt>
-# rm <snapdir>/<snapfile> (queue snapshot for deletion and return EBUSY)
+# rm <mntdir>/.snapshots/<snapfile> (queue snapshot for deletion and return EBUSY if snapshot file is in use)
 </pre>
 
 '''<font color=red>TODO: Auto-disable snapshot on last snapshot file close.</font>'''
@@ -59,9 +59,16 @@ Simplified API:
 '''<font color=red>TODO: Invoke snapshot delete from unlink command.</font>'''
 
 == Listing snapshots ==
-Script command: "snapshot status"
+Script command: "next3 stat"
 
 Current API:
 <pre>
-# lsattr -X <snapdir>
+# lsattr -X <mntdir>/.snapshots
 </pre>
+
+New API:
+<pre>
+# lssnap <mntdir>/.snapshots
+</pre>
+
+'''<font color=red>TODO: Install link lssnap->lsattr on e2fsprogs install.</font>'''

@@ -20,7 +20,7 @@ The following files have been changed after they were cloned to support the next
 *fs/next3/Kconfig - add next3 snapshot support kernel configuration option.
 *fs/next3/Makefile - add next3 snapshot files to next3 file system build.
 *fs/next3/balloc.c - add snapshot delete hooks, reserve free blocks for snapshot use and update exclude bitmap on snapshot file block allocations/deletes.
-*fs/next3/file.c - enforce snapshot file read-only access permissions.
+*fs/next3/file.c - enforce snapshot file read-only access permissions. 
 *fs/next3/inode.c - snapshot file address space read-only ops, data write hooks and implementation of special snapshot file map commands.
 *fs/next3/ioctl.c - entry point to snapshot control functions (by chattr -X).
 *fs/next3/namei.c - reuse orphan inode list functions for snapshot list manipulation and restrict unlink of snapshot files on list.
@@ -29,17 +29,16 @@ The following files have been changed after they were cloned to support the next
 *fs/next3/next3_jbd.h - add extra COW credits to all journal transactions.
 *fs/next3/next3.h - add snapshot fields to next3 on-disk structs and define snapshot file status flags.
 *fs/next3/next3_i.h - add snapshot fields to next3 in-memory inode struct.
-*fs/next3/next3_sb.h - add snapshot fields to next3 in-memory super block struct.
+*fs/next3/next3_sb.h - add snapshot fields to next3 in-memory super block struct. 
 
 ==Added Next3 snapshot files==
 The following files were added to the cloned next3 file system to implement the snapshot feature:
+*fs/next3/buffer.c - add tracked read functions.
 *fs/next3/snapshot.h - next3 snapshot macros and API.
 *fs/next3/snapshot.c - next3 snapshot block access and COW functions.
 *fs/next3/snapshot_ctl.c - next3 snapshot load, destroy and control functions.
 *fs/next3/snapshot_debug.h - next3 snapshot debug macros.
 *fs/next3/snapshot_debug.c - next3 snapshot debug functions.
-*fs/next3/buffer.c - add tracked read functions.
-
 
 
 

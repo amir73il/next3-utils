@@ -104,7 +104,7 @@ if [ -z $NEXT3DEV ] && [ -z $NEXT3MNT ] ; then
 		. ./$CONFFILE
 	elif [ -f ~/$CONFFILE ] ; then
 		. ~/$CONFFILE
-	elif [ $( mount -t next3 | wc -l ) == 1 ] ; then
+	elif [ $( mount -t next3 | wc -l ) = 1 ] ; then
 		# exactly one mounted next3 filesystem found - use it
 		NEXT3DEV=$( mount -t next3 | ( read a b c d ; echo $a ) )
 		NEXT3MNT=$( mount -t next3 | ( read a b c d ; echo $c ) )

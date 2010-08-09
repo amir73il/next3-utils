@@ -13,5 +13,5 @@ Adds snapshot awareness to e2fsck, mke2fs, dumpe2fs, debugfs, resize2fs, tune2fs
 
 There are no snapshot COW operations during offline processing, only restrictions on changing a file system with snapshots offline.
 
-==snapshot script==
-The snapshot script uses patched e2fsprogs utils to manage Next3 snapshots and run snapshot tests.
+==next3 script==
+The next3 script uses patched e2fsprogs utils to manage next3 snapshots and run snapshot tests.
