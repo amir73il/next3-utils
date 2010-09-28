@@ -20,6 +20,7 @@ Developed by [http://www.ctera.com/ CTERA Networks], Next3 is licensed under the
 * [[Code documentation]]
 * [[On-disk format]]
 * [[User-kernel API]]
+* [[Ext4 snapshots TODO]]
 * [[Changelog]]
 * [[Known issues]]
 * [[License]]
@@ -27,7 +28,7 @@ Developed by [http://www.ctera.com/ CTERA Networks], Next3 is licensed under the
 == Source Code ==
 [[Next3 patches]] are available for download on the project [http://sourceforge.net/projects/next3/files/ download page].
 
-Please contact [mailto:next3@ctera.com CTERA] if you would like to contribute to the project by reviewing the patches.
+Please contact the project administrator if you would like to contribute to the project by reviewing the patches.
 
 == Beta Testing ==
 Next3 is being tested by a group of beta testers on an ARM platforms with 512MB RAM.
@@ -35,18 +36,19 @@ It has also undergone basic testing on X86.
 
 Please post bugs to the [https://lists.sourceforge.net/lists/listinfo/next3-devel next3-devel mailing list].
 
-Please contact [mailto:next3@ctera.com CTERA] if you would like to contribute to the project by testing on your platform.
+Please contact the project administrator if you would like to contribute to the project by testing on your platform.
 
 == Benchmarks ==
 [[Bonnie++]]
 
 Please post benchmark results to the [https://lists.sourceforge.net/lists/listinfo/next3-devel next3-devel mailing list].
 
-Please contact [mailto:next3@ctera.com CTERA] if you would like to contribute to the project by running benchmarks.
+Please contact the project administrator if you would like to contribute to the project by running benchmarks.
 
 == Help and support ==
 Please post support questions to the [https://lists.sourceforge.net/lists/listinfo/next3-users next3-users mailing list].
 
 Please post bugs and technical questions to the [https://lists.sourceforge.net/lists/listinfo/next3-devel next3-devel mailing list].
 
-Please contact [mailto:next3@ctera.com CTERA] if you would like to contribute to the project in any way.
+Please contact the project administrator if you would like to contribute to the project in any way.
+

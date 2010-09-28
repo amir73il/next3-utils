@@ -1,3 +1,10 @@
+v1.0.13-WIP
+-------
+???, 2010
+- fix sparse kernel checker warnings
+- fix exclude inode extending on online resize
+- fix snapshot blocks reservation
+
 v1.0.12
 -------
 Aug 8, 2010

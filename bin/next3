@@ -466,7 +466,7 @@ case "$1" in
 		echo "$0 dump: snapshot name is expected!"
 		exit 1
 	fi
-	if [ -f $SNAPDIR/$s ] ; then
+	if [ ! -f $SNAPDIR/$s ] ; then
 		echo "$0 dump: snapshot $S not found!"
 		exit 1
 	fi
@@ -646,7 +646,7 @@ case "$1" in
 		echo Remove test:
 		echo ------------
 		echo 'Truncating c.txt (to size 4)'
-		truncate $NEXT3MNT/C/c.txt -s 4
+		truncate -s 4 $NEXT3MNT/C/c.txt
 		echo 'Removing d.txt'
 		rm $NEXT3MNT/D/d.txt
 	  ;;
