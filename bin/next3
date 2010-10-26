@@ -285,11 +285,11 @@ case "$1" in
 	echo "id inode attributes disk-usage mtime filename"
 	echo "---------------------------------------------"
 	for s in $( ls -vr $SNAPDIR/* ) ; do
-		( echo -n "$( $LSSNAP -v -X $s ) " ; \
-		echo -n "$( du -h $s ) " ; \
-		echo -n "$( ls -lih --color=never $s ) " ; \
-		echo ) | ( read id attr a du b ino c d e f g mm dd tt fname h ; \
-				echo $id $ino $attr $du $mm $dd $tt $fname )
+		( echo "$( $LSSNAP -v -X $s ) " ; \
+			echo "$( du -h $s ) " ; \
+			echo "$( ls -lih --color=never $s ) " ) | \
+		( read id attr a ; read du b ; read ino c d e f g mm dd tt fname h ; \
+			echo $id $ino $attr $du $mm $dd $tt $fname )
 	done 2> /dev/null
 	echo .
 	;;
@@ -616,7 +616,7 @@ case "$1" in
 	echo Creating $n x $F files
 	cd $NEXT3MNT > /dev/null
 	for i in $( seq 1 $n ) ; do
-		dd if=/dev/urandom bs=1M count=$M of=$F.$i conv=notrunc 2> /dev/null || exit 1
+		dd if=/dev/urandom bs=1M count=$M of=$F.$i 2> /dev/null || exit 1
 		md5sum $F.$i || exit 1
 	done > md5list
 	cd - > /dev/null

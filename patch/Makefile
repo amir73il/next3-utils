@@ -17,14 +17,17 @@ E2FS_PKG?=../../pkg
 ifeq ($(KERNEL),2.6.27)
 LINUX=linux-2.6.27.7
 endif
-ifeq ($(KERNEL),2.6.29)
-LINUX=linux-2.6.29.3
-endif
 ifeq ($(KERNEL),2.6.31)
 LINUX?=linux-2.6.31.11
 endif
 ifeq ($(KERNEL),2.6.32)
 LINUX=linux-2.6.32.12
+endif
+ifeq ($(KERNEL),2.6.33)
+LINUX=linux-2.6.33.7
+endif
+ifeq ($(KERNEL),2.6.34)
+LINUX=linux-2.6.34.7
 endif
 ifeq ($(KERNEL),2.6.35)
 LINUX=linux-2.6.35.6
@@ -39,7 +42,7 @@ SIGNATURE=Amir Goldstein <amir73il@users.sf.net>
 SIGNEDOFF=Signed-off-by: ${SIGNATURE}
 DELIMITER="--------------------------------------------------------------------------------"
 
-#N3_VERSION=1.0.12
+N3_VERSION=1.0.13-rc1
 N3_VERSION?=${DATE}
 N3_PKGNAME=next3-${N3_VERSION}
 N3_TARBALL=${N3_PKGNAME}.tar.gz

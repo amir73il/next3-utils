@@ -1,9 +1,14 @@
-v1.0.13-WIP
+v1.0.13-rc1
 -------
-???, 2010
+Oct 12, 2010
+- installer supports kernel versions 2.6.31-2.6.35
+- tested on Ubuntu desktop releases 9.10-10.10
+- tested on mips64 platform
 - fix sparse kernel checker warnings
 - fix exclude inode extending on online resize
 - fix snapshot blocks reservation
+- fix loop device access beyond end of file
+- fix mount with data=writeback (untested feature)
 
 v1.0.12
 -------

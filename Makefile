@@ -1,4 +1,4 @@
-VER=1.0.12
+VER=1.0.13
 KERNEL?=${shell uname -r}
 MACH?=${shell uname -m}
 BASE_PATCH=next3_fs.module.patch
@@ -7,7 +7,8 @@ PWD:=${shell pwd}
 KDIR=/lib/modules/${KERNEL}/build
 INSTALL_DIR=/lib/modules/${KERNEL}/fs/next3
 E2FSPROGS=e2fsprogs-1.41.9
-E2FSPROGS_PATCH=${E2FSPROGS}-next3-${VER}.patch
+E2FSPROGS_VER=1.0.12
+E2FSPROGS_PATCH=${E2FSPROGS}-next3-${E2FSPROGS_VER}.patch
 
 all: module utils
 
@@ -82,11 +83,17 @@ clean:
 
 %.patch:
 	@echo downloading next3 patches for kernel ${KERNEL}...
-	@wget "http://next3.sf.net/cgi-bin/download?f=$@&v=${VER}&r=${KERNEL}&m=${MACH}"
+	# some wget support --trust-server-names, others don't
+	@wget --trust-server-names "http://next3.sf.net/cgi-bin/download?f=$@&v=${VER}&r=${KERNEL}&m=${MACH}" || \
+		wget "http://next3.sf.net/cgi-bin/download?f=$@&v=${VER}&r=${KERNEL}&m=${MACH}" || \
+		(echo "Sorry, $@ is not available for kernel ${KERNEL}. Please check http://next3.sf.net for new releases." && false)
 
 %.gz:
 	@echo downloading source package $@...
-	@wget "http://next3.sf.net/cgi-bin/download?f=$@&v=${VER}&r=${KERNEL}&m=${MACH}"
+	# some wget support --trust-server-names, others don't
+	@wget --trust-server-names "http://next3.sf.net/cgi-bin/download?f=$@&v=${VER}&r=${KERNEL}&m=${MACH}" || \
+		wget "http://next3.sf.net/cgi-bin/download?f=$@&v=${VER}&r=${KERNEL}&m=${MACH}" || \
+		(echo "Sorry, $@ is not available for kernel ${KERNEL}. Please check http://next3.sf.net for new releases." && false)
 
 
 .PHONY: distclean

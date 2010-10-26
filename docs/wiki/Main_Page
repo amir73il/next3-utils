@@ -12,18 +12,24 @@ Developed by [http://www.ctera.com/ CTERA Networks], Next3 is licensed under the
 
 == Documentation ==
 
+=== Users ===
+
 * [[FAQ]]
 * [[Getting started]]
 * [[Moving from Ext3 and back]]
-* [http://sourceforge.net/projects/next3/files/Next3_Snapshots.pdf/download Snapshots design]
+* [[Changelog]]
+* [[Known issues]]
+* [[License]]
+
+=== Developers ===
+
+* [[Technical overview]]
+* [http://sourceforge.net/projects/next3/files/Next3_Snapshots.pdf/download Snapshots design (PDF format)]
 * [[Diagrams]]
 * [[Code documentation]]
 * [[On-disk format]]
 * [[User-kernel API]]
 * [[Ext4 snapshots TODO]]
-* [[Changelog]]
-* [[Known issues]]
-* [[License]]
 
 == Source Code ==
 [[Next3 patches]] are available for download on the project [http://sourceforge.net/projects/next3/files/ download page].
@@ -51,4 +57,3 @@ Please post support questions to the [https://lists.sourceforge.net/lists/listin
 Please post bugs and technical questions to the [https://lists.sourceforge.net/lists/listinfo/next3-devel next3-devel mailing list].
 
 Please contact the project administrator if you would like to contribute to the project in any way.
-

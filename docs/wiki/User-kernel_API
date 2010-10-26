@@ -1,5 +1,7 @@
 This page was created to help simplifying the user-kernel API for Next3 snapshots, according to suggestions of Ted T'so.
 
+For internal kernel API, see [[Code documentation#Snapshot kernel API]].
+
 == Taking a snapshot ==
 Script command: "next3 take <name>"
 

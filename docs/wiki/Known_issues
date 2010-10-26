@@ -10,8 +10,9 @@ The following features have not been tested in Next3 or have been disabled due t
 The following issues may cause performance degradation and should be further optimized:
 * Move-on-write with random in-place writes to a large file causes file fragmentation and degrades sequential read performance.
 * Next3 with N snapshots may use up to N+1 address spaces and N+1 pages to map the same unmodified block.
+* Next3 uses a single mutex object to protect from concurrent move/copy-on-write operations, so it will not scale well to workload of high concurrency and systems with multiple CPU's. That said, for most workloads, move/copy-on-write operations become less frequent as the snapshot ages, so performance degradation should only be observed shortly after taking a snapshot.
 
 ==Worst case scenarios==
 Next3 should handle most use cases properly, but some extreme use cases will cause file system failures:
-* Disk space reservation for metadata COW is based on average file system metadata/data ratio. A Next3 volume full with metadata (directories, special inodes, etc.) may abort with "snapshot out of space" error.
+* Disk space reservation for metadata COW is based on average file system metadata/data ratio. A Next3 volume full with metadata (directories, hard links, special inodes, etc.) may abort with "snapshot out of space" error.
 * Transaction buffer credits reservation for COW operations is based on average COW overhead. Block allocation races on a full Next3 volume may result in failures to claim found blocks. Such failures cause extra COW operations and may result in "out of buffer credits" OOPS.

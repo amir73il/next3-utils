@@ -44,6 +44,49 @@ The following files were added to the cloned next3 file system to implement the 
 
 ----
 
+=Snapshot kernel API=
+Following is a list of kernel API's added or modified by the [[Next3 patches]].
+
+The interaction between the snapshot sub-system and the filesystem is mostly, but not exclusively, through these API's.
+
+==Snapshot constructor/destructor==
+* next3_snapshot_load() - load snapshot list on filesystem mount.
+* next3_snapshot_destroy() - free snapshot resources on filesystem umount.
+
+==Snapshot control API==
+The following functions are implemented in snapshot_ctl.c file and are called by [[User-kernel API]] functions to perform various snapshot administrative tasks.
+* next3_snapshot_create() - allocate resources from a new snapshot.
+* next3_snapshot_take() - take a current snapshot of the filesystem.
+* next3_snapshot_enable() - enable user (read-only) access to snapshot.
+* next3_snapshot_disable() - disable user access to snapshot.
+* next3_snapshot_delete() - queue snapshot for deletion.
+* next3_snapshot_update() - update snapshots status and cleanup deleted snapshots.
+
+==Snapshot block access API==
+The following functions are called from various filesystem hooks to monitor the modification of snapshot protected blocks.
+
+Some of the API names resemble the corresponding JBD block access API, which they are called from.
+* next3_snapshot_get_write_access() - notify snapshot before modifying a metadata block.
+* next3_snapshot_get_undo_access() - notify snapshot before modifying a block bitmap block.
+* next3_snapshot_get_create_access() - notify snapshot before writing a new metadata block.
+* next3_snapshot_get_move_access() - notify snapshot before modifying data blocks.
+* next3_snapshot_get_delete_access() - notify snapshot before deleting blocks.
+
+==Snapshot file VFS API==
+* next3_file_open() - grant restricted (read-only) access to snapshot files.
+* next3_snapshot_readpage() - implementation of the VFS readpage operation on snapshot files.
+* next3_no_writepage() - NOP implementation of the VFS writepage operation on snapshot files.
+
+==Extended filesystem API==
+The following filesystem API's where extended, in order to accommodate the special snapshot files and implement new snapshot block operation.
+* next3_free_branches_cow() - extends next3_free_branches() API to prune inode blocks selectively (according to COW bitmap). Several helper functions, such as next3_free_data(), where extended in a similar manner.
+* next3_move_branches() - moves block from one (snapshot) file to another.
+* next3_get_blocks_handle() - the boolean 'create' input argument was extended to pass special snapshot file block allocation commands such as 'move existing block' and 'allocate COW bitmap block'. Several helper functions, such as next3_alloc_branch(), where extended in a similar manner.
+
+
+
+----
+
 =Data structures and locking semantics=
 Following is a list of file system data structures manipulated by the snapshot code.
 

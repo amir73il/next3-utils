@@ -1,0 +1,509 @@
+This document offers a quick overview of all the technical aspects of the
+Next3 snapshots implementation.
+
+The Next3 snapshots design paper, which was written mostly before the
+implementation, offers a wider perspective and can be found
+[http://sf.net/projects/next3/files/Next3_Snapshots.pdf/download here].
+
+[[Code documentation]] offers a closer perspective on specific files,
+functions, API's, structures and lock semantics.
+
+
+
+=                            Basic Terminology                             =
+
+== Snapshot files ==
+A snapshot file is a regular sparse file, whose size is the same as the size
+of the filesystem in which it resides. Every logical block offset in the
+snapshot file represents a physical block in the underlying block device.
+
+A mapped block in a snapshot file holds a copy of the physical block data
+at the time of snapshot creation.
+
+A 'hole' in the snapshot file signifies that the snapshot's version of this
+block is identical to a later snapshot's version and/or to the current
+version of this block.
+
+Snapshot files are marked with a snapshot file flag, which is inherited from
+their parent directory and cannot be otherwise set on regular files.
+
+In the following illustrations, blocks are represented by characters, file
+and filesystem block boundaries are represented by {} and spaces represent
+unallocated blocks within those boundaries:
+
+  block device and new snapshot file at time 0:
+  ---------------------------------------------
+  snapshot one @0:{                      one:{}}
+  block device @0:{The_next3_file_system one:{}}
+
+  block device and snapshot file at time 1:
+  -----------------------------------------
+  snapshot one @1:{    n     f    s      one:{}}
+  block device @1:{The_Next3_File_System one:{  n f s}
+
+Note that when a snapshot file is created, it contains an empty copy of
+itself. It is beyond the limits of this illustration to demonstrate exactly
+how this works out, but it does.
+
+== Snapshot list ==
+All snapshot files are chained on a list on-disk and in-memory by order of
+creation. The head of the list, the latest snapshot, is referenced from the
+super block.
+
+Blocks of a certain snapshot on the list represent incremental differences
+from the previous (newer) snapshot on the list.
+
+In the following illustrations, the on-disk snapshot list references are
+noted by [^] and the list null termination is noted by [.]:
+
+  block device and new snapshot file at time 0:
+  ---------------------------------------------
+  [.]snapshot one @0:{                      one:{}}
+  [^]block device @0:{The_next3_file_system one:{}}
+
+  block device, new and old snapshot file at time 1:
+  --------------------------------------------------
+  [.]snapshot one @1:{    n     f    s      one:{}}
+  [^]snapshot two @1:{                      one:{}        two:{}}
+  [^]block device @1:{The_Next3_File_System one:{  n f s} two:{}}
+
+  block device and 2 snapshot files at time 2:
+  --------------------------------------------
+  [.]snapshot one @2:{    n     f    s      one:{}}
+  [^]snapshot two @2:{              _System one:{}        two:{}}
+  [^]block device @2:{The_Next3_Filesystem_ one:{  n f s} two:{ _System}}
+
+Note that when a snapshot file is created, it contains empty copies of all
+existing snapshots including itself. This fix is done during snapshot take.
+
+== Read through ==
+Snapshot files are restricted to read-only open and the writepage operation
+of snapshot files is a NOP.
+
+The readpage operation of snapshot files reads through 'holes' in the file.
+When reading at an offset of a 'hole', instead of zeroing the page, the
+read operation continues to read though recursively from a newer snapshot
+file at the same offset.
+
+When reading through a 'hole' in the latest snapshot, the unmodified
+block is read from its associated physical offset in the block device.
+
+== Snapshot image ==
+A snapshot image is the frozen-in-time view of the filesystem as it is seen
+by a user who reads the snapshot file.
+
+The typical way to access a snapshot image, is to mount a snapshot file via
+a loop device as a read-only ext2 filesystem.
+
+In the following illustrations, snapshot one is mounted via loop0 and
+snapshot two is mounted via loop1:
+
+  block device, 2 snapshot files (1 mounted) at time 2:
+  -----------------------------------------------------
+     loop0 device @2:{The_next3_file_system one:{}}n f s  two:{ _System}
+  [.]snapshot one @2:{    n     f    s      one:{}}
+  [^]snapshot two @2:{              _System one:{}        two:{}}
+  [^]block device @2:{The_Next3_Filesystem_ one:{  n f s} two:{ _System}}
+
+  block device, 2 mounted snapshot files at time 2:
+  -------------------------------------------------
+     loop0 device @2:{The_next3_file_system one:{}}n f s  two:{ _System}
+  [.]snapshot one @2:{    n     f    s      one:{}}
+     loop1 device @2:{The_Next3_File_System one:{} n f s  two:{}}System
+  [^]snapshot two @2:{              _System one:{}        two:{}}
+  [^]block device @2:{The_Next3_Filesystem_ one:{  n f s} two:{ _System}}
+
+Note that a snapshot image may contain some blocks outside the boundaries of
+the filesystem. However, since these blocks are not referenced by the frozen
+filesystem, they cannot be accessed by non-privileged users.
+
+== Active snapshot ==
+The latest snapshot is also referred to as the active snapshot, because it
+is the only snapshot file that needs to be actively maintained. The active
+snapshot file keeps changing on-the-fly as physical blocks are being copied
+and moved into it.
+
+== Has snapshot ==
+The has_snapshot feature is a read-only compatible feature set on first
+snapshot take. Once the feature is set, the filesystem can no longer be
+mounted as ext3 read-write, so the snapshots will not get corrupted.
+
+When the feature is cleared by tune2fs or e2fsck -x, all snapshots are
+discarded.
+
+== Copy-on-write ==
+A copy-on-write operation allocates a new block for the active snapshot
+and copies the data of the about-to-be-modified physical block into the
+newly allocated snapshot block.
+
+Filesystem metadata blocks are copied-on-write, inside the JBD hooks
+(i.e. journal_get_write_access), which are called with an up-to-date
+metadata buffer prior to its modification.
+
+The active snapshot file indirect blocks are journaled in the same
+transaction with the invoking metadata block write and the copied
+snapshot data blocks are 'ordered', to guaranty snapshot data
+consistency during power failures.
+
+== Move-on-write ==
+A move-on-write operation allocates only indirect blocks for the active
+snapshot and maps the about-to-be-modified or about-to-be-freed physical
+block to the snapshot file at the same logical offset as the physical
+offset of the block itself.
+
+Regular file data blocks are moved-on-write inside get_block() callbacks,
+which are invoked by file write operations. When a data block is moved to
+snapshot, a new block is allocated for the new data about to be written to
+the file. This method may increase file fragmentation under random write
+workloads.
+
+Blocks that are in-use by snapshots are not being freed inside
+free_blocks(), but are being moved to active snapshot instead.
+
+== COW bitmap ==
+The filesystem's block bitmap keeps track of which blocks are in-use by the
+filesystem. A snapshot's COW bitmap is the snapshot's copy of the
+filesystem's block bitmap. In other words, the COW bitmap keeps track of
+which blocks were in-use by the filesystem at snapshot creation time.
+
+The active snapshot's COW bitmap will be referred to as the COW bitmap.
+Blocks that has their bit set in the COW bitmap are said to be in-use by
+snapshots.
+
+The COW bitmap indicates which blocks should be copied or moved to active
+snapshot, but it does not indicate whether these blocks have already been
+copied or moved. This information is obtained from the snapshot file itself. 
+
+The COW bitmap blocks are initialized lazily, on the first COW bitmap block
+access after snapshot take. The physical addresses of initialized COW bitmap
+blocks are cached in a per block-group array in memory.
+
+== Protected blocks ==
+Blocks which are in-use by snapshots are called protected block, because
+they cannot be modified nor freed, before taking proper actions.
+There are two kinds of protected blocks in the filesystem. Blocks which are
+mapped to snapshot files and protected by the fact that snapshot files are
+not writable and blocks which are set in the COW bitmap and protected by
+copy-on-write and move-on-write operations.
+
+Note that when a block is about to be modified or freed, it is sufficient
+to test the active snapshot COW bitmap to determine whether this block is
+in-use by any older non-deleted snapshots.
+
+The statement above can be proven by induction using the following rule:
+
+If block B is set in COW bitmap of snapshot N-1 and not set in COW bitmap of
+snapshot N, then block B must have been freed while snapshot N-1 was the
+active snapshot, hence, it was already moved to snapshot N-1. Therefore, it
+cannot be modified and cannot be freed unless snapshot N-1 is deleted.
+
+== Exclude bitmap ==
+The exclude bitmap keeps track of which blocks are mapped to snapshot files.
+
+During lazy initialization of a COW bitmap block, the block bitmap block is
+masked with the exclude bitmap block. The result is that snapshot file
+blocks are never copied or moved to active snapshot.
+
+== Exclude inode ==
+The exclude bitmap blocks are allocated by mke2fs, tune2fs and resize2fs
+and mapped to a special exclude inode, if the exclude_inode feature is set.
+
+The physical addresses of exclude bitmap blocks are cached in a per
+block-group array in memory.
+
+
+
+=              Snapshot Control Operations and Status Flags                =
+
+Snapshot control operations are invoked by [[User-kernel API]] to manipulate
+the snapshot list and to change the status of individual snapshots.
+
+A set of snapshot file flags, listed at the end of this section, is used to
+keep track of the status of individual snapshots and display it to the user.
+
+All control operations acquire the filesystem's snapshot mutex.
+
+== Snapshot load ==
+Load snapshot list from disk on mount time and set latest snapshot active.
+
+== Snapshot destroy ==
+Return resources used by snapshots on umount time.
+
+== Snapshot create/take ==
+Snapshot take is the procedure of creating a new snapshot of the filesystem.
+The following steps are involved:
+
+* create an empty snapshot file.
+* insert snapshot file to head of snapshot list.
+* allocate initial blocks (super block, group descriptors, snapshot inodes).
+* test for sufficient disk space for snapshot reserved blocks.
+* freeze the filesystem by calling freeze_fs() API.
+* copy initial blocks from filesystem to snapshot.
+* fix initial blocks (reset has_snapshot feature and snapshot inodes).
+* set has_snapshot feature and snapshot reserved blocks in super block.
+* reset COW bitmap block addresses cache.
+* set new snapshot as active snapshot.
+* thaw the filesystem by calling unfreeze_fs() API.
+
+Thanks to the freeze_fs() API, the new snapshot image is in a clean state,
+that is, it appears to have been cleanly unmounted.
+
+Thanks to the snapshot image fixes, the new snapshot appears to have no
+snapshots. This sits well with the fact that snapshot file blocks are never
+copied or moved to active snapshot. If the existing snapshot files would
+have been apparent in the snapshot image, they would surely appear to
+contain garbage and reading from them could cause I/O errors and security
+violations.
+
+== Snapshot enable/disable ==
+Snapshot enable grants read access to a snapshot file.
+
+Snapshot disable revokes read access to a snapshot file and invalidates the
+snapshot file cached pages.
+
+An open snapshot file cannot be disabled.
+
+== Snapshot delete ==
+Snapshot delete permanently revokes read access to a snapshot file, thus
+allowing the filesystem to reclaim its unused blocks.
+
+An enabled snapshot cannot be deleted.
+
+== Snapshot cleanup ==
+After every delete operation, the snapshot list is traversed from oldest
+to latest and some deleted snapshots are shrunk, merged or removed.
+
+Changes to status of older snapshots, may cause newer deleted snapshots to
+be shrunk, merged or removed.
+
+== Snapshot shrink ==
+Snapshot shrink is the process of freeing the unused blocks of a deleted
+snapshot while it is still on the snapshot list and while some of its blocks
+are still in-use by older enabled snapshots.
+
+The shrink operation can always be repeated if for some reason, it was not
+completed the first time around (system crash).
+
+In the following illustrations, deleted snapshot is noted by [x] and shrunk
+snapshot is noted by [X]:
+
+  block device, 2 snapshot files (1 mounted and 1 deleted):
+  ---------------------------------------------------------
+     loop0 device @3:{The_next3_file_system one:{}}n f s  two:{ _System}
+  [.]snapshot one @3:{    n     f    s      one:{}}
+  [x]snapshot two @3:{              _System one:{}        two:{}}
+  [^]block device @3:{The_Next3_Filesystem_ one:{  n f s} two:{ _System}}
+
+  block device, 2 snapshot files (1 mounted and 1 deleted and shrunk):
+  --------------------------------------------------------------------
+     loop0 device @4:{The_next3_file_system one:{}}n f s  two:{ _ ystem}
+  [.]snapshot one @4:{    n     f    s      one:{}}
+  [X]snapshot two @4:{              _ ystem       }
+  [^]block device @4:{The_Next3_Filesystem_ one:{  n f s} two:{ _ ystem}}
+
+Note that the deleted and shrunk snapshot is still on snapshot list and its
+blocks are read through from mounted snapshot one.
+
+== Snapshot merge ==
+Snapshot merge is the process of moving the remaining used blocks of a
+deleted and shrunk snapshot to the previous snapshot.
+
+Snapshot merge can only be done when all older snapshots are disabled.
+
+  block device, 2 snapshot files merged, while older is not mounted:
+  ------------------------------------------------------------------
+  [.]snapshot one @5:{    n     f   _system one:{}}
+  [X]snapshot two @5:{                            }
+  [^]block device @5:{The_Next3_Filesystem_ one:{  n f _system} two:{}}
+
+== Snapshot remove ==
+After a deleted snapshot was shrunk and merged, it can finally be removed
+from snapshot list altogether.
+
+Unlink and truncate of snapshot files on the snapshot list will fail.
+After snapshot remove, the empty snapshot file can be unlinked.
+
+  block device, 2 snapshot files (1 mounted and 1 removed from list):
+  -------------------------------------------------------------------
+     loop0 device @6:{The_next3_file_system one:{}}n f _system  two:{}
+  [.]snapshot one @6:{    n     f   _system one:{}}
+     snapshot two @6:{}
+  [^]block device @6:{The_Next3_Filesystem_ one:{  n f _system} two:{}}
+
+== Snapshot update ==
+After every control operation, the snapshot list is traversed from oldest
+to latest and all the snapshot file status flags are being updated.
+
+Changes to status of older snapshots, may change the status of newer
+snapshots (the in-use flag in particular).
+
+== Snapshot on-list flag ==
+The snapshot file is on the snapshot list.
+
+Snapshot files not on the list may be failed snapshot take attempts and
+deleted snapshots, which can be unlinked.
+
+== Snapshot active flag ==
+The snapshot is the current active snapshot.
+
+The active snapshot may be deleted, but its blocks will be freed only after
+all snapshots have been deleted, or after another snapshot becomes active.
+
+== Snapshot enabled flag ==
+The snapshot may be opened for read.
+
+== Snapshot mounted flag ==
+The snapshot is opened for read.
+
+== Snapshot in-use flag ==
+The snapshot blocks may be in-use by older enabled snapshots.
+
+== Snapshot deleted flag ==
+The snapshot has been marked for deletion.
+
+This flag is persistent.
+
+== Snapshot shrunk flag ==
+The snapshot unused blocks were freed.
+
+This flag is persistent.
+
+
+
+
+=                           Block COW Operation                            =
+
+Block COW operations are invoked on every block write access and on every
+block free in a filesystem, which has an active snapshot.
+
+A COW operation may involve copying or moving of the block in question to
+active snapshot, but most of the times, it involves no changes to on-disk
+structures.
+
+== COW workflow ==
+COW operations go through the following steps:
+
+* if task is already in COWing state return.
+* set task COWing state.
+* if the block's buffer head is already in COWed state goto exit.
+* get/init the relevant COW bitmap block.
+* if the block's bit is not set in the COW bitmap goto exit.
+* if the block's offset is already mapped in active snapshot goto exit.
+* copy or move the block to active snapshot at block's offset.
+* wait for completion of pending COW and tracked read operations.
+exit:
+* set the block's buffer head to COWed state.
+* clear task COWing state.
+
+== COW locks ==
+The following locks apply to a COW operation:
+
+* test/set of blocks COWed state acquires a per block spinlock.
+* lazy init of COW bitmap acquires a per block-group spinlock.
+* copy or move to active snapshot acquires a per filesystem mutex.
+* other steps are lock free.
+
+== COWed block ==
+Blocks in a COWed state need not be COWed, because they are not set in COW
+bitmap or already mapped in active snapshot. Blocks not in a COWed state
+may or may not need to be COWed (we simply don't know yet).
+
+Setting the block's COWed state is implemented by setting the current
+transaction id in the journal head associated with that block in the block
+device page cache. The COWed state is implicitly cleared on every journal
+commit and by extension on every snapshot take.
+
+== COWing task ==
+A COWing task is a task performing a COW operation. The COWing state is
+signified by a bit in the task's current transaction handle.
+
+The COWing state is used, among other things, to avoid recursive COW
+operations, keep track of used COW credits and utilize snapshot reserved
+blocks.
+
+== COW/user credits ==
+Every task that wants to start a filesystem transaction, needs to declare
+the maximum number of blocks that it will be modifying in the transaction
+by calling the journal_start(nblocks) API.
+
+'nblocks' is set as the initial buffer credits for the transaction and one
+buffer credit is paid for every block modified by the task.
+
+If the task tries to modify a block without any remaining buffer credits,
+the results is a kernel OOPS.
+
+COW operations involve extra modified blocks (snapshot file blocks), which
+need to be declared on journal_start(). The next3_journal_start() macro
+takes care of adding the extra COW credits to the requested buffer credits.
+
+Note that the amount of COW credits actually used is usually a lot less
+than the declared worst case. When a large journal transaction is being
+extended, it is desired to utilize unused COW credits that have already
+been requested.
+
+The 'user credits' counter is used to keep track of used COW credits
+(buffer credits - user credits = COW credits). It is initialized to the
+original 'nblocks' value and one 'user credit' is paid for every block
+modified by the task, while it is not in the COWing state. In other words,
+'user credits' should have the same value as Ext3 'buffer credits'.
+
+== Snapshot reserved blocks ==
+COW operations may involve allocating blocks for the active snapshot file.
+In case there are no available free blocks the COW operation will fail and
+the invoking write operation will return an I/O error.
+
+To avoid this unpleasant situation, the filesystem has a snapshot reserved
+blocks count to be used only by COW operations. When the filesystem blocks
+count drops below the snapshot reserved blocks count, only a task in the
+COWing state is allowed to allocate blocks.
+
+The snapshot reserved blocks count is calculated on snapshot take from
+the estimated amount of filesystem metadata blocks, who may need to be
+copied to the snapshot in the future. The future moving of data blocks
+contributes only 1/1000 of the filesystem's size to reserved blocks count.
+
+== Pending COW ==
+With concurrent COW operations on the same block, the first task to acquire
+the snapshot inode's truncate mutex and allocate the snapshot block is also
+responsible for copying the data into the new block. The 'new' flag on the
+buffer head of the newly allocated block is set by the allocating task and
+cleared only after the copy has completed.
+
+The rest of the tasks find the block already mapped in the snapshot (with
+or without acquiring the truncate mutex), but if they find the buffer head
+with the 'new' flag set, they need to wait until the first task has
+completed the copy and cleared the 'new' flag from the buffer head.
+
+This 2-stage synchronization method is being used in order to avoid
+acquiring a mutex in the more common case, where the block is already mapped
+in the snapshot.
+
+== Tracked reads ==
+When a task reads through an active snapshot 'hole' to the block device, the
+task's 'reading' page (the page passed to readpage()) is marked with the
+'tracked read' flag and the block device's page is grabbed and marked with a
+'tracked read' reference count.
+
+The 'tracked read' flag is set on the buffer head attached to the page and
+the 'tracked read' reference count uses the upper word of the buffer head
+reference count.
+
+Upon asynchronous I/O completion of the 'reading' page, the 'tracked read'
+flag is cleared and the 'tracked read' reference count on the block device's
+page is dropped. I/O completion can be called in interrupt context, so no
+locks are taken in this process.
+
+Before completing a COW operation, the COWing task checks if there are any
+tracked reads on the origin block. If there are, it waits in a sleep loop,
+until the tracked reads reference count drops to zero. The sleep loop is a
+cheap and good enough solution to handle this rare race condition.
+
+It is important to note, that while the COWing task is waiting for tracked
+reads to complete, other COWing tasks may be waiting for that COWing task to
+complete the pending COW operation.
+
+It is also important to note, that while the COWing task is waiting for
+tracked reads to complete, the new snapshot block is already mapped, so new
+snapshot readpage operations will not read through to block device and will
+not further increase the tracked read reference count, while the COWing task
+is waiting for it to drop down to zero.

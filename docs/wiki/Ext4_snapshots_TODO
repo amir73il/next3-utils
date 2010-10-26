@@ -1,15 +1,211 @@
-This page was created to collaborate the effort to merge the snapshots feature into Ext4.
+This page was created to collaborate the effort to merge the snapshots
+feature into Ext4.
 
-==Ext4 snapshots mile stones==
-Each of following mile stones will make the snapshot feature available to a wider group of ext4 users:
-# Apply the current patches to ext4 code - snapshots with ext4 when only Next3 supported features are enabled (no extents, no 64bit, etc).
-# Add support for new ext4 features (excluding 64bit support) - snapshots for common ext4 deployments.
-# Optimize extent mapped file delete performance - combine snapshot functionality with ext4 high performance.
-# Add support for Next3 unsupported features (no journal, no bh, direct I/O, journaled quota, block size != page size) - snapshots for special ext4 deployments.
-# Add support for 64bit - snapshots for large scale ext4 deployments.
+Developers that wish to contribute to that effort in one or more of the
+following ways are most welcome to contact the project administrator:
+* Writing better and more coherent documentation.
+* Suggesting solutions to design challenges.
+* Performing actual merge tasks.
 
 
-==Ext4 snapshots merge tasks==
+=                     Ext4 snapshots design challenges                     =
+
+The following issues require special attention when merging the snapshots
+feature to ext4.
+
+Ext4 developers are encouraged to comment on these issues and suggest
+solutions other than the ones proposed here.
+
+== Extent mapped file data block re-write ==
+
+The term re-write refers to a non first write to a file's data block.
+The first write allocates a new block for that file and requires no special
+snapshot block operations. If a snapshot was taken after a block was
+allocated, that block is protected by the snapshot's COW bitmap. Any attempt
+to re-write that block should result in a snapshot block operation, which
+either copies the original data to the snapshot file or moves the original
+block to the snapshot file and allocates a new block for the new data.
+
+Current implementation moves data blocks of indirect mapped files to
+snapshot on re-write. The move-on-write method is more efficient than the
+copy-on-write method, but it may cause a file to get fragmented in a use
+case of re-writes to many random locations.
+
+For extent mapped files re-write, there are 2 possible solutions.
+Ted T'so has wrote about this choice:
+
+''Technically speaking, it's possible to do it both ways, yes?''
+''I'm not sure why you consider this such an important design decision.''
+''We can even play games where for some files we might do copy-on-write,''
+''and for some files, we do move-on-write. It's always possible to check''
+''the COW bitmaps to decide what had happened.''
+
+=== Move-on-write ===
+
+Besides the mentioned file fragmentation problem, every move-on-write
+operation may need to split up a data extent into 2 extents of existing
+blocks and a third extent for blocks allocated for the new data.
+The metadata overhead of such a split operation is more significant than
+that of an indirect mapped file move-on-write operation and these extra
+metadata updates will have to be accounted for in advance when starting a
+block re-write transaction. Extent spliting may also degrade re-write
+performance to extent mapped files.
+
+In general, delayed allocation, or delayed move-on-write for our purpose,
+should be used to avoid extent splitting as much as possible.
+
+Perhaps the file fragmentation problem can be solved by online
+de-fragmentation. After all, the original file's blocks are kept safely
+inside the snapshot file, so a background task can simply copy the snapshot
+moved blocks to new locations and then copy the file's new data into its
+original blocks and map them back into the file.
+
+
+=== Copy-on-write ===
+
+Copying the re-written block to snapshot may seem like the "easy way out"
+of the file fragmentation problem, but the problems it causes in return
+are not to be disregarded.
+
+The first and obvious problem is write performance, because every data
+block re-write involves reading the content of the existing block from
+storage, before proceeding with the re-write. This read I/O can be avoided
+when using the move-on-write method. Though the write performance seems
+like a big limitation, it can be tagged as a trade-off between random write
+performance and sequential read performance and the choice can be left at
+the hands of the user.
+
+The second issue with data blocks copy-on-write is the snapshot reserved
+blocks count. On snapshot take, the file system reserves a certain amount of
+blocks for snapshot use. The reservation is calculated from the estimated
+count of metadata blocks that may need to be copied to snapshot at some
+point in the future. Move-on-write uses much less snapshot reserved blocks
+than copy-on-write, so the data blocks count doesn't need to be accounted
+for. When choosing to do copy-on-write on data blocks re-write, the re-write
+operation should first verify that there is enough disk space for allocating
+the snapshot copied data blocks without using snapshot reserved blocks.
+If there is not enough disk space, the operation should return ENOSPC.
+
+The last and most challenging issue has to do with I/O ordering within a
+single snapshot COW operation. The rule is very simple:
+To keep the snapshot data safe, the snapshot copy has to secured in storage
+before the new data is allowed to be written to storage.
+
+With metadata copy-on-write, this ordering is provided as a by product from
+the journaling sub-system. All snapshot COW'ed blocks are marked as ordered
+data, which is always written to storage before transaction commit starts
+and metadata blocks are always written to storage during transaction commit.
+
+When COW'ing a data block, which may be "ordered" or "writeback", there is
+no mechanism in place to help order the async writes of the snapshot COW'ed
+blocks before the async writes of the re-written data blocks. Even worse,
+when COW'ing an "ordered" data block, the journal will force it to storage
+before transaction commit starts and the snapshot COW'ed block mapping into
+the snapshot file will only be written during transaction commit.
+
+One possible solution is to implement a "holdback" list of blocks that
+should not be written before the current transaction commits. Naturally, a
+block must not be on both the "ordered" and "holdback" lists, but when
+re-writing an allocated data block, there is no sense in making this block
+"ordered", because this kind of data modification is directly related to any
+metadata modification (except change of inode's mtime, but who cares).
+
+
+==Large file create and delete performance==
+Ext4 has improved performance over Ext3 mainly due to delayed allocation and extent mapped files.
+
+Delayed allocation improves performance by reducing I/O flush requests and by helping to allocate
+large extents of data blocks when creating large files.
+
+Extent mapped files improve performance by reducing the metadata write overhead when creating and deleting
+large files.
+
+On first look, delayed allocation should not interfere with snapshots and vise versa,
+so the performance of creating large file should not be affected by snapshots.
+This statement needs to be investigated and verified.
+
+One thing that does require attention with delayed allocation is the size of the blocks reservation
+made when re-writing into an already allocated data extent of size N.
+Without snapshots, there is no need for any reservation. With snapshots, there may be a need to reserve up to
+N new blocks for the re-write, depending on the snapshot's COW bitmap.
+
+The performance of deleting large file, however, will be affected by snapshots.
+The question is how much? A special effort should be invested in optimizing the deletion
+of large data extents with snapshots enabled.
+
+One possible solution would be to use extent mapped snapshot files and to move the entire deleted extent
+to the snapshot file with significantly fewer metadata I/O operations than when moving deleted blocks
+into an indirect mapped snapshot file.
+
+==Large file system size (64bit support)==
+Ext3 file system size is limited by 32bit physical block address space.
+
+Ext4 breaks this limit by using 48bit physical block address space in extent mapped files.
+
+Snapshot files are used to map the entire file system block address space.
+The current snapshot file format is an extended indirect mapped file,
+with up to 4 triple indirect blocks, that can map a 32bit block address space
+when the file system block size is 4K.
+
+Even if the snapshot file format would be an extent mapped file, it wouldn't be possible 
+to map a 48bit block address space, because extent mapped files have a 32bit logical block address space.
+
+In order to map a 48bit physical block address space, the snapshot file would have to use a new
+extent format, which maps a 48bit logical address space to a 48bit physical address space.
+
+
+==Large scale SMP systems==
+In general, every file system should aim to allow as many concurrent operations as possible on both single and multiple CPU systems.
+In many cases, file system operations on different objects (i.e. inodes) or on different physical locations (i.e. block groups) can be performed concurrently with very little need for synchronization.
+
+With current snapshots design, however, every COW operation of any block in the file system takes a single mutex object (the active snapshot file's truncate_mutex). One must keep in mind that COW operations are not so common and one might think. New allocated blocks are never COW'ed and COW of modified metadata block happens only once per snapshot era.
+
+To mitigate the COW bottleneck, an array of mutex objects can be used to synchronize COW operation within specific block group ranges.
+
+The number of block group ranges would depend on the desired level of concurrency, but it also depends of the structure of the snapshot file. With current implementation, independent block group ranges, must not be mapped by the same double indirect block.
+(1 double indirect block maps 1M of 4K blocks = 32 block groups).
+
+==The (ab?)use of page cache==
+As all other metadata operations, the file system uses the block device's page cache, with attached buffer heads,
+to perform the I/O of COW operations.
+
+During COW operations, those buffer heads are used to synchronize concurrent COW and snapshot reading tasks.
+For the sake of simplifying the code dealing with race conditions, a task reading through from a snapshot file to
+block device, first grabs the block device's associated page.
+
+The result is that many snapshot file readpage operations end up using 2 pages instead of just one (the block device's page for synchronization and the snapshot file's page for the actual read). Further more, when reading the same file system block from several different snapshots, there is one page used per snapshots. Since all those pages read the same block, this is a waste of memory and a waste of I/O.
+
+On top of that, the loop block device associated with the snapshot file has cached pages of it's own.
+
+A possible solution to all this waste of pages, would be that the file system should expose virtual read-only block devices instead of using loop block devices on snapshot files. The virtual block device could possibly share pages amongst themselves (it this possible?) and in any case, the waste of the snapshot file pages would be avoided.
+
+=Ext4 snapshots mile stones=
+Each of following mile stones will make the snapshot feature available to a wider group of ext4 users.
+
+===Mutually exclusive snapshots feature===
+* Apply the current patches to ext4 code.
+* Mutually exclude the snapshot feature from other ext4 features (i.e. extents).
+* '''Availability of snapshots feature for upgrading ext3 deployments.'''
+
+===Support ext4 default configuration===
+* Add support for default ext4 features (i.e. extents).
+* '''Availability of snapshots feature for common ext4 deployments.'''
+
+===Performance optimizations===
+* Verify that delayed allocation works well with snapshots.
+* Optimize moving deleted extent data blocks into snapshot.
+* '''Availability for users that require snapshots functionality combined with improved ext4 performance.'''
+
+===Support ext4 configuration options===
+* Add support for untested configuration options (no journal, no bh, journaled quota, block size != page size).
+* Add support for untested direct I/O write operation.
+* '''Availability of snapshots feature for custom ext4 deployments.'''
+
+===Large file system support===
+* Implement a snapshot file format that can map up to 48bit block offsets.
+* '''Availability of snapshots feature to large scale ext4 deployments.'''
+
+=Ext4 snapshots merge tasks=
 The [[Next3 snapshot patches]] add snapshot support to Next3 (after it was cloned from Ext3).
 
 Following is an estimation of the work that has to be done on each patch or group of patches to merge it into Ext4.
@@ -67,4 +263,3 @@ The colors indicate the nature of the merge tasks:
 ===Snapshot cleanup patches===
 * Reclaim deleted snapshot file blocks.
 * <font color=green>Move snapshot_shrink_blocks() and snapshot_merge_blocks() from inode.c to new snapshot_inode.c file.</font>
-
