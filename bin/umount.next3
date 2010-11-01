@@ -1,8 +1,0 @@
-#!/bin/sh
-
-if [ -z $VOL ] ; then
-	VOL=vol1
-fi
-next3 umount $*
-rs exec /proc/storage umount name $VOL || exit 1
-sleep 1
