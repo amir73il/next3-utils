@@ -142,6 +142,7 @@ fi
 if [ -z $SNAPDIR ] ; then
 	# directory inside next3 filesystem to store snapshot files
 	SNAPDIR=$NEXT3MNT/.snapshots
+	TESTDIR=.snapshots/test
 fi
 if [ -z $SNAPMNT ] ; then
 	# directory prefix for snapshot mount points
@@ -512,11 +513,13 @@ case "$1" in
 	echo aligator > $NEXT3MNT/A/a.txt
 	echo bizon > $NEXT3MNT/B/b.txt
 	echo camel > $NEXT3MNT/C/c.txt
+	# create non-snapshot dir in snapshots dir block group
+	mkdir -p $NEXT3MNT/$TESTDIR
+	$CHSNAP -x $NEXT3MNT/$TESTDIR || exit 1
 	;;
   rmtest)
 	rm -rf $NEXT3MNT/? 2> /dev/null
-	rm -rf $NEXT3MNT/*M.? 2> /dev/null
-	rm -rf $NEXT3MNT/md5list 2> /dev/null
+	rm -rf $NEXT3MNT/$TESTDIR 2> /dev/null
 	;;
   lstest)
 	if [ $1_$2 = $1_help ] ; then
@@ -535,7 +538,7 @@ case "$1" in
 	if [ -d $d ] ; then
 		cd $d > /dev/null
 		grep -v xxx ?/*
-		test -e md5list && (md5sum -c md5list || exit 1)
+		test -e $TESTDIR/md5list && (cd $TESTDIR ; md5sum -c md5list || exit 1)
 		#find $d/ -maxdepth 1 -type f -print
 		cd - > /dev/null
 		echo .
@@ -574,7 +577,7 @@ case "$1" in
 	if [ $N = 0 ] ; then
 		$0 fsck
 	else
-		#$0 lstest
+		$0 lstest
 		for n in $( seq 1 $N ) ; do
 			$0 lstest $n
 		done
@@ -613,18 +616,24 @@ case "$1" in
 		M=1
 	fi
 	F=${M}M
-	echo Creating $n x $F files
-	cd $NEXT3MNT > /dev/null
+	cd $NEXT3MNT/$TESTDIR > /dev/null
+	echo Appending $F zeros to $F.1
+	# append writes to new allocated blocks
+	dd if=/dev/zero bs=1M count=$M >> $F.1 2> /dev/null || exit 1
+	echo Writing $n x $F files
 	for i in $( seq 1 $n ) ; do
-		dd if=/dev/urandom bs=1M count=$M of=$F.$i 2> /dev/null || exit 1
+		# 1st rewrite moves existing blocks to snapshot and allocates new blocks
+		dd if=/dev/urandom bs=1M count=$M of=$F.$i conv=notrunc 2> /dev/null || exit 1
+		# subsequent rewrites write to existing blocks
+		dd if=/dev/urandom bs=1M count=$M of=$F.1 conv=notrunc 2> /dev/null || exit 1
+	done
+	for i in $( seq 1 $n ) ; do
 		md5sum $F.$i || exit 1
 	done > md5list
 	cd - > /dev/null
-	#$0 lstest || exit 1
+	$0 lstest || exit 1
 	s=$n
 	$0 take $s || exit 1
-	echo Appending $F zeros to $F.$n
-	dd if=/dev/zero bs=1M count=$M >> $NEXT3MNT/$F.1 2> /dev/null || exit 1
 	case "$n" in
   	  1)
 		echo Create test:
@@ -695,7 +704,7 @@ case "$1" in
 	  ;;
 	esac || exit 1
 	echo .
-	#$0 lstest || exit 1
+	$0 lstest || exit 1
 	$0 lstest $s || exit 1
 	$0 stat
 	;;

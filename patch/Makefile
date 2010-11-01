@@ -42,7 +42,7 @@ SIGNATURE=Amir Goldstein <amir73il@users.sf.net>
 SIGNEDOFF=Signed-off-by: ${SIGNATURE}
 DELIMITER="--------------------------------------------------------------------------------"
 
-N3_VERSION=1.0.13-rc1
+N3_VERSION=1.0.13-rc3
 N3_VERSION?=${DATE}
 N3_PKGNAME=next3-${N3_VERSION}
 N3_TARBALL=${N3_PKGNAME}.tar.gz
@@ -144,10 +144,10 @@ next3_fs: ${BASE}/${LINUX} ${N3_BASEPATCH}~
 	@rm -f a b ; ln -sf ${ORIG}/${LINUX} a ; ln -sf ${BASE}/${LINUX} b
 	@mkdir -p ${ORIG}/fs ${BASE}/fs
 	@mv ${BASE}/${LINUX}/fs/next3 ${BASE}/fs
-	@diff -Nuarp a b > $@.built-in.patch || cp $@.built-in.patch ${LINUX_PKG}
+	@diff -Nuarp a b > $@.built-in.patch || test 1 = 1
 	@# create module patch (only fs/next3 files)
 	@rm -f a b ; ln -sf ${ORIG} a ; ln -sf ${BASE} b
-	@diff -Nuarp a/fs b/fs > $@.module.patch || cp $@.module.patch ${LINUX_PKG}
+	@diff -Nuarp a/fs b/fs > $@.module.patch || test 1 = 1
 	@mv ${BASE}/fs/next3 ${BASE}/${LINUX}/fs
 	@rm -rf a b ${ORIG}/fs ${BASE}/fs
 	@# create full base+rebase/built-in+module patch
@@ -162,7 +162,7 @@ next3_snapshot: next3_fs next3
 	@rm -f a b ; ln -sf ${BASE}/${LINUX} a ; ln -sf ${PREV}/${LINUX} b
 	@mkdir -p ${PREV}/fs ${BASE}/fs
 	@mv ${PREV}/${LINUX}/fs/next3 ${PREV}/fs ; mv ${BASE}/${LINUX}/fs/next3 ${BASE}/fs
-	@diff -Nuarp a b > $@.built-in.patch || cp $@.built-in.patch ${LINUX_PKG}
+	@diff -Nuarp a b > $@.built-in.patch || test 1 = 1
 	@rm -f a b ; ln -sf ${BASE} a ; ln -sf ${PREV} b
 	@diff -Nuarp a/fs b/fs > $@.module.patch || cp $@.module.patch ${LINUX_PKG}
 	@mv ${PREV}/fs/next3 ${PREV}/${LINUX}/fs ; mv ${BASE}/fs/next3 ${BASE}/${LINUX}/fs
@@ -286,12 +286,16 @@ next3_include.sed:
 rotate_dirs:
 	@test ! -e ${SRC_HEAD} || rm -rf ${SRC_HEAD}
 	@test ! -e ${SRC_PREV} || mv ${SRC_PREV} ${SRC_HEAD}
-	@mkdir -p ${SRC_PREV}/{${INC},${N3},${JBD},${E2FS}/{debugfs,misc,resize},${FSCK},${E2LIB}/{e2p,ext2fs}}
-	@mkdir -p ${SRC_HEAD}/{${INC},${N3},${JBD},${E2FS}/{debugfs,misc,resize},${FSCK},${E2LIB}/{e2p,ext2fs}}
+	@mkdir -p ${SRC_PREV}/${INC} ${SRC_PREV}/${N3} ${SRC_PREV}/${JBD}
+	@mkdir -p ${SRC_HEAD}/${INC} ${SRC_HEAD}/${N3} ${SRC_HEAD}/${JBD}
+	@mkdir -p ${SRC_PREV}/{${E2FS}/{debugfs,misc,resize},${FSCK},${E2LIB}/{e2p,ext2fs}}
+	@mkdir -p ${SRC_HEAD}/{${E2FS}/{debugfs,misc,resize},${FSCK},${E2LIB}/{e2p,ext2fs}}
 	@test ! -e ${HEAD} || rm -rf ${HEAD}
 	@test ! -e ${PREV} || mv ${PREV} ${HEAD}
-	@mkdir -p ${PREV}/{${INC},${N3},${JBD},${E2FS}/{debugfs,misc,resize},${FSCK},${E2LIB}/{e2p,ext2fs}}
-	@mkdir -p ${HEAD}/{${INC},${N3},${JBD},${E2FS}/{debugfs,misc,resize},${FSCK},${E2LIB}/{e2p,ext2fs}}
+	@mkdir -p ${PREV}/${INC} ${PREV}/${N3} ${PREV}/${JBD}
+	@mkdir -p ${HEAD}/${INC} ${PREV}/${N3} ${PREV}/${JBD}
+	@mkdir -p ${PREV}/{${E2FS}/{debugfs,misc,resize},${FSCK},${E2LIB}/{e2p,ext2fs}}
+	@mkdir -p ${HEAD}/{${E2FS}/{debugfs,misc,resize},${FSCK},${E2LIB}/{e2p,ext2fs}}
 
 ${INC}/%:
 	@test ! -z ${KEY} || cp ${SRC}/$@ ${SRC_PREV}/$@

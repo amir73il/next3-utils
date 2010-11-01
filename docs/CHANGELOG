@@ -1,14 +1,16 @@
-v1.0.13-rc1
+v1.0.13-rc3
 -------
-Oct 12, 2010
+Nov 1, 2010
 - installer supports kernel versions 2.6.31-2.6.35
-- tested on Ubuntu desktop releases 9.10-10.10
-- tested on mips64 platform
+- tested on Ubuntu 9.10-10.10 and Fedora 13-14
+- tested on multi-core machine (by Sergey Ivanov)
+- fix hang during file remove (reported by Sergey Ivanov)
+- fix oops during journal commit (reported by Sergey Ivanov)
 - fix sparse kernel checker warnings
 - fix exclude inode extending on online resize
 - fix snapshot blocks reservation
 - fix loop device access beyond end of file
-- fix mount with data=writeback (untested feature)
+- disable mount with data=writeback
 
 v1.0.12
 -------
