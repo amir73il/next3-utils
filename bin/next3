@@ -142,7 +142,6 @@ fi
 if [ -z $SNAPDIR ] ; then
 	# directory inside next3 filesystem to store snapshot files
 	SNAPDIR=$NEXT3MNT/.snapshots
-	TESTDIR=.snapshots/test
 fi
 if [ -z $SNAPMNT ] ; then
 	# directory prefix for snapshot mount points
@@ -150,6 +149,7 @@ if [ -z $SNAPMNT ] ; then
 	# default to ZFS snapshot naming convention <filesystem>@<snapshot>
 	SNAPMNT=$NEXT3MNT@
 fi
+TESTDIR=test
 
 # See how we were called.
 case "$1" in

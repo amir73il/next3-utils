@@ -12,3 +12,21 @@ Creating /20M
 snapshot: __next3_journal_stop(0): credits=416, limit=417/420, user=23/23, ref=1, caller=next3_create
 snapshot: COW stats: moved/copied=0/0, mapped/clear/cached=4/0/2, bitmaps/cleared=0/0
 
+Bug #2: snapshot take hangs all file system writers
+===================================================
+Next3-version: 1.0.13-rc3
+Hardware: X86_64 4 cores
+Submited-by: Sergey Ivanov <sergey57@gmail.com>
+Side-effects: any file system writer process hangs
+Test: run phoronix disk benchmark on next3, every 2 seconds create snaphsot and delete old snapshot
+
+Bug #3: postgress benchmark fails to run
+========================================
+Next3-version: 1.0.13-rc3
+Hardware: X86_64 4 cores
+Submited-by: Sergey Ivanov <sergey57@gmail.com>
+Side-effects: core dump
+Test: run phoronix pgbench benchmark on next3 with existing snapshots
+Analysis: this is an mmap related bug. mmap writeback is not implemented correctly.
+
+
