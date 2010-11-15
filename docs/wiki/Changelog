@@ -2,6 +2,7 @@
 * Installer supports kernel versions 2.6.31-2.6.35.
 * Tested on Ubuntu 9.10-10.10 and Fedora 13-14.
 * Tested on multi-core machine (by Sergey Ivanov).
+* Fix hang on snapshot take (reported by Sergey Ivanov).
 * Fix hang during file remove (reported by Sergey Ivanov).
 * Fix oops during journal commit (reported by Sergey Ivanov).
 * Fix sparse kernel checker warnings.

@@ -42,7 +42,7 @@ SIGNATURE=Amir Goldstein <amir73il@users.sf.net>
 SIGNEDOFF=Signed-off-by: ${SIGNATURE}
 DELIMITER="--------------------------------------------------------------------------------"
 
-N3_VERSION=1.0.13-rc3
+N3_VERSION=1.0.13-rc4
 N3_VERSION?=${DATE}
 N3_PKGNAME=next3-${N3_VERSION}
 N3_TARBALL=${N3_PKGNAME}.tar.gz

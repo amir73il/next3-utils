@@ -1,9 +1,10 @@
-v1.0.13-rc3
+v1.0.13-rc4
 -------
-Nov 1, 2010
+Nov 15, 2010
 - installer supports kernel versions 2.6.31-2.6.35
 - tested on Ubuntu 9.10-10.10 and Fedora 13-14
 - tested on multi-core machine (by Sergey Ivanov)
+- fix hang on snapshot take (reported by Sergey Ivanov)
 - fix hang during file remove (reported by Sergey Ivanov)
 - fix oops during journal commit (reported by Sergey Ivanov)
 - fix sparse kernel checker warnings

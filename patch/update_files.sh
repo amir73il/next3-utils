@@ -33,7 +33,7 @@ else
 	TO=$DST
 fi
 
-files=$(cd $SRC && ls -d * && ls -d */* && ls -d */*/*)
+files=$(cd $SRC && ls -d * && ls -d */* && ls -d */*/* && ls -d */*/*/*)
 for f in $files ; do 
 	(test -f $SRC/$f && test -f $DST/$f && \
 	( $( $TEST $SRC/$f $DST/$f > /dev/null ) || \
