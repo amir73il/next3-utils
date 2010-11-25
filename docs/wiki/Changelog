@@ -1,4 +1,4 @@
-==v1.0.13-rc3 (Nov 2010)==
+==v1.0.13-rc5 (Nov 2010)==
 * Installer supports kernel versions 2.6.31-2.6.35.
 * Tested on Ubuntu 9.10-10.10 and Fedora 13-14.
 * Tested on multi-core machine (by Sergey Ivanov).
@@ -9,7 +9,11 @@
 * Fix exclude inode extending on online resize.
 * Fix snapshot blocks reservation.
 * Fix loop device access beyond end of file.
-* Disable mount with data=writeback.
+* Fix quota file update.
+* Fix data write paths from mmap and direct I/O.
+* Enable direct I/O.
+* Disable mount with data!=ordered.
+* Disable mount without exclude_inode,has_snapshot features.
 
 ==v1.0.12 (Aug 2010)==
 * Installer supports kernel versions 2.6.27-2.6.33.

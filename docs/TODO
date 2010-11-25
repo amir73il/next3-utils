@@ -5,7 +5,6 @@ Experimental next3 features:
 Unsupported ext3 features:
 --------------------------
 - journaled quotas (copy user/group quota blocks on snapshot take)
-- direct I/O
 - block size != PAGE_SIZE
 - data journaling
 

@@ -19,6 +19,6 @@ Hardware: X86_64 4 cores
 Submited-by: Sergey Ivanov <sergey57@gmail.com>
 Side-effects: core dump due to SIGSEGV
 Test: run phoronix pgbench benchmark on next3 with existing snapshots
-Analysis: this is probably an mmap related bug. mmap writeback is not implemented correctly.
+Analysis: this may be related to unsupported direct I/O
 
 

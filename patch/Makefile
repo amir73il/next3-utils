@@ -42,7 +42,7 @@ SIGNATURE=Amir Goldstein <amir73il@users.sf.net>
 SIGNEDOFF=Signed-off-by: ${SIGNATURE}
 DELIMITER="--------------------------------------------------------------------------------"
 
-N3_VERSION=1.0.13-rc4
+N3_VERSION=1.0.13-rc5
 N3_VERSION?=${DATE}
 N3_PKGNAME=next3-${N3_VERSION}
 N3_TARBALL=${N3_PKGNAME}.tar.gz
@@ -88,7 +88,7 @@ N3_FILES=${INC_FILES} ${FS_FILES} ${JBD_FILES} ${MOD_FILES} ${NEW_FILES} ${OLD_F
 BIN=../bin
 DOC=../docs
 BIN_FILES=${BIN}/next3 ${BIN}/fsck.next3 ${BIN}/mkfs.next3 ${BIN}/tunefs.next3 \
-	  ${BIN}/lsattr.next3 ${BIN}/chattr.next3
+	  ${BIN}/lsattr.next3 ${BIN}/chattr.next3 ${BIN}/resize.next3
 RELEASE_FILES=../Makefile ${DOC}/README ${DOC}/COPYING ${DOC}/INSTALL ${DOC}/HOWTO ${DOC}/CHANGELOG \
 	  ${DOC}/INDEX ${DOC}/BUGS ${DOC}/TODO
 
@@ -125,7 +125,7 @@ release:
 	mkdir -p ${N3_RELEASE}/bin
 	install -m 644 ${RELEASE_FILES} ${N3_RELEASE}
 	install -m 755 ${BIN_FILES} ${N3_RELEASE}/bin || \
-		(cp -f ${E2FS_PKG}/${E2FS}.tar.gz ${E2FS_PATCH} ${N3_RELEASE} && \
+		(cp -f ${E2FS_PKG}/${E2FS}.tar.gz ${N3_RELEASE} && \
 		make -C ${N3_RELEASE} e2fsprogs && rm -rf ${N3_RELEASE}/${E2FS}*)
 	cd ${RELEASE} ; tar cfz ${N3_TARBALL} ${N3_PKGNAME}
 	cp -f ${DOC}/wiki/Changelog ${RELEASE}/Release-notes.txt

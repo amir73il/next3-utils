@@ -1,4 +1,4 @@
-VER=1.0.13-rc4
+VER=1.0.13-rc5
 KERNEL?=${shell uname -r}
 MACH?=${shell uname -m}
 BASE_PATCH=next3_fs.module.patch
@@ -28,6 +28,7 @@ install:
 	install bin/tunefs.next3 /sbin
 	install bin/lsattr.next3 /sbin
 	install bin/chattr.next3 /sbin
+	install bin/resize.next3 /sbin || echo "run 'make e2fsprogs' to build resize.next3"
 
 .PHONY: test
 test:
@@ -59,6 +60,8 @@ e2fsprogs: ${E2FSPROGS}
 	install -T ${E2FSPROGS}/misc/tune2fs bin/tunefs.next3
 	install -T ${E2FSPROGS}/misc/lsattr bin/lsattr.next3
 	install -T ${E2FSPROGS}/misc/chattr bin/chattr.next3
+	make -C ${E2FSPROGS}/resize
+	install -T ${E2FSPROGS}/resize/resize2fs bin/resize.next3
 
 ${E2FSPROGS}: ${E2FSPROGS}.tar.gz ${E2FSPROGS_PATCH}
 	@patch -v || echo "Please install the patch utility, i.e.: sudo apt-get install patch"

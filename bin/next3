@@ -7,7 +7,7 @@
 #
 
 SCRIPT_NAME=next3
-SCRIPT_VER=1.0.12
+SCRIPT_VER=1.0.13
 SCRIPT_DESC="Next3 snapshot management script"
 
 # generic e2fs progs
@@ -571,16 +571,16 @@ case "$1" in
 	for n in $( seq 0 $N ) ; do
 		$0 test $n $3 $4 || exit 1
 	done
+	$0 lstest
+	for n in $( seq 1 $N ) ; do
+		$0 lstest $n
+	done
 	# skip fsck if non zero read delay or zero delay between tests         
         ( [ ${test_read}_ms = 0_ms ] && [ ${3}_ms != 0_ms ] ) || exit 0
 	sleep 1
 	if [ $N = 0 ] ; then
 		$0 fsck
 	else
-		$0 lstest
-		for n in $( seq 1 $N ) ; do
-			$0 lstest $n
-		done
 		for n in $( seq 1 $N ) ; do
 			$0 fsck $n 2> /dev/null
 		done
@@ -617,15 +617,17 @@ case "$1" in
 	fi
 	F=${M}M
 	cd $NEXT3MNT/$TESTDIR > /dev/null
-	echo Appending $F zeros to $F.1
-	# append writes to new allocated blocks
-	dd if=/dev/zero bs=1M count=$M >> $F.1 2> /dev/null || exit 1
-	echo Writing $n x $F files
+	echo Appending $F zeros to $F.1 with direct I/O
+	# append writes to new allocated blocks using direct I/O
+	dd if=/dev/zero bs=1M count=$M of=$F.1 conv=notrunc oflag=append,direct status=noxfer || exit 1
+	echo Writing $F random data to $n files
 	for i in $( seq 1 $n ) ; do
 		# 1st rewrite moves existing blocks to snapshot and allocates new blocks
-		dd if=/dev/urandom bs=1M count=$M of=$F.$i conv=notrunc 2> /dev/null || exit 1
-		# subsequent rewrites write to existing blocks
-		dd if=/dev/urandom bs=1M count=$M of=$F.1 conv=notrunc 2> /dev/null || exit 1
+		fallocate -mrs -l 1M $F.$i 2>/dev/null || \
+			dd if=/dev/urandom bs=1M count=$M of=$F.$i conv=notrunc status=noxfer || exit 1
+		# subsequent rewrites write to existing blocks using mmap or direct I/O
+		fallocate -mrs -l 1M $F.1 2>/dev/null || \
+			dd if=/dev/urandom bs=1M count=$M of=$F.1 conv=notrunc oflag=direct status=noxfer || exit 1
 	done
 	for i in $( seq 1 $n ) ; do
 		md5sum $F.$i || exit 1
