@@ -7,7 +7,7 @@
 #
 
 SCRIPT_NAME=next3
-SCRIPT_VER=1.0.13
+SCRIPT_VER="1.0.13-rc5"
 SCRIPT_DESC="Next3 snapshot management script"
 
 # generic e2fs progs
@@ -394,7 +394,7 @@ case "$1" in
 		echo "$0 disable: snapshot $S not found!"
 		exit 1
   	fi
-	if grep $SNAPMNT$s /proc/mounts ; then
+	if grep "$SNAPMNT$s\ " /proc/mounts ; then
 		echo "$0 disable: snapshot $S is mounted!"
 		exit 1
 	fi
@@ -419,7 +419,7 @@ case "$1" in
 		echo next3 filesystem is mounted on $NEXT3MNT
 	else
   		$0 enable $s || exit 1
-		if grep $SNAPMNT$s /proc/mounts ; then
+		if grep "$SNAPMNT$s\ " /proc/mounts ; then
 			echo "$0 mount: snapshot $S is already mounted!"
 			exit 1
 		fi
@@ -494,7 +494,7 @@ case "$1" in
 		$FSCK -nf -C 0 $SNAPDIR/$s >&2 && \
 			echo snapshot $S 'is healthy' || \
 			echo snaphsot $S 'has errors'
-		if ! grep $SNAPMNT$s /proc/mounts ; then
+		if ! grep "$SNAPMNT$s\ " /proc/mounts ; then
   			$0 disable $s || exit 1
 		fi
 	fi
@@ -666,7 +666,7 @@ case "$1" in
 		echo -------------
 		f=$( ls -v $SNAPDIR/ | head -n 1 )
 		echo 'Restoring from snapshot' $f
-		if ! grep $SNAPMNT$f /proc/mounts ; then
+		if ! grep "$SNAPMNT$f\ " /proc/mounts ; then
 			$0 mount $f || exit 1
 		fi
 		rm -rf $NEXT3MNT/?
