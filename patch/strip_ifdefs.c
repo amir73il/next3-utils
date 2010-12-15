@@ -3,8 +3,8 @@
 #include <string.h>
 #include <ctype.h>
 
-#define MAINKEY "CONFIG_NEXT3_FS_SNAPSHOT"
-#define MAINKEY_LEN 24
+#define MAINKEY_NEXT3 "CONFIG_NEXT3_FS_SNAPSHOT"
+#define MAINKEY_E2FS "EXT2FS_SNAPSHOT"
 #define MAX_KEY 20
 
 #define LINE_SIZE 1024
@@ -40,7 +40,10 @@ int main(int argc, char *argv[])
 	char KEY[MAX_KEY+1];
 	FILE *infile, *outfile;
 	const char *filename, *filetype;
-	const char *patchname = NULL, *module = NULL;
+	const char *MAINKEY = MAINKEY_NEXT3;
+	int MAINKEY_LEN = strlen(MAINKEY);
+	const char *patchname = "next3_snapshot";
+	const char *module = "next3";
 	char *key = NULL;
 	int len, keylen, keytokens;
 	int ifdefno = 0, lineno = 0, nested = 0, hold = 0;
@@ -98,16 +101,16 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (!strcmp(filename+1, "config")) {
+	if (strstr(argv[1], "e2fsprogs")) {
+		module = "e2fsprogs";
+		patchname = NULL;
+		MAINKEY = MAINKEY_E2FS;
+		MAINKEY_LEN = strlen(MAINKEY);
+	}
+
+	if (!strcmp(filename+1, "config"))
 		/* strip config NEXT3_FS_SNAPSHOT_xxx */
 		config = 1;
-		if (*filename == 'K') {
-			patchname = "next3_snapshot";
-			module = "next3";
-		} else {
-			module = "e2fsprogs";
-		}
-	}
 
 	if (!strcmp(key, "SNAPSHOT") || !strcmp(key, "MAIN"))
 		/* strip all snapshot ifdefs */
@@ -128,8 +131,8 @@ int main(int argc, char *argv[])
 			exit(0);
 	}
 
-	fprintf(stderr, "stripping %s%s%s%s from file %s...\n",
-			MAINKEY, key ? "_" : "", key ? : "", 
+	fprintf(stderr, "stripping SNAPSHOT%s%s%s from file %s...\n",
+			key ? "_" : "", key ? : "", 
 			!strip ? "" : (strip > 0 ? "=y" : "=n"),
 			filename);
 
@@ -171,23 +174,16 @@ int main(int argc, char *argv[])
 					if (!key)
 						/* discard all snapshot sub configs */
 						break;
-					if (!snapshot)
-						/* snapshot main config */
-						nested = snapshot = 1;
-					else
-						/* snapshot sub config */
-						nested = 2;
-					if (!key || nested > snapshot) {
-						if (!strncmp(line+MAINKEY_LEN+1, key, keylen)) {
-							/* start filtering snapshot sub config */
-							if (filter)
-								exit_error("nested snapshot sub config",
-										filename, lineno, line);
-							filter = FILTER_UNDEFINED;
-						} else {
-							/* stop filtering snapshot sub config */
-							filter = FILTER_NONE;
-						}
+					snapshot = 1;
+					if (!strncmp(line+MAINKEY_LEN+1, key, keylen)) {
+						/* start filtering snapshot sub config */
+						if (filter)
+							exit_error("nested snapshot sub config",
+									filename, lineno, line);
+						filter = FILTER_UNDEFINED;
+					} else {
+						/* stop filtering snapshot sub config */
+						filter = FILTER_NONE;
 					}
 				}
 			} else if (snapshot || debug) {
@@ -254,6 +250,12 @@ int main(int argc, char *argv[])
 			if (!key && strip < 0 &&
 					!strncmp(line+1, "include", 7) &&
 					!strncmp(line+10, "snapshot.h", 10))
+				continue;
+
+			/* filter define MAINKEY */
+			if (!strncmp(line+1, "define", 6) &&
+				!strncmp(line+8, MAINKEY, MAINKEY_LEN) &&
+				(!key || !strncmp(line+8+MAINKEY_LEN+1, key, keylen)))
 				continue;
 
 			/* filter ifdef/ifndef MAINKEY */

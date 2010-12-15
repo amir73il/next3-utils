@@ -1,4 +1,4 @@
-VER=1.0.13-rc5
+VER=1.0.13-rc6
 KERNEL?=${shell uname -r}
 MACH?=${shell uname -m}
 BASE_PATCH=next3_fs.module.patch

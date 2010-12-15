@@ -1,16 +1,20 @@
-==v1.0.13-rc5 (Nov 2010)==
+==v1.0.13-rc6 (Dec 2010)==
 * Installer supports kernel versions 2.6.31-2.6.35.
 * Tested on Ubuntu 9.10-10.10 and Fedora 13-14.
 * Tested on multi-core machine (by Sergey Ivanov).
+* Tested on big endian platform (mips64).
 * Fix hang on snapshot take (reported by Sergey Ivanov).
 * Fix hang during file remove (reported by Sergey Ivanov).
 * Fix oops during journal commit (reported by Sergey Ivanov).
+* Fix hang after large snapshot deletes (reported by Sergey Ivanov).
 * Fix sparse kernel checker warnings.
 * Fix exclude inode extending on online resize.
 * Fix snapshot blocks reservation.
 * Fix loop device access beyond end of file.
 * Fix quota file update.
+* Ignore quota limits on active snapshot updates.
 * Fix data write paths from mmap and direct I/O.
+* Fix snapshot read error 'deleted inode referenced'.
 * Enable direct I/O.
 * Disable mount with data!=ordered.
 * Disable mount without exclude_inode,has_snapshot features.

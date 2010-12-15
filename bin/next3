@@ -7,7 +7,7 @@
 #
 
 SCRIPT_NAME=next3
-SCRIPT_VER="1.0.13-rc5"
+SCRIPT_VER="1.0.13-rc6"
 SCRIPT_DESC="Next3 snapshot management script"
 
 # generic e2fs progs
@@ -623,10 +623,10 @@ case "$1" in
 	echo Writing $F random data to $n files
 	for i in $( seq 1 $n ) ; do
 		# 1st rewrite moves existing blocks to snapshot and allocates new blocks
-		fallocate -mrs -l 1M $F.$i 2>/dev/null || \
+		fallocate -mrs -l $F $F.$i 2>/dev/null || \
 			dd if=/dev/urandom bs=1M count=$M of=$F.$i conv=notrunc status=noxfer || exit 1
 		# subsequent rewrites write to existing blocks using mmap or direct I/O
-		fallocate -mrs -l 1M $F.1 2>/dev/null || \
+		fallocate -mrs -l $F $F.1 2>/dev/null || \
 			dd if=/dev/urandom bs=1M count=$M of=$F.1 conv=notrunc oflag=direct status=noxfer || exit 1
 	done
 	for i in $( seq 1 $n ) ; do

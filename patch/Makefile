@@ -7,8 +7,7 @@
 # location of work dir with non-stripped next3 sources
 SRC?=..
 # location of release dir for patches
-RELEASE?=~
-KERNEL?=2.6.31
+KERNEL?=2.6.35
 # location of kernel archive
 LINUX_PKG?=../../kernel/${KERNEL}
 # location of e2fsprogs archive
@@ -30,7 +29,7 @@ ifeq ($(KERNEL),2.6.34)
 LINUX=linux-2.6.34.7
 endif
 ifeq ($(KERNEL),2.6.35)
-LINUX=linux-2.6.35.6
+LINUX=linux-2.6.35.9
 endif
 
 # xlate "X0" -> "X", "0" -> ""
@@ -42,10 +41,11 @@ SIGNATURE=Amir Goldstein <amir73il@users.sf.net>
 SIGNEDOFF=Signed-off-by: ${SIGNATURE}
 DELIMITER="--------------------------------------------------------------------------------"
 
-N3_VERSION=1.0.13-rc5
+N3_VERSION=1.0.13-rc6
 N3_VERSION?=${DATE}
 N3_PKGNAME=next3-${N3_VERSION}
 N3_TARBALL=${N3_PKGNAME}.tar.gz
+RELEASE?=~/files/${N3_VERSION}
 N3_RELEASE=${RELEASE}/${N3_PKGNAME}
 N3_SUBTARBALL=next3_snapshot-${N3_VERSION}_patches.tar.gz
 N3_PATCH=next3_snapshot-${N3_VERSION}.patch
@@ -102,15 +102,15 @@ distclean: clean
 
 .PHONY: next3 next3_fs next3_snapshot wiki release
 next3: ${STRIP} rotate_dirs ${BASE}/${LINUX} ${N3_FILES} ${N3_PATCH}~
-	@test -z ${ID} || diff -Nuarp ${SRC_PREV} ${SRC_HEAD} > ${N3_SUBPATCH}+ || test 1 = 1
+	@test -z ${ID} || diff -Nuarp ${SRC_PREV} ${SRC_HEAD} > ${N3_SUBPATCH}+ || true
 	@test -z ${ID} || (rm -f a b ; ln -sf ${PREV}/${LINUX} a ; ln -sf ${HEAD}/${LINUX} b)
 	@test -z ${ID} || (diff -Nuarp a b >> ${N3_SUBPATCH} ; \
 			((echo -n ${ID} ${N3_SUBPATCH} ; \
 			(diffstat ${N3_SUBPATCH}|tail -n 1)) >> next3_series))
-	@diff -Nuarp ${BASE}/${LINUX} ${SRC_PREV}/${LINUX} > _${N3_PATCH}+ || test 1 = 1
+	@diff -Nuarp ${BASE}/${LINUX} ${SRC_PREV}/${LINUX} > _${N3_PATCH}+ || true
 	@(cat ${N3_PATCH}~ ; echo "${SIGNEDOFF}" ; echo ; echo ${DELIMITER}) > _${N3_PATCH}
 	@rm -f a b ; ln -sf ${BASE}/${LINUX} a ; ln -sf ${PREV}/${LINUX} b
-	@diff -Nuarp a b >> _${N3_PATCH} || test 1 = 1
+	@diff -Nuarp a b >> _${N3_PATCH} || true
 	@test ! -z ${KEY} || cp _${N3_PATCH}+ ${N3_PATCH}+
 	@test _${KEY} != _HEAD || cp _${N3_PATCH} ${N3_PATCH}
 	@test _${ID} != _00 || (cp _${N3_PATCH} ${N3_SUBPATCH} ; \
@@ -124,9 +124,9 @@ ${N3_PATCH}~:
 release:
 	mkdir -p ${N3_RELEASE}/bin
 	install -m 644 ${RELEASE_FILES} ${N3_RELEASE}
-	install -m 755 ${BIN_FILES} ${N3_RELEASE}/bin || \
-		(cp -f ${E2FS_PKG}/${E2FS}.tar.gz ${N3_RELEASE} && \
-		make -C ${N3_RELEASE} e2fsprogs && rm -rf ${N3_RELEASE}/${E2FS}*)
+	install -m 755 ${BIN_FILES} ${N3_RELEASE}/bin || true
+	#	(cp -f ${E2FS_PKG}/${E2FS}.tar.gz ${N3_RELEASE} && \
+	#	make -C ${N3_RELEASE} e2fsprogs && rm -rf ${N3_RELEASE}/${E2FS}*)
 	cd ${RELEASE} ; tar cfz ${N3_TARBALL} ${N3_PKGNAME}
 	cp -f ${DOC}/wiki/Changelog ${RELEASE}/Release-notes.txt
 
@@ -144,16 +144,16 @@ next3_fs: ${BASE}/${LINUX} ${N3_BASEPATCH}~
 	@rm -f a b ; ln -sf ${ORIG}/${LINUX} a ; ln -sf ${BASE}/${LINUX} b
 	@mkdir -p ${ORIG}/fs ${BASE}/fs
 	@mv ${BASE}/${LINUX}/fs/next3 ${BASE}/fs
-	@diff -Nuarp a b > $@.built-in.patch || test 1 = 1
+	@diff -Nuarp a b > $@.built-in.patch || true
 	@# create module patch (only fs/next3 files)
 	@rm -f a b ; ln -sf ${ORIG} a ; ln -sf ${BASE} b
-	@diff -Nuarp a/fs b/fs > $@.module.patch || test 1 = 1
+	@diff -Nuarp a/fs b/fs > $@.module.patch || true
 	@mv ${BASE}/fs/next3 ${BASE}/${LINUX}/fs
 	@rm -rf a b ${ORIG}/fs ${BASE}/fs
 	@# create full base+rebase/built-in+module patch
 	@(cat ${N3_BASEPATCH}~ ; echo "${SIGNEDOFF}" ; echo ; echo ${DELIMITER}) > ${N3_BASEPATCH}
 	@rm -f a b ; ln -sf ${ORIG}/${LINUX} a ; ln -sf ${BASE}/${LINUX} b
-	@diff -Nuarp a b >> ${N3_BASEPATCH} || test 1 = 1
+	@diff -Nuarp a b >> ${N3_BASEPATCH} || true
 
 next3_snapshot: next3_fs next3
 	make KEY=exclude_files
@@ -162,7 +162,7 @@ next3_snapshot: next3_fs next3
 	@rm -f a b ; ln -sf ${BASE}/${LINUX} a ; ln -sf ${PREV}/${LINUX} b
 	@mkdir -p ${PREV}/fs ${BASE}/fs
 	@mv ${PREV}/${LINUX}/fs/next3 ${PREV}/fs ; mv ${BASE}/${LINUX}/fs/next3 ${BASE}/fs
-	@diff -Nuarp a b > $@.built-in.patch || test 1 = 1
+	@diff -Nuarp a b > $@.built-in.patch || true
 	@rm -f a b ; ln -sf ${BASE} a ; ln -sf ${PREV} b
 	@diff -Nuarp a/fs b/fs > $@.module.patch || cp $@.module.patch ${LINUX_PKG}
 	@mv ${PREV}/fs/next3 ${PREV}/${LINUX}/fs ; mv ${BASE}/fs/next3 ${BASE}/${LINUX}/fs
@@ -288,14 +288,22 @@ rotate_dirs:
 	@test ! -e ${SRC_PREV} || mv ${SRC_PREV} ${SRC_HEAD}
 	@mkdir -p ${SRC_PREV}/${INC} ${SRC_PREV}/${N3} ${SRC_PREV}/${JBD}
 	@mkdir -p ${SRC_HEAD}/${INC} ${SRC_HEAD}/${N3} ${SRC_HEAD}/${JBD}
-	@mkdir -p ${SRC_PREV}/{${E2FS}/{debugfs,misc,resize},${FSCK},${E2LIB}/{e2p,ext2fs}}
-	@mkdir -p ${SRC_HEAD}/{${E2FS}/{debugfs,misc,resize},${FSCK},${E2LIB}/{e2p,ext2fs}}
+	@cd ${SRC_PREV} && mkdir -p ${FSCK} ${E2LIB} ${E2FS}
+	@cd ${SRC_PREV}/${E2LIB} && mkdir -p e2p ext2fs
+	@cd ${SRC_PREV}/${E2FS} && mkdir -p debugfs misc resize
+	@cd ${SRC_HEAD} && mkdir -p ${FSCK} ${E2LIB} ${E2FS}
+	@cd ${SRC_HEAD}/${E2LIB} && mkdir -p e2p ext2fs
+	@cd ${SRC_HEAD}/${E2FS} && mkdir -p debugfs misc resize
 	@test ! -e ${HEAD} || rm -rf ${HEAD}
 	@test ! -e ${PREV} || mv ${PREV} ${HEAD}
 	@mkdir -p ${PREV}/${INC} ${PREV}/${N3} ${PREV}/${JBD}
 	@mkdir -p ${HEAD}/${INC} ${PREV}/${N3} ${PREV}/${JBD}
-	@mkdir -p ${PREV}/{${E2FS}/{debugfs,misc,resize},${FSCK},${E2LIB}/{e2p,ext2fs}}
-	@mkdir -p ${HEAD}/{${E2FS}/{debugfs,misc,resize},${FSCK},${E2LIB}/{e2p,ext2fs}}
+	@cd ${PREV} && mkdir -p ${FSCK} ${E2LIB} ${E2FS}
+	@cd ${PREV}/${E2LIB} && mkdir -p e2p ext2fs
+	@cd ${PREV}/${E2FS} && mkdir -p debugfs misc resize
+	@cd ${HEAD} && mkdir -p ${FSCK} ${E2LIB} ${E2FS}
+	@cd ${HEAD}/${E2LIB} && mkdir -p e2p ext2fs
+	@cd ${HEAD}/${E2FS} && mkdir -p debugfs misc resize
 
 ${INC}/%:
 	@test ! -z ${KEY} || cp ${SRC}/$@ ${SRC_PREV}/$@
@@ -335,7 +343,8 @@ clean_next3:
 #
 # e2fsprogs patch
 #
-E2FS=e2fsprogs-1.41.9
+E2FSPROGS?=1.41.9
+E2FS=e2fsprogs-${E2FSPROGS}
 E2FS_PATCH=${E2FS}-next3-${N3_VERSION}.patch
 E2FS_SUBTARBALL=${E2FS}-next3-${N3_VERSION}_patches.tar.gz
 E2FS_SUBPATCH=e2fs_next3_${SUFFIX}.patch
@@ -344,7 +353,7 @@ E2LIB=${E2FS}/lib
 E2LIB_FILES=${E2LIB}/e2p/pf.c ${E2LIB}/e2p/feature.c ${E2LIB}/e2p/ls.c ${E2LIB}/e2p/e2p.h \
 	${E2LIB}/ext2fs/res_gdt.c ${E2LIB}/ext2fs/swapfs.c ${E2LIB}/ext2fs/mkjournal.c \
 	${E2LIB}/ext2fs/block.c ${E2LIB}/ext2fs/i_block.c ${E2LIB}/ext2fs/bmap.c ${E2LIB}/ext2fs/rw_bitmaps.c \
-	${E2LIB}/ext2fs/openfs.c ${E2LIB}/ext2fs/ext2fs.h ${E2LIB}/ext2fs/ext2_fs.h
+	${E2LIB}/ext2fs/openfs.c ${E2LIB}/ext2fs/freefs.c ${E2LIB}/ext2fs/ext2fs.h ${E2LIB}/ext2fs/ext2_fs.h
 FSCK=${E2FS}/e2fsck
 FSCK_FILES=${FSCK}/problem.c ${FSCK}/unix.c ${FSCK}/super.c ${FSCK}/rehash.c ${FSCK}/journal.c \
 	${FSCK}/pass1.c ${FSCK}/pass5.c ${FSCK}/problem.h ${FSCK}/e2fsck.h
@@ -354,15 +363,16 @@ MISC_FILES=${E2FS}/misc/dumpe2fs.c ${E2FS}/misc/mke2fs.c ${E2FS}/misc/tune2fs.c 
 E2FS_FILES=${E2LIB_FILES} ${FSCK_FILES} ${MISC_FILES} ${E2FS}/version.h 
 
 .PHONY: e2fs e2fs_clean
-e2fs: ${STRIP} rotate_dirs ${ORIG}/${E2FS} ${E2FS_FILES} ${E2FS}/Sconfig ${E2FS_PATCH}~
-	@test -z ${ID0} || diff -Nuarp ${SRC_PREV} ${SRC_HEAD} > ${E2FS_SUBPATCH}+ || test 1 = 1
-	@test -z ${ID0} || (rm -f a b ; ln -sf ${PREV}/${E2FS} a ; ln -sf ${HEAD}/${E2FS} b)
+e2fs: ${STRIP} rotate_dirs ${ORIG}/${E2FS} ${E2FS_FILES} ${E2FS}/Kconfig ${E2FS_PATCH}~
+	@rm -f a b ; ln -sf ${SRC_PREV}/${E2FS} a ; ln -sf ${SRC_HEAD}/${E2FS} b
+	@test -z ${ID0} || diff -Nuarp a b > ${E2FS_SUBPATCH}+ || true
+	@rm -f a b ; ln -sf ${PREV}/${E2FS} a ; ln -sf ${HEAD}/${E2FS} b
 	@test -z ${ID0} || (diff -Nuarp a b >> ${E2FS_SUBPATCH} ; \
 			((echo -n ${ID} ${E2FS_SUBPATCH} ; \
 			(diffstat ${E2FS_SUBPATCH}|tail -n 1)) >> e2fs_series))
-	@diff -Nuarp ${ORIG}/${E2FS} ${SRC_PREV}/${E2FS} > _${E2FS_PATCH}+ || test 1 = 1
+	@diff -Nuarp ${ORIG}/${E2FS} ${SRC_PREV}/${E2FS} > _${E2FS_PATCH}+ || true
 	@rm -f a b ; ln -sf ${ORIG}/${E2FS} a ; ln -sf ${PREV}/${E2FS} b
-	@diff -Nuarp a b > _${E2FS_PATCH} || test 1 = 1
+	@diff -Nuarp a b > _${E2FS_PATCH} || true
 	@test ! -z ${KEY} || cp _${E2FS_PATCH}+ ${E2FS_PATCH}+
 	@test _${KEY} != _HEAD || cat ${E2FS_PATCH}~ _${E2FS_PATCH} > ${E2FS_PATCH}
 	@test _${ID} != _0 || cat ${E2FS_SUBPATCH}~ _${E2FS_PATCH} > ${E2FS_SUBPATCH}
@@ -415,12 +425,12 @@ e2fs_series: ${ORIG}/${E2FS} e2fs
 ${E2FS}/version.h:
 	@cp ${SRC}/$@ ${SRC_PREV}/$@ ; cp ${SRC}/$@ ${PREV}/$@
 
-${E2FS}/Sconfig:
+${E2FS}/Kconfig:
 	@test ! -z ${KEY} || cp ${SRC}/$@ ${SRC_PREV}/$@
 	@test -z ${KEY} || ((${STRIP} ${SRC_HEAD}/$@ ${SRC_PREV}/$@ ${KEY} > ${E2FS_SUBPATCH}~) && \
 		(cat ${E2FS_SUBPATCH}~ ; echo "${SIGNEDOFF}") > ${E2FS_SUBPATCH} && \
 		cp ${E2FS_SUBPATCH} ${E2FS_SUBPATCH}~)
-	@cp ${SRC_PREV}/$@ ${SRC_HEAD}/$@
+	@${STRIP} ${SRC_PREV}/$@ ${PREV}/$@ snapshot y
 
 ${E2FS}/debugfs/%:
 	@test ! -z ${KEY} || cp ${SRC}/$@ ${SRC_PREV}/$@

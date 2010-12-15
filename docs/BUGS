@@ -12,13 +12,4 @@ Creating /20M
 snapshot: __next3_journal_stop(0): credits=416, limit=417/420, user=23/23, ref=1, caller=next3_create
 snapshot: COW stats: moved/copied=0/0, mapped/clear/cached=4/0/2, bitmaps/cleared=0/0
 
-Bug #3: postgress benchmark fails to run
-========================================
-Next3-version: 1.0.13-rc3
-Hardware: X86_64 4 cores
-Submited-by: Sergey Ivanov <sergey57@gmail.com>
-Side-effects: core dump due to SIGSEGV
-Test: run phoronix pgbench benchmark on next3 with existing snapshots
-Analysis: this may be related to unsupported direct I/O
-
 
