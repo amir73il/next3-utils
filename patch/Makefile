@@ -41,7 +41,7 @@ SIGNATURE=Amir Goldstein <amir73il@users.sf.net>
 SIGNEDOFF=Signed-off-by: ${SIGNATURE}
 DELIMITER="--------------------------------------------------------------------------------"
 
-N3_VERSION=1.0.13-rc6
+N3_VERSION=1.0.13-rc7
 N3_VERSION?=${DATE}
 N3_PKGNAME=next3-${N3_VERSION}
 N3_TARBALL=${N3_PKGNAME}.tar.gz
@@ -87,7 +87,8 @@ N3_FILES=${INC_FILES} ${FS_FILES} ${JBD_FILES} ${MOD_FILES} ${NEW_FILES} ${OLD_F
 
 BIN=../bin
 DOC=../docs
-BIN_FILES=${BIN}/next3 ${BIN}/fsck.next3 ${BIN}/mkfs.next3 ${BIN}/tunefs.next3 \
+BIN_FILES=${BIN}/next3 ${BIN}/Makefile ${BIN}/truncate.c ${BIN}/fallocate.c \
+	  ${BIN}/fsck.next3 ${BIN}/mkfs.next3 ${BIN}/tunefs.next3 \
 	  ${BIN}/lsattr.next3 ${BIN}/chattr.next3 ${BIN}/resize.next3
 RELEASE_FILES=../Makefile ${DOC}/README ${DOC}/COPYING ${DOC}/INSTALL ${DOC}/HOWTO ${DOC}/CHANGELOG \
 	  ${DOC}/INDEX ${DOC}/BUGS ${DOC}/TODO
@@ -158,6 +159,7 @@ next3_fs: ${BASE}/${LINUX} ${N3_BASEPATCH}~
 next3_snapshot: next3_fs next3
 	make KEY=exclude_files
 	make KEY=file_goal
+	make KEY=mount
 	make KEY=HEAD
 	@rm -f a b ; ln -sf ${BASE}/${LINUX} a ; ln -sf ${PREV}/${LINUX} b
 	@mkdir -p ${PREV}/fs ${BASE}/fs
@@ -171,6 +173,7 @@ next3_snapshot: next3_fs next3
 next3_series: next3_fs next3
 	make KEY=exclude_files
 	make KEY=file_goal
+	make KEY=mount
 	make KEY=HEAD
 	@rm -f $@
 	make ID=92 KEY=cleanup_merge

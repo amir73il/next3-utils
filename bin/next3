@@ -7,7 +7,7 @@
 #
 
 SCRIPT_NAME=next3
-SCRIPT_VER="1.0.13-rc6"
+SCRIPT_VER="1.0.13-rc7"
 SCRIPT_DESC="Next3 snapshot management script"
 
 # generic e2fs progs
@@ -36,6 +36,16 @@ if [ -f $dir/chattr.next3 ] ; then
 	CHSNAP=$dir/chattr.next3
 fi
 done 
+
+# some packaged test utils
+TRUNCATE=truncate
+FALLOCATE=fallocate
+if [ -f ./bin/truncate ] ; then
+	TRUNCATE=./bin/truncate
+fi
+if [ -f ./bin/fallocate ] ; then
+	FALLOCATE=./bin/fallocate
+fi
 
 if [ $# -ge 2 ] && [ $1 != help ] && [ $1_$2 != $1_help ] && [ $1 != config ] && \
 	[ $1 != version ] && [ $1 != debug ] && [ $1 != delay ] && [ _$1 != _test ] && [ $1 != tests ] ; then
@@ -104,10 +114,10 @@ if [ -z $NEXT3DEV ] && [ -z $NEXT3MNT ] ; then
 		. ./$CONFFILE
 	elif [ -f ~/$CONFFILE ] ; then
 		. ~/$CONFFILE
-	elif [ $( mount -t next3 | wc -l ) = 1 ] ; then
+	elif [ $( mount -t next3 | grep -v @ | wc -l ) = 1 ] ; then
 		# exactly one mounted next3 filesystem found - use it
-		NEXT3DEV=$( mount -t next3 | ( read a b c d ; echo $a ) )
-		NEXT3MNT=$( mount -t next3 | ( read a b c d ; echo $c ) )
+		NEXT3DEV=$( mount -t next3 | grep -v @ | ( read a b c d ; echo $a ) )
+		NEXT3MNT=$( mount -t next3 | grep -v @ | ( read a b c d ; echo $c ) )
 	fi
 fi
 
@@ -339,7 +349,7 @@ case "$1" in
 		exit 1
 	fi
 	if [ -f $SNAPDIR/$s ] ; then
-		$0 umount $s
+		$0 umount $s || exit 1
 		$CHSNAP -X -S $SNAPDIR/$s || exit 1
 	fi
 	echo snapshot $S is deleted
@@ -421,7 +431,7 @@ case "$1" in
   		$0 enable $s || exit 1
 		if grep "$SNAPMNT$s\ " /proc/mounts ; then
 			echo "$0 mount: snapshot $S is already mounted!"
-			exit 1
+			exit 0
 		fi
 		mkdir -p $SNAPMNT$s
   		mount -t ext2 -r -o loop $SNAPDIR/$s $SNAPMNT$s || exit 1
@@ -446,11 +456,13 @@ case "$1" in
 		umount -i -d $MNTOPT $NEXT3MNT || exit 1
 		echo next3 filesystem was unmounted
 	else
-		if [ -d $SNAPMNT$s ] ; then
+		if grep "$SNAPMNT$s\ " /proc/mounts ; then
 			umount -d $SNAPMNT$s || exit 1
+		fi
+		if [ -d $SNAPMNT$s ] ; then
 			rmdir $SNAPMNT$s
 		fi
-  		$0 disable $s
+  		$0 disable $s || exit 1
 		echo snapshot $S was unmounted
 	fi
 	echo .
@@ -623,10 +635,10 @@ case "$1" in
 	echo Writing $F random data to $n files
 	for i in $( seq 1 $n ) ; do
 		# 1st rewrite moves existing blocks to snapshot and allocates new blocks
-		fallocate -mrs -l $F $F.$i 2>/dev/null || \
+		$FALLOCATE -mrs -l $F $F.$i 2>/dev/null || \
 			dd if=/dev/urandom bs=1M count=$M of=$F.$i conv=notrunc status=noxfer || exit 1
 		# subsequent rewrites write to existing blocks using mmap or direct I/O
-		fallocate -mrs -l $F $F.1 2>/dev/null || \
+		$FALLOCATE -mrs -l $F $F.1 2>/dev/null || \
 			dd if=/dev/urandom bs=1M count=$M of=$F.1 conv=notrunc oflag=direct status=noxfer || exit 1
 	done
 	for i in $( seq 1 $n ) ; do
@@ -657,7 +669,7 @@ case "$1" in
 		echo Remove test:
 		echo ------------
 		echo 'Truncating c.txt (to size 4)'
-		truncate -s 4 $NEXT3MNT/C/c.txt
+		$TRUNCATE -s 4 $NEXT3MNT/C/c.txt
 		echo 'Removing d.txt'
 		rm $NEXT3MNT/D/d.txt
 	  ;;

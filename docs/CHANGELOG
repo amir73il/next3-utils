@@ -1,6 +1,6 @@
-v1.0.13-rc6
+v1.0.13-rc7
 -----------
-Dec 13, 2010
+Dec 23, 2010
 - installer supports kernel versions 2.6.31-2.6.35
 - tested on Ubuntu 9.10-10.10 and Fedora 13-14
 - tested on multi-core X86_64 (by Sergey Ivanov)
@@ -17,6 +17,7 @@ Dec 13, 2010
 - ignore quota limits on active snapshot updates
 - fix data write paths from mmap and direct I/O
 - fix snapshot read error 'deleted inode referenced'
+- fix crash on mount after journal has recorded an error
 - enable direct I/O
 - disable mount with data!=ordered
 - disable mount without exclude_inode,has_snapshot features

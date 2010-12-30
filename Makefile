@@ -1,4 +1,4 @@
-VER=1.0.13-rc6
+VER=1.0.13-rc7
 KERNEL?=${shell uname -r}
 MACH?=${shell uname -m}
 BASE_PATCH=next3_fs.module.patch
@@ -33,11 +33,11 @@ install:
 .PHONY: test
 test:
 	grep next3 /proc/modules || /sbin/insmod next3/next3.ko
-	(test -f test.img && (bin/tunefs.next3 -l test.img | grep UUID)) || ( touch test.img ; yes | bin/mkfs.next3 test.img 1048576 )
+	(test -f test.img && (./bin/tunefs.next3 -l test.img | grep UUID)) || ( ./bin/truncate -s 4G test.img ; yes | ./bin/next3 mkfs test.img )
 	mkdir -p test
 	mount -t next3 | grep test || mount -t next3 test.img -o loop test
-	bin/next3 tests
-	bin/next3 umount
+	./bin/next3 tests
+	./bin/next3 umount
 	/sbin/rmmod next3
 	
 next3: ${BASE_PATCH} ${SNAPSHOT_PATCH}
@@ -47,8 +47,9 @@ next3: ${BASE_PATCH} ${SNAPSHOT_PATCH}
 
 .PHONY: utils
 utils:
-	bin/mkfs.next3 -V || make e2fsprogs
-	bin/fsck.next3 -V
+	./bin/mkfs.next3 -V || make e2fsprogs
+	./bin/fsck.next3 -V
+	make -C bin || true
 
 .PHONY: e2fsprogs
 e2fsprogs: ${E2FSPROGS}

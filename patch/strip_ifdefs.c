@@ -4,6 +4,7 @@
 #include <ctype.h>
 
 #define MAINKEY_NEXT3 "CONFIG_NEXT3_FS_SNAPSHOT"
+#define MAINKEY_EXT4 "CONFIG_EXT4_FS_SNAPSHOT"
 #define MAINKEY_E2FS "EXT2FS_SNAPSHOT"
 #define MAX_KEY 20
 
@@ -68,7 +69,10 @@ int main(int argc, char *argv[])
 	else
 		filetype = "";
 
-	outfile = fopen(argv[2], "w");
+	if (!strcmp(argv[2], "-"))
+		outfile = stdout;
+	else
+		outfile = fopen(argv[2], "w");
 	if (!outfile)
 		exit_error("failed to open outfile",
 				argv[2], 0, "");
@@ -101,7 +105,13 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (strstr(argv[1], "e2fsprogs")) {
+	if (strstr(argv[1], "ext4")) {
+		module = "ext4";
+		patchname = NULL;
+		MAINKEY = MAINKEY_EXT4;
+		MAINKEY_LEN = strlen(MAINKEY);
+	}
+	else if (strstr(argv[1], "e2fsprogs")) {
 		module = "e2fsprogs";
 		patchname = NULL;
 		MAINKEY = MAINKEY_E2FS;
@@ -162,7 +172,8 @@ int main(int argc, char *argv[])
 				continue;
 			} else if (!strncmp(line, "config ", 7)) {
 				if (debug) {
-					if (!strncmp(line+7, "NEXT3_FS_DEBUG", 14)) {
+					if (!strncmp(line+7, MAINKEY+7, MAINKEY_LEN-15) &&
+						!strncmp(line+MAINKEY_LEN-8, "DEBUG", 5)) {
 						/* strip debug config */
 						hold = 0;
 						filter = FILTER_UNDEFINED;
