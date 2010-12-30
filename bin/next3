@@ -41,10 +41,10 @@ done
 TRUNCATE=truncate
 FALLOCATE=fallocate
 if [ -f ./bin/truncate ] ; then
-	TRUNCATE=./bin/truncate
+	TRUNCATE=$PWD/bin/truncate
 fi
 if [ -f ./bin/fallocate ] ; then
-	FALLOCATE=./bin/fallocate
+	FALLOCATE=$PWD/bin/fallocate
 fi
 
 if [ $# -ge 2 ] && [ $1 != help ] && [ $1_$2 != $1_help ] && [ $1 != config ] && \

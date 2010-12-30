@@ -33,7 +33,8 @@ install:
 .PHONY: test
 test:
 	grep next3 /proc/modules || /sbin/insmod next3/next3.ko
-	(test -f test.img && (./bin/tunefs.next3 -l test.img | grep UUID)) || ( ./bin/truncate -s 4G test.img ; yes | ./bin/next3 mkfs test.img )
+	(test -f test.img && (./bin/tunefs.next3 -l test.img | grep UUID)) || \
+		( touch test.img ; ./bin/truncate -s 4G test.img ; yes | ./bin/next3 mkfs test.img )
 	mkdir -p test
 	mount -t next3 | grep test || mount -t next3 test.img -o loop test
 	./bin/next3 tests
