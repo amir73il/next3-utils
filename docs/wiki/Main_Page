@@ -1,5 +1,5 @@
-Next3 is a flavor of the widely used Ext3 file system with built-in support for snapshots. 
-Developed by [http://www.ctera.com/ CTERA Networks], Next3 is licensed under the GPL.
+NEXT3(R) is a flavor of the widely used Ext3 file system with built-in support for snapshots. 
+Developed by [http://www.ctera.com/ CTERA Networks], NEXT3 is licensed under the GPL.
 
 == Features ==
 * Backward and forward compatible with Ext3
