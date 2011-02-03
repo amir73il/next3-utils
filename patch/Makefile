@@ -41,7 +41,7 @@ SIGNATURE=Amir Goldstein <amir73il@users.sf.net>
 SIGNEDOFF=Signed-off-by: ${SIGNATURE}
 DELIMITER="--------------------------------------------------------------------------------"
 
-N3_VERSION=1.0.13-rc7
+N3_VERSION=1.0.13
 N3_VERSION?=${DATE}
 N3_PKGNAME=next3-${N3_VERSION}
 N3_TARBALL=${N3_PKGNAME}.tar.gz
@@ -346,7 +346,7 @@ clean_next3:
 #
 # e2fsprogs patch
 #
-E2FSPROGS?=1.41.9
+E2FSPROGS?=1.41.14
 E2FS=e2fsprogs-${E2FSPROGS}
 E2FS_PATCH=${E2FS}-next3-${N3_VERSION}.patch
 E2FS_SUBTARBALL=${E2FS}-next3-${N3_VERSION}_patches.tar.gz

@@ -1,6 +1,7 @@
-v1.0.13-rc7
------------
-Dec 23, 2010
+v1.0.13
+-------
+Feb 3, 2010
+- upgrade next3 utils to e2fsprogs-1.41.14
 - installer supports kernel versions 2.6.31-2.6.35
 - tested on Ubuntu 9.10-10.10 and Fedora 13-14
 - tested on multi-core X86_64 (by Sergey Ivanov)

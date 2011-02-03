@@ -1,4 +1,4 @@
-VER=1.0.13-rc7
+VER=1.0.13
 KERNEL?=${shell uname -r}
 MACH?=${shell uname -m}
 BASE_PATCH=next3_fs.module.patch
@@ -6,8 +6,8 @@ SNAPSHOT_PATCH=next3_snapshot.module.patch
 PWD:=${shell pwd}
 KDIR=/lib/modules/${KERNEL}/build
 INSTALL_DIR=/lib/modules/${KERNEL}/fs/next3
-E2FSPROGS=e2fsprogs-1.41.9
-E2FSPROGS_VER=1.0.12
+E2FSPROGS=e2fsprogs-1.41.14
+E2FSPROGS_VER=1.0.13
 E2FSPROGS_PATCH=${E2FSPROGS}-next3-${E2FSPROGS_VER}.patch
 
 all: module utils
