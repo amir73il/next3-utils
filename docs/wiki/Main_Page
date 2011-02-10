@@ -32,9 +32,9 @@ Developed by [http://www.ctera.com/ CTERA Networks], NEXT3 is licensed under the
 * [[Ext4 snapshots TODO]]
 
 == Source Code ==
-[[Next3 patches]] are available for download on the project [http://sourceforge.net/projects/next3/files/ download page].
+The latest Next3 code as well as in development Ext4 snapshots code is available on [https://github.com/amir73il/ext4-snapshots github].
 
-Please contact the project administrator if you would like to contribute to the project by reviewing the patches.
+Please contact the project administrator if you would like to contribute to Next3 or Ext4 snapshots development.
 
 == Beta Testing ==
 Next3 is being tested by a group of beta testers on an ARM platforms with 512MB RAM.

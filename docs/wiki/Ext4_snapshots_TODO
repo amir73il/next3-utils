@@ -8,8 +8,7 @@ following ways are most welcome to contact the project administrator:
 * Performing actual merge tasks.
 
 
-=                     Ext4 snapshots design challenges                     =
-
+= Ext4 snapshots design challenges =
 The following issues require special attention when merging the snapshots
 feature to ext4.
 
@@ -17,7 +16,6 @@ Ext4 developers are encouraged to comment on these issues and suggest
 solutions other than the ones proposed here.
 
 == Extent mapped file data block re-write ==
-
 The term re-write refers to a non first write to a file's data block.
 The first write allocates a new block for that file and requires no special
 snapshot block operations. If a snapshot was taken after a block was
@@ -41,7 +39,6 @@ Ted T'so has wrote about this choice:
 ''the COW bitmaps to decide what had happened.''
 
 === Move-on-write ===
-
 Besides the mentioned file fragmentation problem, every move-on-write
 operation may need to split up a data extent into 2 extents of existing
 blocks and a third extent for blocks allocated for the new data.
@@ -60,9 +57,7 @@ inside the snapshot file, so a background task can simply copy the snapshot
 moved blocks to new locations and then copy the file's new data into its
 original blocks and map them back into the file.
 
-
 === Copy-on-write ===
-
 Copying the re-written block to snapshot may seem like the "easy way out"
 of the file fragmentation problem, but the problems it causes in return
 are not to be disregarded.
@@ -110,6 +105,28 @@ re-writing an allocated data block, there is no sense in making this block
 "ordered", because this kind of data modification is directly related to any
 metadata modification (except change of inode's mtime, but who cares).
 
+=== Heal-on-rewrite ===
+Copy and move on write both have severe performance implications.
+One idea that can enjoy the best of the two methods, is heal-on-rewrite.
+
+The first time a snapshot protected data block is written, it is moved to
+snapshot, possibly fragmenting the file (if it is a random write pattern).
+
+At that time, a self-healing I/O sequence is initiated, in which the data
+in the old file block, which is currently mapped to the snapshot file, is
+copied to a new block and remapped to the snapshot file. The old block is
+then freed and inserted to the original file's preallocations.
+
+The seconds time that data is written to the same offset, the file will be
+automatically de-fragmented, using the new data will be written to the
+good old block.
+
+The seconds time write can either be initiated after the snapshot remapping
+is complete or it can rely on the assumption that "random" write patterns
+are not really random and that writing to offset X in a file is unlikely a
+singular event. So at some point in time a file may be fragmented, but at
+a later time it will be healed, preserving a constant level of fragmentation
+over time.
 
 ==Large file create and delete performance==
 Ext4 has improved performance over Ext3 mainly due to delayed allocation and extent mapped files.
@@ -153,17 +170,21 @@ to map a 48bit block address space, because extent mapped files have a 32bit log
 In order to map a 48bit physical block address space, the snapshot file would have to use a new
 extent format, which maps a 48bit logical address space to a 48bit physical address space.
 
-
 ==Large scale SMP systems==
 In general, every file system should aim to allow as many concurrent operations as possible on both single and multiple CPU systems.
 In many cases, file system operations on different objects (i.e. inodes) or on different physical locations (i.e. block groups) can be performed concurrently with very little need for synchronization.
 
-With current snapshots design, however, every COW operation of any block in the file system takes a single mutex object (the active snapshot file's truncate_mutex). One must keep in mind that COW operations are not so common and one might think. New allocated blocks are never COW'ed and COW of modified metadata block happens only once per snapshot era.
+With current snapshots implementation, however, every COW operation of any block in the file system needs to acquire a write lock (the active snapshot file's i_data_sem).
+One must keep in mind that COW operations are not so common and one might think. New allocated blocks are never COW'ed and COW of modified metadata block happens only once per snapshot era.
 
-To mitigate the COW bottleneck, an array of mutex objects can be used to synchronize COW operation within specific block group ranges.
+To mitigate the COW bottleneck, taking the write lock can be avoided, thanks to the restriction that the active snapshot cannot be truncated nor unlinked.
 
-The number of block group ranges would depend on the desired level of concurrency, but it also depends of the structure of the snapshot file. With current implementation, independent block group ranges, must not be mapped by the same double indirect block.
-(1 double indirect block maps 1M of 4K blocks = 32 block groups).
+Instead, the synchronization of concurrent COW operations can be achieved by taking the buffer_head spin lock before splicing a new branch to the indirect map tree.
+If a branch was already slices to the slice point, the new allocated branch is pruned and sliced at a deeper level of the existing branch.
+
+This solution is unique to the indirect map format, because extent map format may need to re-balance the entire tree on every allocation.
+
+Thanks for Jan Kara for helping me to come up with this solution , which was designed on a napkin in ksummit ;-).
 
 ==The (ab?)use of page cache==
 As all other metadata operations, the file system uses the block device's page cache, with attached buffer heads,
@@ -184,21 +205,20 @@ Each of following mile stones will make the snapshot feature available to a wide
 
 ===Mutually exclusive snapshots feature===
 * Apply the current patches to ext4 code.
-* Mutually exclude the snapshot feature from other ext4 features (i.e. extents).
+* Mutually exclude the snapshot feature from other ext4 features (extents, delayed allocation).
 * '''Availability of snapshots feature for upgrading ext3 deployments.'''
 
 ===Support ext4 default configuration===
-* Add support for default ext4 features (i.e. extents).
+* Add support for default ext4 features (extents, delayed allocation).
 * '''Availability of snapshots feature for common ext4 deployments.'''
 
 ===Performance optimizations===
-* Verify that delayed allocation works well with snapshots.
+* Verify that delayed allocation performs well with snapshots.
 * Optimize moving deleted extent data blocks into snapshot.
 * '''Availability for users that require snapshots functionality combined with improved ext4 performance.'''
 
-===Support ext4 configuration options===
+===Support custom ext4 configuration options===
 * Add support for untested configuration options (no journal, no bh, journaled quota, block size != page size).
-* Add support for untested direct I/O write operation.
 * '''Availability of snapshots feature for custom ext4 deployments.'''
 
 ===Large file system support===
@@ -217,49 +237,51 @@ The colors indicate the nature of the merge tasks:
 * '''<font color=red>Challenging</font>''' - should be designed in collaboration with other ext4 developers.
 
 ===Snapshot debug patch===
-* Add generic debug functions.
+* <s>Add generic debug functions.</s>
 
 ===Snapshot hooks patches===
-* Add snapshot hooks inside JBD2 meta data write hooks.
-* Add snapshot hooks inside ext4_free_blocks().
-* Move indirect mapped file data blocks to snapshot on write.
+* <s>Add snapshot hooks inside JBD2 meta data write hooks.</s>
+* <s>Add snapshot hooks inside ext4_free_blocks().</s>
+* <s>Move indirect mapped file data blocks to snapshot on write.</s>
+* <font color=green>Move on write from mmap and direct I/O write paths.</font>
+* <font color=green>Move on write from delayed allocation write paths.</font>
 * <font color=red>Move or copy extent mapped file data blocks to snapshot on write.</font>
 
 ===Snapshot file patches===
-* Snapshot implementation as an indirect mapped file, that can map up to 32bit block offsets.
-* <font color=green>Move read-though code from get_blocks_handle() to snapshot_get_block().</font>
-* <font color=green>Move snapshot_get_block() and snapshot_readpage() from inode.c to new snapshot_inode.c file.</font>
+* <s>Snapshot implementation as an indirect mapped file, that can map up to 32bit block offsets.</s>
+* <s><font color=green>Move read-though code from get_blocks_handle() to snapshot_get_block().</font></s>
+* <s><font color=green>Move snapshot_get_block() and snapshot_readpage() from inode.c to new snapshot_inode.c file.</font></s>
 * <font color=red>Snapshot implementation as a new extent mapped file format, that can map up to 48bit of block offsets.</font>
-* <font color=green>Add support for direct I/O.</font>
 
 ===Snapshot block operation patches===
-* Copy meta data blocks to snapshot.
-* Move deleted blocks to snapshot.
+* <s>Copy meta data blocks to snapshot.</s>
+* <s>Move data blocks to snapshot on write.</s>
+* <s>Move deleted blocks to snapshot.</s>
 * <font color=blue>Fast move of large group of deleted blocks to reduce the performance impact on extent mapped file deletion.</font>
-* Move indirect mapped file data blocks to snapshot on write.
+* <font color=blue>Reduce locking contention on active snapshot block allocations to improve the performance of concurrent COW operations.</font>
 * <font color=red>Move or copy extent mapped file data blocks to snapshot on write.</font>
 * <font color=red>Add support block size != page size.</font>
 
 ===Snapshot control patches===
-* Add snapshot control via SETFLAGS ioctl.
+* <s>Add snapshot control via SETFLAGS ioctl.</s>
 * <font color=green>Implement the simplified [[User-kernel API]].</font>
 * <font color=green>Initialize global metadata of new ext4 features on snapshot take (like meta block group descriptors).</font>
 
 ===Snapshot journaling patches===
-* Journal snapshot block operations in current transaction.
+* <s>Journal snapshot block operations in current transaction.</s>
 * <font color=green>Check for new JBD2 API's that require special attention.</font>
 * <font color=green>Add support for journaled quota.</font>
 
 ===Snapshot list patches===
-* Add snapshot list operations and read-through to previous snapshot.
+* <s>Add snapshot list operations and read-through to previous snapshot.</s>
 
 ===Snapshot race patches===
-* Add protection for snapshot race conditions.
+* <s>Add protection for snapshot race conditions.</s>
 * <font color=red>Stop using buffer heads for synchronization of snapshot block operations.</font>
 
 ===Snapshot exclude bitmap patches===
-* Keep the exclude bitmap up-to-date with snapshot file blocks.
+* <s>Keep the exclude bitmap up-to-date with snapshot file blocks.</s>
 
 ===Snapshot cleanup patches===
-* Reclaim deleted snapshot file blocks.
-* <font color=green>Move snapshot_shrink_blocks() and snapshot_merge_blocks() from inode.c to new snapshot_inode.c file.</font>
+* <s>Reclaim deleted snapshot file blocks.</s>
+* <s><font color=green>Move snapshot_shrink_blocks() and snapshot_merge_blocks() from inode.c to new snapshot_inode.c file.</font></s>
