@@ -205,11 +205,11 @@ Each of following mile stones will make the snapshot feature available to a wide
 
 ===Mutually exclusive snapshots feature===
 * Apply the current patches to ext4 code.
-* Mutually exclude the snapshot feature from other ext4 features (extents, delayed allocation).
+* Mutually exclude the snapshot feature from other ext4 features (i.e. extents, 64bit).
 * '''Availability of snapshots feature for upgrading ext3 deployments.'''
 
 ===Support ext4 default configuration===
-* Add support for default ext4 features (extents, delayed allocation).
+* Add support for default ext4 features (i.e. extents).
 * '''Availability of snapshots feature for common ext4 deployments.'''
 
 ===Performance optimizations===
@@ -243,8 +243,8 @@ The colors indicate the nature of the merge tasks:
 * <s>Add snapshot hooks inside JBD2 meta data write hooks.</s>
 * <s>Add snapshot hooks inside ext4_free_blocks().</s>
 * <s>Move indirect mapped file data blocks to snapshot on write.</s>
+* <s><font color=green>Move on write from delayed allocation write paths.</font></s>
 * <font color=green>Move on write from mmap and direct I/O write paths.</font>
-* <font color=green>Move on write from delayed allocation write paths.</font>
 * <font color=red>Move or copy extent mapped file data blocks to snapshot on write.</font>
 
 ===Snapshot file patches===
