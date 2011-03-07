@@ -353,10 +353,13 @@ E2FS_SUBTARBALL=${E2FS}-next3-${N3_VERSION}_patches.tar.gz
 E2FS_SUBPATCH=e2fs_next3_${SUFFIX}.patch
 
 E2LIB=${E2FS}/lib
-E2LIB_FILES=${E2LIB}/e2p/pf.c ${E2LIB}/e2p/feature.c ${E2LIB}/e2p/ls.c ${E2LIB}/e2p/e2p.h \
+E2LIB_FILES=${E2LIB}/e2p/pf.c ${E2LIB}/e2p/feature.c ${E2LIB}/e2p/ls.c \
+	    ${E2LIB}/e2p/fgetflags.c ${E2LIB}/e2p/e2p.h \
 	${E2LIB}/ext2fs/res_gdt.c ${E2LIB}/ext2fs/swapfs.c ${E2LIB}/ext2fs/mkjournal.c \
-	${E2LIB}/ext2fs/block.c ${E2LIB}/ext2fs/i_block.c ${E2LIB}/ext2fs/bmap.c ${E2LIB}/ext2fs/rw_bitmaps.c \
-	${E2LIB}/ext2fs/openfs.c ${E2LIB}/ext2fs/freefs.c ${E2LIB}/ext2fs/ext2fs.h ${E2LIB}/ext2fs/ext2_fs.h
+	${E2LIB}/ext2fs/block.c ${E2LIB}/ext2fs/i_block.c ${E2LIB}/ext2fs/bmap.c \
+	${E2LIB}/ext2fs/rw_bitmaps.c \
+	${E2LIB}/ext2fs/openfs.c ${E2LIB}/ext2fs/freefs.c ${E2LIB}/ext2fs/dupfs.c \
+	${E2LIB}/ext2fs/ext2fs.h ${E2LIB}/ext2fs/ext2_fs.h
 FSCK=${E2FS}/e2fsck
 FSCK_FILES=${FSCK}/problem.c ${FSCK}/unix.c ${FSCK}/super.c ${FSCK}/rehash.c ${FSCK}/journal.c \
 	${FSCK}/pass1.c ${FSCK}/pass5.c ${FSCK}/problem.h ${FSCK}/e2fsck.h
