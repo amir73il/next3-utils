@@ -2,12 +2,7 @@
 <html> 
   <head> 
     <title>NEXT3 Filesystem Home Page</title> 
-      <style type="text/css">
-          .style1 {
-              font-size: medium;
-          }
-      </style>
-  </head> 
+      </head> 
  
   <body> 
     <!-- top title table --> 
@@ -26,32 +21,71 @@
     <P>This is the home page for the NEXT3(R) filesystem. Next3 is a clone of the Ext3 filesystem
     with built-in support for snapshots. Next3 was developed by <A HREF="http://www.ctera.com">CTERA Networks</A></P> 
  
-    <P>The Next3 Sourceforge summary page can be found <A HREF="http://sourceforge.net/projects/next3">here</A>.</P>
+    <P>The Next3 Sourceforge summary page can be found <A HREF="http://sourceforge.net/projects/next3">here</A>. Documentation and other resources can be found <A HREF="http://sourceforge.net/apps/mediawiki/next3">here</A>.</P>
  
-    <P>Documentation and other resources can be found <A HREF="http://sourceforge.net/apps/mediawiki/next3">here</A>.</P>    
+    <P>Visit <a href="http://www.ctera.com/next3">Next3</a> page on <A>CTERA website</A> to learn more about Next3 snapshots and Cloud Attached Storage.</P> 
+ 
+    <hr> 
  
     <H2>Next3 release 1.0.13 is available!</H2> 
  
-    <H4 class="style1">First version to run on multi core machines. Many thanks to 
+    <H4>First version to run on multi core machines. Many thanks to 
         Sergey Ivanov for testing, reporting bugs and helping to hunt them down.</H4>
-    <H4>Featuring a Makefile that builds a stand-alone kernel module,
-        installs pre-compiled (x86-64) next3 utils and runs next3 snapshot tests on a loop mounted image.</H4>
-     <H4>Successfuly tested on Ubuntu 9.10-10.10, Fedora 13-14 and with kernel versions 
-         2.6.31-2.6.35 (support for kernels 2.6.27-30 was dropped).</H4>
+    <p>Featuring a Makefile that builds a stand-alone kernel module,
+        installs pre-compiled (x86-64) next3 utils and runs next3 snapshot tests on a loop mounted image.<p>Successfully tested on Ubuntu 9.10-10.10, Fedora 13-14 and with kernel versions 
+         2.6.31-2.6.35 (support for kernels 2.6.27-30 was dropped).</p>
       
-	<P>A package with pre-built utils for x86-64 can be downloaded from <A HREF="http://next3.sourceforge.net/files/1.0.13/next3-1.0.13-x86-64.tar.gz">here</A></P> 
-    <P>A package with no pre-built utils can be downloaded from <A HREF="http://next3.sourceforge.net/files/1.0.13/next3-1.0.13.tar.gz">here</A></P>    
+	<P>A package with pre-built utils for x86-64 can be downloaded from <A HREF="http://next3.sourceforge.net/files/1.0.13/next3-1.0.13-x86-64.tar.gz">here</a>. 
+	A package with no pre-built utils can be downloaded from <A HREF="http://next3.sourceforge.net/files/1.0.13/next3-1.0.13.tar.gz">here</A></P>
     
      
-    <P>Install instructions can be found <A HREF="http://sourceforge.net/apps/mediawiki/next3/index.php?title=Getting_started#Install_next3">here</A></P>
+    <P>Install instructions can be found <A HREF="http://sourceforge.net/apps/mediawiki/next3/index.php?title=Getting_started#Install_next3">here</A>. Release notes can be found <A HREF="http://next3.sourceforge.net/files/1.0.13/Release-notes.txt">here</A>.</P>
      
-    <P>Release notes can be found <A HREF="http://next3.sourceforge.net/files/1.0.13/Release-notes.txt">here</A></P>    
+    <hr> 
+ 
+    <H2>Next3 port for OpenNode / CentOS 5 / RHEL 5</H2> 
+ 
+    <p>
+        The port was
+        <a href="http://opennode.activesys.org/single/news/experimental-ext3-snapshot-backup-support-available-for-testing/">
+        announced</a> by the OpenNode development team and is available in their RPM 
+        test repository.</p>
+    
      
-    <P>Visit Next3 page on <A HREF="http://www.ctera.com/next3">CTERA website</A> to learn more about Next3 snapshots and Cloud Attached Storage.</P> 
+    <P>Install instructions and usage examples can be found 
+        <A HREF="http://opennode.activesys.org/documentation/howtos/next3-snapshots/">here</A></P>
+     
+    <hr> 
+ 
+    <H2>Ext4 snapshots port is in the works</H2> 
+ 
+    <h4>
+        Porting of Next3 snapshot patches to Ext4 is mostly completed, and testing 
+          of the code is currently in progress.</h4>
+    <p>
+        The current code can be found in the
+        <a href="https://github.com/amir73il/ext4-snapshots">ext4-snapshots</a>
+        repository.</p>
+    <p>
+        The remaining tasks can be found in the
+        <a href="http://sourceforge.net/apps/mediawiki/next3/index.php?title=Ext4_snapshots_TODO">
+        Ext4 snapshots TODO</a> 
+ page.</p>
+    <p>
+        The porting of the Next3 snapshot patches and current work on preparing Ext4 
+        patches for submission is attributed to Aditya Dani, Shardul Mangade, Piyush 
+        Nimbalakar and Harshad Shirwadkar from the Pune Institute of Computed Technology 
+        (PICT).</p>
+    <p>
+        Current work on extents move on write implementation is being carried out by 
+        Yongqiang Yang from the Institute of Computing Technology, Chinese Academy of 
+        Sciences.</p>
+    <p>
+        Thanks for all your hard work!</p>
  
     <hr> 
     <a href="http://sourceforge.net"><img src="http://sflogo.sourceforge.net/sflogo.php?group_id=2406&amp;type=2" width="125" height="37" border="0" alt="SourceForge.net Logo" /></a> 
 <p> 
-<!-- hhmts start -->Last modified: Sun Feb 22 17:14:42 IDT 2011 <!-- hhmts end --> 
+<!-- hhmts start -->Last modified: Thu Mar 10 14:14:42 IDT 2011 <!-- hhmts end --> 
   </body> 
 </html> 
