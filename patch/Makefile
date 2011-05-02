@@ -354,7 +354,7 @@ E2FS_SUBPATCH=e2fs_next3_${SUFFIX}.patch
 
 E2LIB=${E2FS}/lib
 E2LIB_FILES=${E2LIB}/e2p/pf.c ${E2LIB}/e2p/feature.c ${E2LIB}/e2p/ls.c \
-	    ${E2LIB}/e2p/fgetflags.c ${E2LIB}/e2p/e2p.h \
+	    ${E2LIB}/e2p/fgetflags.c ${E2LIB}/e2p/fsetflags.c ${E2LIB}/e2p/e2p.h \
 	${E2LIB}/ext2fs/res_gdt.c ${E2LIB}/ext2fs/swapfs.c ${E2LIB}/ext2fs/mkjournal.c \
 	${E2LIB}/ext2fs/block.c ${E2LIB}/ext2fs/i_block.c ${E2LIB}/ext2fs/bmap.c \
 	${E2LIB}/ext2fs/rw_bitmaps.c \
