@@ -1,9 +1,9 @@
 =Install next3=
 This section contains instructions for installing the next3 kernel module and utils.
 
-The installer was tested on Ubuntu 9.10 and 10.4 distributions and on x86 and x86_64 machines,
-but should work on any distribution with kernel version between 2.6.27 and 2.6.33 and on any machine.
-
+The next3-1.0.13 package was tested on Ubuntu 9.10-10.10 distributions and on x86 and x86_64 machines,
+but should work on any distribution with kernel version between 2.6.31 and 2.6.35 and on any machine.
+    
 Support for other kernel versions will be provided later on or per demand.
 
 ==Download and build next3 kernel module and utils==
@@ -64,16 +64,6 @@ install bin/tunefs.next3 /sbin
 install bin/lsattr.next3 /sbin
 install bin/chattr.next3 /sbin
 </pre>
-
-
-==Increase the kernel limit on number of loop devices (optional)==
-Next3 uses loop devices to mount snapshots, so if you want to be able to mount more than 8 snapshots at a time,
-you need to increase the kernel limit on number of loop devices.
-
-Following are some tips on how to do this:
-* Add 'options loop max_loop=256' to /etc/modules.conf and reload the loop module (if loop device is built as a module).
-* Add 'max_loop=256' to boot parameters and reboot (if loop device is built statically).
-* Follow this old [http://tldp.org/HOWTO/CDServer-HOWTO/addloops.html HOWTO]
 
 
 ----
