@@ -461,7 +461,7 @@ case "$1" in
 		echo $FSTYPE filesystem was unmounted
 	else
 		if [ -d $SNAPMNT$s ] ; then
-			umount -d $SNAPMNT$s || exit 1
+			umount $SNAPMNT$s || exit 1
 			rmdir $SNAPMNT$s
 		fi
   		$0 disable $s
