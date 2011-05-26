@@ -9,9 +9,7 @@ COPYING - GPL License.
 CHANGELOG - Release notes.
 INSTALL - Build and install instructions.
 HOWTO - Getting started with snapshots.
-INDEX - Reference to Next3 source files.
 BUGS - Open issues.
-TODO - Development road map.
 Makefile - Download, build, install and test next3 kernel module and utils.
 bin/next3 - Next3 snapshots management script.
 bin/{fsck,mkfs,tunefs,lsattr/chattr}.next3 - Pre-compiled (for x86) e2fsprogs utils with next3 support patches.
