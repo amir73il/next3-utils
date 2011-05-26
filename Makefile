@@ -44,11 +44,11 @@ install_utils:
 
 .PHONY: test
 test:
-	grep next4 /proc/modules || /sbin/modprobe next4 || /sbin/insmod next4/next4.ko
-	(test -f test.img && (./bin/tunefs.next4 -l test.img | grep UUID)) || \
-		( touch test.img ; ./bin/truncate -s 4G test.img ; yes | ./bin/next4 mkfs test.img )
-	mkdir -p test
-	mount -t next4 | grep test || mount -t next4 test.img -o loop test
+	grep next4 /proc/modules || /sbin/modprobe next4 2>/dev/null || /sbin/insmod next4/next4.ko
+	touch test.img && mkdir -p test && ./bin/next4 config ${PWD}/test.img ${PWD}/test
+	(./bin/tunefs.next4 -l test.img | grep UUID) || \
+		( ./bin/truncate -s 4G test.img ; yes | ./bin/next4 mkfs )
+	mount -t next4 | grep test || ./bin/next4 mount
 	./bin/next4 tests
 	./bin/next4 umount
 	/sbin/rmmod next4
