@@ -1,78 +1,82 @@
 #!/bin/sh
 #
-# Written by Amir Goldstein <amir73il@users.sf.net>, 2008
-# Copyright (C) 2008-2010 CTERA Networks
+# NEXT3(R) snapshot management script
 #
-# Next3 snapshot management script
+# Written by Amir Goldstein <amir73il@users.sf.net>, 2008
+# Copyright (C) 2008-2011 CTERA Networks
 #
 
-SCRIPT_NAME=next3
-SCRIPT_VER="1.0.13-1"
-SCRIPT_DESC="Next3 snapshot management script"
+SCRIPT_NAME=$(basename $0)
+SCRIPT_VER=1.0.13-7
+# script name is $FSTYPE or e4snapshot or snapshot.$FSTYPE
+FSTYPE=$(echo $SCRIPT_NAME | ( IFS=$IFS. ; read a b ; if [ $a = "snapshot" ] ; then echo $b ; else echo $a ; fi ) )
+if [ -z $FSTYPE ] || [ $FSTYPE = "e4snapshot" ] ; then
+	# deafult to ext4
+	FSTYPE=ext4
+fi
+SCRIPT_DESC="$FSTYPE snapshot management script"
 
 # generic e2fs progs
 FSCK=e2fsck
 MKFS=mke2fs
 TUNEFS=tune2fs
-LSSNAP=lsattr
-CHSNAP=chattr
+LSSNAP="lssnap"
+CHSNAP="chsnap"
+CHATTR=chattr
 
-# override generic e2fs progs with installed e2fs.next3 progs in /sbin fodler
-# and override those with private built e2fs.next3 progs in ./bin folder
+# override generic e2fs progs with installed e2fs.$FSTYPE progs in /sbin fodler
+# and override those with private built e2fs.$FSTYPE progs in ./bin folder
 for dir in /sbin ./bin ; do
-if [ -f $dir/fsck.next3 ] ; then
-	FSCK=$dir/fsck.next3
+if [ -f $dir/fsck.$FSTYPE ] ; then
+	FSCK=$dir/fsck.$FSTYPE
 fi
-if [ -f $dir/mkfs.next3 ] ; then
-	MKFS=$dir/mkfs.next3
+if [ -f $dir/mkfs.$FSTYPE ] ; then
+	MKFS=$dir/mkfs.$FSTYPE
 fi
-if [ -f $dir/tunefs.next3 ] ; then
-	TUNEFS=$dir/tunefs.next3
+if [ -f $dir/tunefs.$FSTYPE ] ; then
+	TUNEFS=$dir/tunefs.$FSTYPE
 fi
-if [ -f $dir/lsattr.next3 ] ; then
-	LSSNAP=$dir/lsattr.next3
+if [ -f $dir/lssnap ] ; then
+	LSSNAP=$dir/lssnap
+elif [ -f $dir/lsattr.$FSTYPE ] ; then
+	LSSNAP="$dir/lsattr.$FSTYPE -X"
 fi
-if [ -f $dir/chattr.next3 ] ; then
-	CHSNAP=$dir/chattr.next3
+if [ -f $dir/chsnap ] ; then
+	CHSNAP=$dir/chsnap
+elif [ -f $dir/chattr.$FSTYPE ] ; then
+	CHSNAP="$dir/chattr.$FSTYPE -X"
+fi
+if [ -f $dir/chattr.$FSTYPE ] ; then
+	CHATTR=$dir/chattr.$FSTYPE
 fi
 done 
 
-# some packaged test utils
-TRUNCATE=truncate
-FALLOCATE=fallocate
-if [ -f ./bin/truncate ] ; then
-	TRUNCATE=$PWD/bin/truncate
-fi
-if [ -f ./bin/fallocate ] ; then
-	FALLOCATE=$PWD/bin/fallocate
-fi
-
 if [ $# -ge 2 ] && [ $1 != help ] && [ $1_$2 != $1_help ] && [ $1 != config ] && \
 	[ $1 != version ] && [ $1 != debug ] && [ $1 != delay ] && [ _$1 != _test ] && [ $1 != tests ] ; then
-	# parse [[next-mount@]snapshot-name] or next3-mount or next3-device argument
+	# parse [[next-mount@]snapshot-name] or $FSTYPE-mount or $FSTYPE-device argument
 	s=$( echo $2 | ( IFS=$IFS@ ; read a b ; echo $b ) )
 	if [ -z $s ] ; then
-		# check if argument is a next3 mount point
-		dev=$( cat /proc/mounts | while read a b c d ; do ( [ _$b = _$2 ] && [ _$c = _next3 ] && echo $a ) ; done )
+		# check if argument is a $FSTYPE mount point
+		dev=$( cat /proc/mounts | while read a b c d ; do ( [ _$b = _$2 ] && [ _$c = _$FSTYPE ] && echo $a ) ; done )
 		if [ ! -z $dev ] ; then
-			# found next3 mount point
-			NEXT3MNT=$2
-			NEXT3DEV=$dev
+			# found $FSTYPE mount point
+			ROOTMNT=$2
+			ROOTDEV=$dev
 		elif [ -b $2 ] || [ $1 = mkfs ] || [ $1 = on ] || [ $1 = off ] ; then
-			# argument is a next3 block device
-			NEXT3DEV=$2
-			NEXT3MNT=$3
+			# argument is a $FSTYPE block device
+			ROOTDEV=$2
+			ROOTMNT=$3
 		else
-			# snapshot name was given without next3 mount point
+			# snapshot name was given without $FSTYPE mount point
 			s=$2
 		fi
 	else
-		# snapshot name is prepended with next3 mount point
-		NEXT3MNT=$( echo $2 | ( IFS=$IFS@ ; read a b ; echo $a ) )
-		# find next3 block device from next3 mount point
-		NEXT3DEV=$( cat /proc/mounts | while read a b c d ; do ( [ _$b = _$NEXT3MNT ] && [ _$c = _next3 ] && echo $a ) ; done )
-		if [ -z $NEXT3DEV ] ; then
-			echo "$0 $1 $2: $NEXT3MNT is not a mounted next3 filesystem!"
+		# snapshot name is prepended with $FSTYPE mount point
+		ROOTMNT=$( echo $2 | ( IFS=$IFS@ ; read a b ; echo $a ) )
+		# find $FSTYPE block device from $FSTYPE mount point
+		ROOTDEV=$( cat /proc/mounts | while read a b c d ; do ( [ _$b = _$ROOTMNT ] && [ _$c = _$FSTYPE ] && echo $a ) ; done )
+		if [ -z $ROOTDEV ] ; then
+			echo "$0 $1 $2: $ROOTMNT is not a mounted $FSTYPE filesystem!"
 			exit 1
 		fi
 		# strip / from snapshot name
@@ -81,7 +85,7 @@ if [ $# -ge 2 ] && [ $1 != help ] && [ $1_$2 != $1_help ] && [ $1 != config ] &&
 fi
 
 SYSDEBUGDIR=/sys/kernel/debug
-SNAPDEBUGDIR=$SYSDEBUGDIR/next3
+SNAPDEBUGDIR=$SYSDEBUGDIR/$FSTYPE
 
 # default debug-level is old-debug-level
 if [ ! -d $SNAPDEBUGDIR ] ; then
@@ -105,59 +109,59 @@ else
 	test_read=0
 fi
 
-# read next3 block device and mount point from conf file
-CONFFILE=.next3.conf
+# read $FSTYPE block device and mount point from conf file
+CONFFILE=.$FSTYPE.conf
 
 # look for snapshot config file in current then home directory
-if [ -z $NEXT3DEV ] && [ -z $NEXT3MNT ] ; then
+if [ -z $ROOTDEV ] && [ -z $ROOTMNT ] ; then
 	if [ -f ./$CONFFILE ] ; then
 		. ./$CONFFILE
 	elif [ -f ~/$CONFFILE ] ; then
 		. ~/$CONFFILE
-	elif [ $( mount -t next3 | grep -v @ | wc -l ) = 1 ] ; then
-		# exactly one mounted next3 filesystem found - use it
-		NEXT3DEV=$( mount -t next3 | grep -v @ | ( read a b c d ; echo $a ) )
-		NEXT3MNT=$( mount -t next3 | grep -v @ | ( read a b c d ; echo $c ) )
+	elif [ $( mount -t $FSTYPE | grep -v noload | wc -l ) = 1 ] ; then
+		# exactly one mounted $FSTYPE filesystem found (mounted snapshots excluded)
+		ROOTDEV=$( mount -t $FSTYPE | grep -v noload | ( read a b c d ; echo $a ) )
+		ROOTMNT=$( mount -t $FSTYPE | grep -v noload | ( read a b c d ; echo $c ) )
 	fi
 fi
 
 if [ ! -z $1 ] && [ $1 != help ] && [ $1_$2 != $1_help ] && [ $1 != config ] && \
 	[ $1 != version ] && [ $1 != debug ] && [ $1 != delay ] && [ _$1 != _test ] && [ $1 != tests ] ; then
 	if [ $1 != mkfs ] && [ $1 != fsck ] && [ $1 != on ] && [ $1 != off ] ; then
-	if [ -z $NEXT3MNT ] ; then
-		echo "$0: ambigous or missing next3 mount point"
+	if [ -z $ROOTMNT ] ; then
+		echo "$0: ambigous or missing $FSTYPE mount point"
 		echo "run '$0 config' to set default value"
 		exit 1
 	fi
-	if [ ! -d $NEXT3MNT ] ; then
-		echo "$0: bad next3 mount point $NEXT3MNT"
+	if [ ! -d $ROOTMNT ] ; then
+		echo "$0: bad $FSTYPE mount point $ROOTMNT"
 		exit 1
 	fi
 	else
-	if [ -z $NEXT3DEV ] ; then
-		echo "$0: ambigous or missing next3 block device"
+	if [ -z $ROOTDEV ] ; then
+		echo "$0: ambigous or missing $FSTYPE block device"
 		echo "run '$0 config' to set default value"
 		exit 1
 	fi
-	if [ ! -b $NEXT3DEV ] && [ ! -f $NEXT3DEV ] ; then
-		echo "$0: bad next3 block device $NEXT3DEV"
+	if [ ! -b $ROOTDEV ] && [ ! -f $ROOTDEV ] ; then
+		echo "$0: bad $FSTYPE block device $ROOTDEV"
 		exit 1
 	fi
 	fi
-	export NEXT3MNT
-	export NEXT3DEV
-	S=$NEXT3MNT@$s
+	export ROOTMNT
+	export ROOTDEV
+	S=$ROOTMNT@$s
 fi
 
 if [ -z $SNAPDIR ] ; then
-	# directory inside next3 filesystem to store snapshot files
-	SNAPDIR=$NEXT3MNT/.snapshots
+	# directory inside $FSTYPE filesystem to store snapshot files
+	SNAPDIR=$ROOTMNT/.snapshots
 fi
 if [ -z $SNAPMNT ] ; then
 	# directory prefix for snapshot mount points
 	# snaphot mount points will be created as $SNAPMNT<snapshot-name>
 	# default to ZFS snapshot naming convention <filesystem>@<snapshot>
-	SNAPMNT=$NEXT3MNT@
+	SNAPMNT=$ROOTMNT@
 fi
 TESTDIR=test
 
@@ -173,7 +177,7 @@ case "$1" in
 	;;
   version)
 	if [ $1_$2 = $1_help ] ; then
-		echo "$1: display next3 snapshot version."
+		echo "$1: display $FSTYPE snapshot version."
 		exit 0
 	fi
 	ver=$(cat $SNAPDEBUGDIR/snapshot-version)
@@ -223,12 +227,12 @@ case "$1" in
 	echo test-$2-delay = $ms msec
 	;;
 
-# Next3 filesystem commands
+# $FSTYPE filesystem commands
   config)
 	if [ $1_$2 = $1_help ] ; then
 		echo "$1: configure or print default next filesystem parameters."
 		echo "creates configuration file $CONFFILE in current directory."
-		echo "usage: $0 config [next3-device next3-mount]"
+		echo "usage: $0 config [$FSTYPE-device $FSTYPE-mount]"
 		exit 0
 	fi
 	if [ ! -z $2 ] && [ ! -b $2 ] && [ ! -f $2 ] ; then
@@ -240,8 +244,8 @@ case "$1" in
 		exit 1
 	fi
 	if [ ! -z $2 ] && [ ! -z $3 ] ; then
-		echo NEXT3DEV=$2 > $CONFFILE
-		echo NEXT3MNT=$3 >> $CONFFILE
+		echo ROOTDEV=$2 > $CONFFILE
+		echo ROOTMNT=$3 >> $CONFFILE
 	fi
 	test -f $CONFFILE && cat $CONFFILE
 	;;
@@ -249,55 +253,54 @@ case "$1" in
 	if [ $1_$2 = $1_help ] ; then
 		echo "on: add the snapshot feature to an existing ext3 filesystem."
 		echo "after adding the snapshot feature to an ext3 filesystem, the filesystem"
-		echo "can no longer be mounted as ext3 read-write (only as next3 or ext3 read-only)."
-		echo "usage: $0 on [next3-device]"
+		echo "can no longer be mounted as ext3 read-write (only as $FSTYPE or ext3 read-only)."
+		echo "usage: $0 on [$FSTYPE-device]"
 		exit 0
 	fi
-	$TUNEFS -e remount-ro -O has_snapshot $NEXT3DEV || exit 1
-	echo snapshot feature added to $NEXT3DEV
+	$TUNEFS -e remount-ro -O has_snapshot $ROOTDEV || exit 1
+	echo snapshot feature added to $ROOTDEV
 	echo .
 	;;
   off)
 	if [ $1_$2 = $1_help ] ; then
-		echo "off: remove the snapshot feature from a next3 filesystem."
+		echo "off: remove the snapshot feature from a $FSTYPE filesystem."
 		echo "after removing the snapshot feature, all existing snapshots will be discarded"
 		echo "and the filesystem could be mounted as ext3 read-write again."
-		echo "usage: $0 off [next3-device]"
+		echo "usage: $0 off [$FSTYPE-device]"
 		exit 0
 	fi
-	$TUNEFS -O ^has_snapshot $NEXT3DEV || exit 1
-	$TUNEFS -O ^exclude_inode $NEXT3DEV || exit 1
-	echo snapshot feature removed from $NEXT3DEV
+	$TUNEFS -O ^has_snapshot $ROOTDEV || exit 1
+	echo snapshot feature removed from $ROOTDEV
 	echo .
 	;;
   mkfs)
 	if [ $1_$2 = $1_help ] ; then
-		echo "$1: create a next3 filesystem."
-		echo "usage: $0 mkfs [next3-device]"
+		echo "$1: create a $FSTYPE filesystem."
+		echo "usage: $0 mkfs [$FSTYPE-device]"
 		exit 0
 	fi
-	$MKFS -b 4096 -j -J big -O has_snapshot,exclude_inode $NEXT3DEV || exit 1
-	$TUNEFS -e remount-ro $NEXT3DEV
-	echo next3 filesystem created on $NEXT3DEV
+	$MKFS -b 4096 -j -J big -O has_snapshot,exclude_inode $ROOTDEV || exit 1
+	$TUNEFS -e remount-ro $ROOTDEV
+	echo $FSTYPE filesystem created on $ROOTDEV
 	echo .
 	;;
 
   stat)
 	if [ $1_$2 = $1_help ] ; then
-		echo "stat: display status of next3 filesystem and all its snapshots."
+		echo "stat: display status of $FSTYPE filesystem and all its snapshots."
 		echo "snapshot attributes are displayed in short format. to display"
 		echo "attributes in long format use the '$0 lsattr' command."
 		echo "usage: $0 stat [next-mount]"
 		exit 0
 	fi
-	echo "Mounted next3 filesystem and snapshots:"
-	df -h $NEXT3MNT $SNAPMNT* 2> /dev/null
+	echo "Mounted $FSTYPE filesystem and snapshots:"
+	df -h $ROOTMNT $SNAPMNT* 2> /dev/null
 	echo .
 	echo "Snapshots list:"
 	echo "id inode attributes disk-usage mtime filename"
 	echo "---------------------------------------------"
 	for s in $( ls -vr $SNAPDIR/* ) ; do
-		( echo "$( $LSSNAP -v -X $s ) " ; \
+		( echo "$( $LSSNAP -v $s ) " ; \
 			echo "$( du -h $s ) " ; \
 			echo "$( ls -lih --color=never $s ) " ) | \
 		( read id attr a ; read du b ; read ino c d e f g mm dd tt fname h ; \
@@ -307,33 +310,34 @@ case "$1" in
 	;;
   lsattr)
 	if [ $1_$2 = $1_help ] ; then
-		echo "$1: display attributes of next3 snapshots in long format."
+		echo "$1: display attributes of $FSTYPE snapshots in long format."
 		echo "usage: $0 $1"
 		exit 0
 	fi
-	$LSSNAP -Xl $SNAPDIR
+	$LSSNAP -l $SNAPDIR
 	;;
 
 # Snapshot control commands (single snapshot)
   take)
 	if [ $1_$2 = $1_help ] ; then
 		echo "take: take a snapshot."
-		echo "usage: $0 take [[next-mount@]snapshot-name] (default=next3-mount@GMT-date)"
+		echo "usage: $0 take [[next-mount@]snapshot-name] (default=$FSTYPE-mount@GMT-date)"
 		exit 0
 	fi
 	mkdir -p $SNAPDIR || exit 1
-	$CHSNAP +x $SNAPDIR || exit 1
+	$CHATTR +dx $SNAPDIR || exit 1
 	if [ -z $s ] ; then
 		# default snapshot-name is the <date-time> in shadow copy format
 		s=$( date -u +GMT-%Y.%m.%d-%H.%M.%S )
-		S=$NEXT3MNT@$s
+		S=$ROOTMNT@$s
 	fi
 	if [ -f $SNAPDIR/$s ] ; then
 		echo "$0 take: snapshot $S already exists!"
 		exit 1
 	fi
 	touch $SNAPDIR/$s 2> /dev/null
-	$CHSNAP -X +S $SNAPDIR/$s || exit 1
+	sync
+	$CHSNAP +S $SNAPDIR/$s || exit 1
 	echo snapshot $S was created
 	echo .
 	;;
@@ -350,8 +354,8 @@ case "$1" in
 		exit 1
 	fi
 	if [ -f $SNAPDIR/$s ] ; then
-		$0 umount $s || exit 1
-		$CHSNAP -X -S $SNAPDIR/$s || exit 1
+		$0 umount $s
+		$CHSNAP -S $SNAPDIR/$s || exit 1
 	fi
 	echo snapshot $S is deleted
 	echo .
@@ -389,7 +393,7 @@ case "$1" in
 		echo "$0 enable: snapshot $S not found!"
 		exit 1
   	fi
-	$CHSNAP -X +n $SNAPDIR/$s || exit 1
+	$CHSNAP +n $SNAPDIR/$s || exit 1
 	;;
   disable)
 	if [ $1_$2 = $1_help ] ; then
@@ -405,37 +409,40 @@ case "$1" in
 		echo "$0 disable: snapshot $S not found!"
 		exit 1
   	fi
-	if grep "$SNAPMNT$s\ " /proc/mounts ; then
+	if grep $SNAPMNT$s /proc/mounts ; then
 		echo "$0 disable: snapshot $S is mounted!"
 		exit 1
 	fi
-	$CHSNAP -X -n $SNAPDIR/$s || exit 1
+	$CHSNAP -n $SNAPDIR/$s || exit 1
 	;;
 
 # Snapshot control commands (single or all snapshots)
   mount)
 	if [ $1_$2 = $1_help ] ; then
 		echo "mount: mount a snapshot."
-		echo "usage: $0 mount [next3-device next3-mount]"
+		echo "usage: $0 mount [$FSTYPE-device $FSTYPE-mount]"
 		echo "usage: $0 mount [next-mount@]<snapshot-name>"
 		exit 0
 	fi
 	if [ -z $s ] ; then
-		# mount next3 filesystem 
-		if [ ! -z $NEXT3DEV ] && [ -f $NEXT3DEV ] ; then
-			MNTOPT="-o loop"
+		# mount $FSTYPE filesystem 
+		MNTOPT="-o errors=remount-ro"
+		# uncomment to enable delayed allocation 
+		#MNTOPT="$MNTOPT,nodelalloc"
+		if [ ! -z $ROOTDEV ] && [ -f $ROOTDEV ] ; then
+			MNTOPT="$MNTOPT,loop"
 		fi
-		# we may be called from mount.next3 so add -i
-		mount -t next3 -i $MNTOPT $NEXT3DEV $NEXT3MNT || exit 1
-		echo next3 filesystem is mounted on $NEXT3MNT
+		# we may be called from mount.$FSTYPE so add -i
+		mount -t $FSTYPE -i $MNTOPT $ROOTDEV $ROOTMNT || exit 1
+		echo $FSTYPE filesystem is mounted on $ROOTMNT
 	else
   		$0 enable $s || exit 1
-		if grep "$SNAPMNT$s\ " /proc/mounts ; then
+		if grep $SNAPMNT$s /proc/mounts ; then
 			echo "$0 mount: snapshot $S is already mounted!"
-			exit 0
+			exit 1
 		fi
 		mkdir -p $SNAPMNT$s
-  		mount -t ext2 -r -o loop $SNAPDIR/$s $SNAPMNT$s || exit 1
+  		mount -t $FSTYPE -r -o loop,noload $SNAPDIR/$s $SNAPMNT$s || exit 1
 		echo snapshot $S is mounted
   	fi
 	echo .
@@ -443,7 +450,7 @@ case "$1" in
   umount)
 	if [ $1_$2 = $1_help ] ; then
 		echo "umount: umount a snapshot."
-		echo "usage: $0 umount [next3-mount]"
+		echo "usage: $0 umount [$FSTYPE-mount]"
 		echo "usage: $0 umount [next-mount@]<snapshot-name>"
 		exit 0
 	fi
@@ -452,18 +459,16 @@ case "$1" in
 		for s in $( ls $SNAPDIR/ 2> /dev/null ) ; do
 			$0 umount $s 2> /dev/null
 		done
-		# umount next3 filesystem 
-		# we may be called from umount.next3 so add -i
-		umount -i -d $MNTOPT $NEXT3MNT || exit 1
-		echo next3 filesystem was unmounted
+		# umount $FSTYPE filesystem 
+		# we may be called from umount.$FSTYPE so add -i
+		umount -i -d $MNTOPT $ROOTMNT || exit 1
+		echo $FSTYPE filesystem was unmounted
 	else
-		if grep "$SNAPMNT$s\ " /proc/mounts ; then
-			umount -d $SNAPMNT$s || exit 1
-		fi
 		if [ -d $SNAPMNT$s ] ; then
+			umount -d $SNAPMNT$s || exit 1
 			rmdir $SNAPMNT$s
 		fi
-  		$0 disable $s || exit 1
+  		$0 disable $s
 		echo snapshot $S was unmounted
 	fi
 	echo .
@@ -484,30 +489,30 @@ case "$1" in
 		echo "$0 dump: snapshot $S not found!"
 		exit 1
 	fi
-	chattr -d $SNAPDIR/$s
+	$CHATTR -d $SNAPDIR/$s
 	echo "map of snapshot $S was printed to kernel ring buffer."
 	echo "use dmesg to display kernel ring buffer."
 	echo .
 	;;
   fsck)
 	if [ $1_$2 = $1_help ] ; then
-		echo "fsck: run fsck on a snapshot or next3 filesystem."
+		echo "fsck: run fsck on a snapshot or $FSTYPE filesystem."
 		echo "usage: $0 fsck [next-device]"
 		echo "usage: $0 fsck [next-mount@]<snapshot-name>"
 		exit 0
 	fi
 	if [ -z $s ] ; then
-		echo "Fscking next3 filesystem on $NEXT3DEV..."
-		$FSCK -nf -C 0 $NEXT3DEV >&2 && \
-			echo next3 filesystem on $NEXT3DEV 'is healthy' || \
-			echo next3 filesystem on $NEXT3DEV 'has errors'
+		echo "Fscking $FSTYPE filesystem on $ROOTDEV..."
+		$FSCK -pf -C 0 $ROOTDEV >&2 && \
+			echo $FSTYPE filesystem on $ROOTDEV 'is healthy' || \
+			echo $FSTYPE filesystem on $ROOTDEV 'has errors'
 	else
   		$0 enable $s || exit 1
 		echo "Fscking snapshot $S..."
 		$FSCK -nf -C 0 $SNAPDIR/$s >&2 && \
 			echo snapshot $S 'is healthy' || \
 			echo snaphsot $S 'has errors'
-		if ! grep "$SNAPMNT$s\ " /proc/mounts ; then
+		if ! grep $SNAPMNT$s /proc/mounts ; then
   			$0 disable $s || exit 1
 		fi
 	fi
@@ -515,34 +520,34 @@ case "$1" in
 	;;
 
   mktest)
-	if [ -d $NEXT3MNT/A ] ; then
+	if [ -d $ROOTMNT/A ] ; then
 		exit 0
 	fi
-	mkdir $NEXT3MNT/A
-	mkdir $NEXT3MNT/B
-	mkdir $NEXT3MNT/C
-	mkdir $NEXT3MNT/D
-	mkdir $NEXT3MNT/E
-	echo aligator > $NEXT3MNT/A/a.txt
-	echo bizon > $NEXT3MNT/B/b.txt
-	echo camel > $NEXT3MNT/C/c.txt
+	mkdir $ROOTMNT/A
+	mkdir $ROOTMNT/B
+	mkdir $ROOTMNT/C
+	mkdir $ROOTMNT/D
+	mkdir $ROOTMNT/E
+	echo aligator > $ROOTMNT/A/a.txt
+	echo bizon > $ROOTMNT/B/b.txt
+	echo camel > $ROOTMNT/C/c.txt
 	# create non-snapshot dir in snapshots dir block group
-	mkdir -p $NEXT3MNT/$TESTDIR
-	$CHSNAP -x $NEXT3MNT/$TESTDIR || exit 1
+	mkdir -p $ROOTMNT/$TESTDIR
+	$CHATTR -x $ROOTMNT/$TESTDIR || exit 1
 	;;
   rmtest)
-	rm -rf $NEXT3MNT/? 2> /dev/null
-	rm -rf $NEXT3MNT/$TESTDIR 2> /dev/null
+	rm -rf $ROOTMNT/? 2> /dev/null
+	rm -rf $ROOTMNT/$TESTDIR 2> /dev/null
 	;;
   lstest)
 	if [ $1_$2 = $1_help ] ; then
-		echo "lstest: list the content of test files in a snapshot or next3 filesystem."
-		echo "usage: $0 lstest [[next-mount@]snapshot-name] (default=next3-mount)"
+		echo "lstest: list the content of test files in a snapshot or $FSTYPE filesystem."
+		echo "usage: $0 lstest [[next-mount@]snapshot-name] (default=$FSTYPE-mount)"
 		exit 0
 	fi
 	if [ -z $s ] ; then
 		echo Files in file system:
-		d=$NEXT3MNT
+		d=$ROOTMNT
 	else
 		$0 mount $s || exit 1
 		echo Files in snapshot $s:
@@ -574,7 +579,7 @@ case "$1" in
 		N=$2
 	fi
 	# disable read-ahead if test read is enabled
-	test $test_read = 0 || blockdev --setra 0 $NEXT3DEV
+	test $test_read = 0 || blockdev --setra 0 $ROOTDEV
 	for s in $( ls $SNAPDIR/ 2> /dev/null ) ; do
 		$0 delete $s 2> /dev/null
 	done
@@ -592,7 +597,9 @@ case "$1" in
         ( [ ${test_read}_ms = 0_ms ] && [ ${3}_ms != 0_ms ] ) || exit 0
 	sleep 1
 	if [ $N = 0 ] ; then
-		$0 fsck
+		$0 umount $ROOTMNT || exit 1
+		$0 fsck $ROOTDEV
+		$0 mount $ROOTDEV $ROOTMNT || exit 1
 	else
 		for n in $( seq 1 $N ) ; do
 			$0 fsck $n 2> /dev/null
@@ -629,18 +636,24 @@ case "$1" in
 		M=1
 	fi
 	F=${M}M
-	cd $NEXT3MNT/$TESTDIR > /dev/null
-	echo Appending $F zeros to $F.1 with direct I/O
-	# append writes to new allocated blocks using direct I/O
-	dd if=/dev/zero bs=1M count=$M of=$F.1 conv=notrunc oflag=append,direct status=noxfer || exit 1
+	cd $ROOTMNT/$TESTDIR > /dev/null
+	NOTRUNC="conv=notrunc"
+	# uncomment the following line to run in-place write tests
+	INPLACE=$NOTRUNC
+	# uncomment the following line to run direct I/O write tests
+	DIRECT="oflag=direct"
+	TRUNCSIZE=4
+	echo Appending $F zeros to $F.1 $DIRECT
+	# append writes to new allocated blocks
+	dd if=/dev/zero bs=1M count=$M of=$F.1 $NOTRUNC oflag=append $DIRECT status=noxfer || exit 1
 	echo Writing $F random data to $n files
 	for i in $( seq 1 $n ) ; do
 		# 1st rewrite moves existing blocks to snapshot and allocates new blocks
-		$FALLOCATE -mrs -l $F $F.$i 2>/dev/null || \
-			dd if=/dev/urandom bs=1M count=$M of=$F.$i conv=notrunc status=noxfer || exit 1
-		# subsequent rewrites write to existing blocks using mmap or direct I/O
-		$FALLOCATE -mrs -l $F $F.1 2>/dev/null || \
-			dd if=/dev/urandom bs=1M count=$M of=$F.1 conv=notrunc oflag=direct status=noxfer || exit 1
+		fallocate -mrs -l 1M $F.$i 2>/dev/null || \
+			dd if=/dev/urandom bs=1M count=$M of=$F.$i $INPLACE status=noxfer || exit 1
+		# subsequent rewrites doesn't move blocks to snapshot
+		fallocate -mrs -l 1M $F.1 2>/dev/null || \
+			dd if=/dev/urandom bs=1M count=$M of=$F.1 $INPLACE $DIRECT status=noxfer || exit 1
 	done
 	for i in $( seq 1 $n ) ; do
 		md5sum $F.$i || exit 1
@@ -654,49 +667,49 @@ case "$1" in
 		echo Create test:
 		echo ------------
 		echo 'Creating d.txt'
-		echo dodo > $NEXT3MNT/D/d.txt
+		echo dodo > $ROOTMNT/D/d.txt
 		echo 'Creating e.txt'
-		echo emu > $NEXT3MNT/E/e.txt
+		echo emu > $ROOTMNT/E/e.txt
 	  ;;
 	  2)
 		echo Write test:
 		echo -----------
 		echo 'Writing b.txt (append)'
-		echo 'barracuda' >> $NEXT3MNT/B/b.txt
+		echo 'barracuda' >> $ROOTMNT/B/b.txt
 		echo 'Writing c.txt (truncate)'
-		echo 'crocodile' > $NEXT3MNT/C/c.txt
+		echo 'crocodile' > $ROOTMNT/C/c.txt
 	  ;;
 	  3)
 		echo Remove test:
 		echo ------------
-		echo 'Truncating c.txt (to size 4)'
-		$TRUNCATE -s 4 $NEXT3MNT/C/c.txt
+		echo "Truncating c.txt (to size $TRUNCSIZE)"
+		truncate -s $TRUNCSIZE $ROOTMNT/C/c.txt
 		echo 'Removing d.txt'
-		rm $NEXT3MNT/D/d.txt
+		rm $ROOTMNT/D/d.txt
 	  ;;
 	  4)
 		echo Restore test:
 		echo -------------
 		f=$( ls -v $SNAPDIR/ | head -n 1 )
 		echo 'Restoring from snapshot' $f
-		if ! grep "$SNAPMNT$f\ " /proc/mounts ; then
+		if ! grep $SNAPMNT$f /proc/mounts ; then
 			$0 mount $f || exit 1
 		fi
-		rm -rf $NEXT3MNT/?
-		cp -R $SNAPMNT$f/? $NEXT3MNT/
+		rm -rf $ROOTMNT/?
+		cp -R $SNAPMNT$f/? $ROOTMNT/
 		$0 umount $f || exit 1
 	  ;;
 	  5)
 		echo Delete excluded test:
 		echo ---------------------
 	  	#echo Removing excluded files
-	  	#rm $NEXT3MNT/*M
+	  	#rm $ROOTMNT/*M
 	  ;;
 	  6)
 		echo Delete reallocated test:
 		echo ------------------------
 		#echo Removing /$F
-		#rm $NEXT3MNT/$F
+		#rm $ROOTMNT/$F
 	  ;;
 	  7)
 		echo Shrink snapshots test:
@@ -729,22 +742,22 @@ case "$1" in
 	echo "usage: $0 help [cmd]"
 	echo "usage: $0 version"
 	echo
-	echo "Next3 filesystem maintenance commands:"
-	echo "usage: $0 {config|mount} [next3-device next3-mount]"
-	echo "usage: $0 {mkfs|fsck|on|off} [next3-device]"
-	echo "usage: $0 {stat|umount} [next3-mount]"
+	echo "$FSTYPE filesystem maintenance commands:"
+	echo "usage: $0 {config|mount} [$FSTYPE-device $FSTYPE-mount]"
+	echo "usage: $0 {mkfs|fsck|on|off} [$FSTYPE-device]"
+	echo "usage: $0 {stat|umount} [$FSTYPE-mount]"
 	echo
-	echo "Next3 snapshot commands:"
+	echo "$FSTYPE snapshot commands:"
 	echo "usage: $0 take [[next-mount@]snapshot-name] (default=next-mount@GMT-date)"
 	echo "usage: $0 {mount|umount|delete|remove|fsck|dump} [next-mount@]<snapshot-name>"
 	echo
 	echo "<snapshot-name> parameter may be just the name of the snapshot or may be"
-	echo "given in ZFS style of <next3-mount>@<snapshot-name>."
-	echo "in the former case, the next3 mount point is either read from /proc/mounts"
-	echo "(if only one next3 filesystem is mounted) or from $CONFFILE config file."
-	echo "in the latter case, the next3 mount point is parsed from the snapshot name prefix."
+	echo "given in ZFS style of <$FSTYPE-mount>@<snapshot-name>."
+	echo "in the former case, the $FSTYPE mount point is either read from /proc/mounts"
+	echo "(if only one $FSTYPE filesystem is mounted) or from $CONFFILE config file."
+	echo "in the latter case, the $FSTYPE mount point is parsed from the snapshot name prefix."
 	echo
-	echo "Next3 debug and test commands:"
+	echo "$FSTYPE debug and test commands:"
 	echo "usage: $0 debug [debug-level]"
 	echo "usage: $0 delay <take|delete|cow|read|bitmap> [delay-sec] [delay-msec]"
 	echo "usage: $0 {test|tests} [test-number] [delay-sec] [file-size-mb]"
