@@ -234,7 +234,7 @@ The colors indicate the nature of the merge tasks:
 * '''Trivial''' - apply current patches to ext4 code.
 * '''<font color=green>Enhancement</font>''' - changes to current patches to enhance code clarity and to catch up with new ext4 features.
 * '''<font color=blue>Optimization</font>''' - not a must for functionality, but needed in order to catch up with ext4 performance improvements.
-* '''<font color=red>Challenging</font>''' - should be designed in collaboration with other ext4 developers.
+* '''<font color=red>Challenging</font>''' - solutions should be designed in collaboration with other ext4 developers (not for first release).
 
 ===Snapshot debug patch===
 * <s>Add generic debug functions.</s>
@@ -244,33 +244,40 @@ The colors indicate the nature of the merge tasks:
 * <s>Add snapshot hooks inside ext4_free_blocks().</s>
 * <s>Move indirect mapped file data blocks to snapshot on write.</s>
 * <s><font color=green>Move on write from delayed allocation write paths.</font></s>
-* <font color=green>Move on write from mmap and direct I/O write paths.</font>
-* <font color=red>Move or copy extent mapped file data blocks to snapshot on write.</font>
+* <s><font color=green>Move on write from direct I/O write paths.</font></s>
+* <s><font color=green>Move on write of extent mapped files.</font></s>
+* <s><font color=green>Move on write from mmap write paths.</font></s>
+* <s><font color=blue>Multi-block delayed move on write.</font></s>
+* <font color=red>Defrag extent mapped file on re-write.</font>
 
 ===Snapshot file patches===
 * <s>Snapshot implementation as an indirect mapped file, that can map up to 32bit block offsets.</s>
 * <s><font color=green>Move read-though code from get_blocks_handle() to snapshot_get_block().</font></s>
 * <s><font color=green>Move snapshot_get_block() and snapshot_readpage() from inode.c to new snapshot_inode.c file.</font></s>
+* <font color=blue>Implement snapshot_read_pages() for multi-block read through.</font>
 * <font color=red>Snapshot implementation as a new extent mapped file format, that can map up to 48bit of block offsets.</font>
 
 ===Snapshot block operation patches===
 * <s>Copy meta data blocks to snapshot.</s>
 * <s>Move data blocks to snapshot on write.</s>
 * <s>Move deleted blocks to snapshot.</s>
+* <s><font color=green>Resolve circular locking dependency with grp->alloc_sem.</font></s>
+* <s><font color=green>Initialize COW bitmap of non-first flex_bg group.</font></s>
 * <font color=blue>Fast move of large group of deleted blocks to reduce the performance impact on extent mapped file deletion.</font>
 * <font color=blue>Reduce locking contention on active snapshot block allocations to improve the performance of concurrent COW operations.</font>
-* <font color=red>Move or copy extent mapped file data blocks to snapshot on write.</font>
 * <font color=red>Add support block size != page size.</font>
 
 ===Snapshot control patches===
-* <s>Add snapshot control via SETFLAGS ioctl.</s>
+* <s>Add snapshot control via SETSNAPFLAGS ioctl.</s>
 * <font color=green>Implement the simplified [[User-kernel API]].</font>
 * <font color=green>Initialize global metadata of new ext4 features on snapshot take (like meta block group descriptors).</font>
 
 ===Snapshot journaling patches===
 * <s>Journal snapshot block operations in current transaction.</s>
-* <font color=green>Check for new JBD2 API's that require special attention.</font>
-* <font color=green>Add support for journaled quota.</font>
+* <s><font color=green>Check for new JBD2 API's that require special attention.</font></s>
+* <s><font color=green>Account for buffer credits of COW bitmap of non-first flex_bg group.</font></s>
+* <font color=green>Add MOW credits to extent file truncate/write transaction.</font>
+* <font color=green>Account for buffer credits of snapshot quota update.</font>
 
 ===Snapshot list patches===
 * <s>Add snapshot list operations and read-through to previous snapshot.</s>

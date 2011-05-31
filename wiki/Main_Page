@@ -36,9 +36,10 @@ The latest Next3 code as well as in development Ext4 snapshots code is available
 
 Please contact the project administrator if you would like to contribute to Next3 or Ext4 snapshots development.
 
-== Beta Testing ==
-Next3 is being tested by a group of beta testers on an ARM platforms with 512MB RAM.
-It has also undergone basic testing on X86.
+== Testing ==
+Next3 is being used in production on ARM and X86_64 platforms.
+
+Ext4 snapshots has undergone basic testing on X86 and X86_64.
 
 Please post bugs to the [https://lists.sourceforge.net/lists/listinfo/next3-devel next3-devel mailing list].
 
@@ -46,6 +47,8 @@ Please contact the project administrator if you would like to contribute to the 
 
 == Benchmarks ==
 [[Bonnie++]]
+
+Disk benchmark of ext4 snapshots with [http://global.phoronix-test-suite.com/index.php?k=profile&u=amir73il-4632-11284-26560 phoronix-test-suite]
 
 Please post benchmark results to the [https://lists.sourceforge.net/lists/listinfo/next3-devel next3-devel mailing list].
 

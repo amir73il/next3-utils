@@ -32,12 +32,10 @@ Current API:
 
 Simplified API:
 <pre>
-# mount -r -o loop <mntdir>/.snapshots/<snapfile> <snapmnt>
+# mount -r -o loop,noload <mntdir>/.snapshots/<snapfile> <snapmnt>
 </pre>
 
 '''<font color=red>TODO: Auto-enable snapshot on snapshot file open.</font>'''
-
-'''<font color=red>TODO: Suppress JBD I/O errors on unmount of read-only ext3.</font>'''
 
 == Deleting a snapshot ==
 Script command: "next3 remove <name>"
@@ -72,5 +70,3 @@ New API:
 <pre>
 # lssnap <mntdir>/.snapshots
 </pre>
-
-'''<font color=red>TODO: Install link lssnap->lsattr on e2fsprogs install.</font>'''
