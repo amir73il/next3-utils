@@ -1,6 +1,6 @@
 ext4dev_snapshots-1.0.13
 ------------------------
-May 26, 2010
+May 26, 2011
 - first ext4 snapshots release
 - builds a stand-alone ext4dev module with snapshots support
 - installer supports kernel version 2.6.38
@@ -8,7 +8,7 @@ May 26, 2010
 
 next3-1.0.13
 ------------
-Feb 3, 2010
+Feb 3, 2011
 - upgrade next3 utils to e2fsprogs-1.41.14
 - installer supports kernel versions 2.6.31-2.6.35
 - tested on Ubuntu 9.10-10.10 and Fedora 13-14

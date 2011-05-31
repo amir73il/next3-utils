@@ -1,4 +1,10 @@
-==v1.0.13 (Feb 2011)==
+==ext4dev_snapshots-1.0.13 (May 2011)==
+* First ext4 snapshots release
+* Builds a stand-alone ext4dev module with snapshots support
+* Installer supports kernel version 2.6.38
+* Tested on Ubuntu 11.4 and Fedora 15
+
+==next3-1.0.13 (Feb 2011)==
 * Upgrade next3 utils to e2fsprogs-1.41.14.
 * Installer supports kernel versions 2.6.31-2.6.35.
 * Tested on Ubuntu 9.10-10.10 and Fedora 13-14.
@@ -21,7 +27,7 @@
 * Disable mount with data!=ordered.
 * Disable mount without exclude_inode,has_snapshot features.
 
-==v1.0.12 (Aug 2010)==
+==next3-1.0.12 (Aug 2010)==
 * Installer supports kernel versions 2.6.27-2.6.33.
 * Tested on Ubuntu desktop releases 9.10 and 10.4.
 * Build next3 as a stand-alone kernel module.
@@ -35,14 +41,14 @@
 * Fix exclude bitmap errors after online resize.
 * Alternative snapshot flags with lssnap/chsnap.
 
-==v1.0.11 (Jun 2010)==
+==next3-1.0.11 (Jun 2010)==
 * Finalized on-disk format.
 * Migrate old format to new format on e2fsck, tune2fs and resize2fs.
 * Migrate old format to new format on mount time.
 * Check snapshot list on fsck.
 * Fix snapshot merge bug.
 
-==v1.0.10 (May 2010)==
+==next3-1.0.10 (May 2010)==
 * Fix snapshot shrink bug (please run e2fsck -f to test for corrupted snapshot files).
 * Replace mke2fs/tune2fs option -O big_journal with -J big.
 * Record errors messages in journal super block.
@@ -50,7 +56,7 @@
 * Support disk quotas (not journaled).
 * Remove NEXT3FS_SNAPSHOT Kconfig option.
 
-==v1.0.9 (Apr 2010)==
+==next3-1.0.9 (Apr 2010)==
 * First public release.
 * Next3 wiki.
 * Free snapshot blocks when discarding snapshots (tune2fs -O ^has_snapshot).
@@ -59,7 +65,7 @@
 * Handle partial page write and partial page truncate correctly.
 * Fsck of exclude bitmap.
 
-==v1.0.8 (Feb 2010)==
+==next3-1.0.8 (Feb 2010)==
 Bug fixes:
 * Incorrect cached data in new snapshot (fix COW-read race).
 * Unused blocks moved to snapshot (fix test COW bitmap blocks count).
@@ -77,44 +83,44 @@ Sanity tests:
 Compatibility:
 * requires e2fsprogs v1.41.9-next3-1.0.8.
 
-==v1.0.7 (Jan 2010)==
+==next3-1.0.7 (Jan 2010)==
 * Clear snapshot blocks from COW bitmap with the use of exclude bitmap.
 
-==v1.0.6 (Dec 2009)==
+==next3-1.0.6 (Dec 2009)==
 * Collect COW statistics (cached/clear/mapped/moved/copied).
 * Unit testing of race conditions.
 
-==v1.0.5 (Nov 2009)==
+==next3-1.0.5 (Nov 2009)==
 * Cache test_and_cow result in journal_head.
 * Count COW credits in transaction handle.
 * Trace journal transactions remaining credits and statistics.
 * Implement next3_journal_release().
 * Clean old snapshot file blocks from COW bitmap.
 
-==v1.0.4 (Oct 2009)==
+==next3-1.0.4 (Oct 2009)==
 * Implement snapshot merge.
 * Snapshot shrink/merge after file system resize.
 * Disallow snapshot take on a non empty file.
 
-==v1.0.3 (Sep 2009)==
+==next3-1.0.3 (Sep 2009)==
 * Rebase to kernel 2.6.31.
 * Support for online resize.
 * Reserve disk space for snapshot use on snapshot take.
 * Copy super block to snapshot header on snapshot take.
 * Store snapshot ID in inode generation.
 
-==v1.0.2 (Mar 2009)==
+==next3-1.0.2 (Mar 2009)==
 * Added "snapshot version" command.
 * "snapshot start/stop" command calls next3 mount/umount.
 * "snapshot clean/mkfs" creates a journal of size 2G (smaller file systems are not supported).
 * Fix journal credits in "snapshot create".
 
-==v1.0.1 (Feb 2009)==
+==next3-1.0.1 (Feb 2009)==
 * After formatting an hard disk and before "snapshot config", reboot is required.
 * After "snapshot config", reboot is required.
 * Use the command "snapshot take" without the <snapshot-name> argument to create a snapshot named "@GMT-<date>-<time>".
 
-==v1.0.0 (Jan 2009)==
+==next3-1.0.0 (Jan 2009)==
 * First beta release.
 * Patch to kernel 2.6.28.
 * Patch to e2fsprogs v1.41.1.
