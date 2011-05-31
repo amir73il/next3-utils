@@ -1,48 +1,48 @@
-Next3 HOWTO:
-============
+ext4dev snapshots HOWTO:
+========================
 
 This HOWTO file contains some basic examples of how to start working
-with next3 snapshots.
-For instructions how to build and install next3 see INSTALL file.
+with ext4dev snapshots.
+For instructions how to build and install ext4dev snapshots see INSTALL file.
 
 Getting started with snapshots:
 ===============================
 
-1. Setup a next3 filesystem
-===========================
-Run the "next3 mkfs" command to create a new next3 filesystem.
+1. Setup an ext4dev filesystem
+==============================
+Run the "snapshot.ext4dev mkfs" command to create a new ext4dev filesystem.
 
-# next3 mkfs /dev/1/vol1
-mke2fs 1.41.9-next3-1.0.12 (25-Jul-2010)
+# snapshot.ext4dev mkfs /dev/1/vol1
+mke2fs 1.41.14-next3-1.0.13-7 (24-May-2011)
 ...
-# mount -t next3 /dev/1/vol1 /var/vol/1
+# mount -t ext4dev /dev/1/vol1 /var/vol/1
 
 The format will fail if the filesystem is smaller than 4G.
 
-Alternatively, run the "next3 on" command to convert an existing ext3 filesystem to next3.
+Alternatively, run the "snapshot.ext4dev on" command to convert an existing ext4 filesystem to ext4dev.
 
 # umount /var/vol/1
-# next3 on /dev/1/vol1
-tune2fs 1.41.9-next3-1.0.12 (25-Jul-2010)
+# snapshot.ext4dev on /dev/1/vol1
+tune2fs 1.41.14-next3-1.0.13-7 (24-May-2011)
 ...
 snapshot feature added to /dev/1/vol1
 .
-# mount -t next3 /dev/1/vol1 /var/vol/1
+# mount -t ext4dev /dev/1/vol1 /var/vol/1
 
 The conversion will fail if the filesystem is smaller than the 4G
-or if the existing ext3 filesystem has a block size other than 4K.
-It is recommended to remove the journal before converting to next3.
+or if the existing ext4 filesystem has a block size other than 4K.
+It is recommended to remove the journal before converting to ext4dev.
 
 2. Take a snapshot
 ==================
-To take a snapshot named "Monday", use the command "next3 take Monday".
-To view the status of current snapshots, use the command "next3 stat".
+To take a snapshot named "Monday", use the command "snapshot.ext4dev take Monday".
+To view the status of current snapshots, use the command "snapshot.ext4dev stat".
 
-# next3 take Monday
+# snapshot.ext4dev take Monday
 snapshot /var/vol/1@Monday was created
 .
-# next3 stat
-Mounted next3 filesystem and snapshots:
+# snapshot.ext4dev stat
+Mounted ext4dev filesystem and snapshots:
 Filesystem           1K-blocks      Used Available Use% Mounted on
 /dev/1/vol1          480713424    203016 456091492   0% /var/vol/1
 .
@@ -55,11 +55,11 @@ id inode attributes disk-usage mtime filename
 
 3. Mount snapshots
 ==================
-To mount the snapshot Monday, use the command "next3 mount Monday".
-The snapshot will be mounted at "<next3-root>@Monday" with read-only access.
+To mount the snapshot Monday, use the command "snapshot.ext4dev mount Monday".
+The snapshot will be mounted at "<ext4dev-mnt>@Monday" with read-only access.
 
-# next3 stat
-Mounted next3 filesystem and snapshots:
+# snapshot.ext4dev stat
+Mounted ext4dev filesystem and snapshots:
 Filesystem           1K-blocks      Used Available Use% Mounted on
 /dev/1/vol1          480713424    203020 456091488   0% /var/vol/1
 .
@@ -68,11 +68,11 @@ id inode attributes disk-usage mtime filename
 ---------------------------------------------
 1 21184514 S-a----- 176.0K Feb 9 18:51 /var/vol/1/.snapshots/Monday
 .
-# next3 mount Monday
+# snapshot.ext4dev mount Monday
 snapshot /var/vol/1@Monday is mounted
 .
-# next3 stat
-Mounted next3 filesystem and snapshots:
+# snapshot.ext4dev stat
+Mounted ext4dev filesystem and snapshots:
 Filesystem           1K-blocks      Used Available Use% Mounted on
 /dev/1/vol1          480713424    203020 456091488   0% /var/vol/1
 /var/vol/1/.snapshots/Monday
@@ -87,15 +87,15 @@ id inode attributes disk-usage mtime filename
 
 4. Delete a snapshot
 ====================
-Finally, to delete snapshot Monday, use the command "next3 delete Monday".
+Finally, to delete snapshot Monday, use the command "snapshot.ext4dev delete Monday".
 
-# next3 delete Monday
+# snapshot.ext4dev delete Monday
 snapshot /var/vol/1@Monday was unmounted
 .
 snapshot /var/vol/1@Monday is deleted
 .
-# next3 stat
-Mounted next3 filesystem and snapshots:
+# snapshot.ext4dev stat
+Mounted ext4dev filesystem and snapshots:
 Filesystem           1K-blocks      Used Available Use% Mounted on
 /dev/1/vol1          480713424    202844 456091664   0% /var/vol/1
 .
@@ -109,8 +109,8 @@ id inode attributes disk-usage mtime filename
 5. What else?
 =============
 A few more useful commands:
-"next3 help <cmd>" - display help on next3 commands
-"next3 debug <n>" - set next3 debug level (default=1)
-"next3 tests" - runs a few simple sanity tests
+"snapshot.ext4dev help <cmd>" - display help on snapshot.ext4dev commands
+"snapshot.ext4dev debug <n>" - set snapshot.ext4dev debug level (default=1)
+"snapshot.ext4dev tests" - runs a few simple sanity tests
 
 

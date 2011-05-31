@@ -1,20 +1,13 @@
-Experimental next3 features:
-----------------------------
-- exclude files with 'nodump' flag (chattr +d) from snapshot
+-journal COW credits
+     journal COW credits have to be recomputed for extent file.
 
-Unsupported ext3 features:
---------------------------
-- journaled quotas (copy user/group quota blocks on snapshot take)
-- block size != PAGE_SIZE
-- data journaling
+-partial-write
+     Partial-write need to be handle more elegently for snapshot.
+     A private block_write_begin() is needed.
 
-Stability
---------------------
-- unit testing of post crash recovery
+-extent merge
+     Try to merge extent after MOW. A more sophiscated extent splitting
+     function is needed. 
 
-Performance:
-------------
-- run file system benchmarks
-- improved block allocation strategies for snapshot file
-- use single page for unmodified blocks (via special snapshot loop device)
-
+-flex bg
+     Shrink snapshots correctly in non-first flex group

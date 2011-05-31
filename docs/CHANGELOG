@@ -1,5 +1,13 @@
-v1.0.13
--------
+ext4dev_snapshots-1.0.13
+------------------------
+May 26, 2010
+- first ext4 snapshots release
+- builds a stand-alone ext4dev module with snapshots support
+- installer supports kernel version 2.6.38
+- tested on Ubuntu 11.4 and Fedora 15
+
+next3-1.0.13
+------------
 Feb 3, 2010
 - upgrade next3 utils to e2fsprogs-1.41.14
 - installer supports kernel versions 2.6.31-2.6.35
@@ -23,8 +31,8 @@ Feb 3, 2010
 - disable mount with data!=ordered
 - disable mount without exclude_inode,has_snapshot features
 
-v1.0.12
--------
+next3-1.0.12
+------------
 Aug 8, 2010
 - installer supports kernel versions 2.6.27-2.6.33
 - tested on Ubuntu desktop releases 9.10 and 10.4
@@ -39,8 +47,8 @@ Aug 8, 2010
 - fix exclude bitmap errors after online resize
 - alternative snapshot flags with lssnap/chsnap
 
-v1.0.11
--------
+next3-1.0.11
+------------
 Jun 14, 2010
 - finalized on-disk format
 - migrate old format to new format on e2fsck, tune2fs and resize2fs
@@ -48,8 +56,8 @@ Jun 14, 2010
 - check snapshot list on fsck
 - fix snapshot merge bug
 
-v1.0.10
--------
+next3-1.0.10
+------------
 May 20, 2010
 - replace mke2fs/tune2fs option -O big_journal with -J big
 - fix snapshot shrink bug
@@ -57,8 +65,8 @@ May 20, 2010
 - clear excluded blocks from COW bitmap
 - support disk quotas (not journaled)
 
-v1.0.9
-------
+next3-1.0.9
+-----------
 Apr 15, 2010
 - first public release of next3
 - next3 wiki [http://sourceforge.net/apps/mediawiki/next3]
@@ -68,8 +76,8 @@ Apr 15, 2010
 - handle partial page write and partial page truncate correctly
 - fsck of exclude bitmap
 
-v1.0.8
-------
+next3-1.0.8
+-----------
 Feb 21, 2010
 Bug fixes:
 - incorrect cached data in new snapshot (fix COW-read race)
@@ -88,19 +96,19 @@ Sanity tests:
 Compatibility:
 - requires e2fsprogs v1.41.9-next3-1.0.8
 
-v1.0.7
-------
+next3-1.0.7
+-----------
 Jan 7, 2010
 - clear snapshot blocks from COW bitmap with the use of exclude bitmap
 
-v1.0.6
-------
+next3-1.0.6
+-----------
 Dec 17, 2009
 - collect COW statistics (cached/clear/mapped/moved/copied)
 - unit testing of race conditions
 
-v1.0.5
-------
+next3-1.0.5
+-----------
 Oct 27, 2009
 - cache test_and_cow result in journal_head
 - count COW credits in handle
@@ -108,15 +116,15 @@ Oct 27, 2009
 - implement journal_release
 - clean old snapshot files from COW bitmap
 
-v1.0.4
-------
+next3-1.0.4
+-----------
 Oct 4, 2009
 - snapshot merge
 - snapshot shrink/merge after file system resize
 - disallow snapshot create on a non empty file
 
-v1.0.3
-------
+next3-1.0.3
+-----------
 Sep 14, 2009
 - rebase to kernel 2.6.31
 - support for online resize
@@ -124,8 +132,8 @@ Sep 14, 2009
 - copy super block to snapshot header
 - store snapshot ID in inode generation
 
-v1.0.2
-------
+next3-1.0.2
+-----------
 Mar 22, 2009
 - added "snapshot version" command
 - "snapshot start/stop" command calls storage mount/umount, so "snapshot clean/restart" works
@@ -133,8 +141,8 @@ Mar 22, 2009
 - "snapshot clean/mkfs" creates a journal of size 2G (smaller file systems are not supported)
 - fix journal credits in "snapshot create"
 
-v1.0.1
-------
+next3-1.0.1
+-----------
 Feb 2, 2009
 - After formatting an hard disk and before "snapshot config", reboot is required
 - "snapshot config" command takes a 3rd argument <share-name>
@@ -146,8 +154,8 @@ Feb 2, 2009
 - "@GMT-<date>-<time>" snapshots are viewable via CIFS shadow copies
   (don't forget to run "snapshot mount" after reboot)
 
-v1.0.0
-------
+next3-1.0.0
+-----------
 Jan 8, 2009
 - first beta release
 - patch to kernel 2.6.28

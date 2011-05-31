@@ -1,21 +1,22 @@
 NEXT3(TM) is a flavor of the widely used Ext3 file system with built-in support for snapshots. 
 Developed by CTERA Networks, NEXT3 is licensed under the GPL.
 
-This package is available for download on the Next3 project download page [http://sourceforge.net/projects/next3/files/].
+This package contains a standalone ext4dev module with NEXT3 snaphsots support.
+It is available for download on the NEXT3 project download page [http://next3.sourceforge.net/files/].
 
 The package consists of the following files:
 README - This file.
-COPYING - GPL License.
-CHANGELOG - Release notes.
-INSTALL - Build and install instructions.
-HOWTO - Getting started with snapshots.
-BUGS - Open issues.
-Makefile - Download, build, install and test next3 kernel module and utils.
-bin/next3 - Next3 snapshots management script.
-bin/{fsck,mkfs,tunefs,lsattr/chattr}.next3 - Pre-compiled (for x86) e2fsprogs utils with next3 support patches.
+Makefile - Download, build, install and test ext4dev kernel module and utils.
+docs/COPYING - GPL License.
+docs/CHANGELOG - Release notes.
+docs/INSTALL - Build and install instructions.
+docs/HOWTO - Getting started with snapshots.
+docs/BUGS - Open issues.
+bin/snapshot.ext4dev - snapshots management script.
+bin/{fsck,mkfs,tunefs,lsattr/chattr}.ext4dev - Pre-compiled (for x86_64) e2fsprogs utils with snapshot support patches.
 
-For more information, please visit the Next3 project page [http://sourceforge.net/apps/mediawiki/next3].
-Please post support questions to the Next3-users mailing list [https://lists.sourceforge.net/lists/listinfo/next3-users].
-Please post bugs and technical questions to the Next3-devel mailing list [https://lists.sourceforge.net/lists/listinfo/next3-devel].
-For other requests please contact CTERA <next3@ctera.com>.
+For more information, please visit the NEXT3 wiki [http://sourceforge.net/apps/mediawiki/next3].
+Please post support questions to the next3-users mailing list [https://lists.sourceforge.net/lists/listinfo/next3-users].
+Please post bugs and technical questions to the next3-devel mailing list [https://lists.sourceforge.net/lists/listinfo/next3-devel].
+For other requests please contact Amir Goldstein <amir73il@users.sourceforge.net>.
 

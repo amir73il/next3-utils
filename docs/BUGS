@@ -1,40 +1,4 @@
 Reported-by: Amir Goldstein <amir73il@users.sf.net>
-Date:   Mon Mar 28 16:52:23 2011 +0200
-HEAD: 6fabd57c
-
-when running xfstest 70 with acl,user_xattr mount options, the test hangs on fsstress task:
-
-[ 1801.310348] INFO: task fsstress:15061 blocked for more than 120 seconds.
-[ 1801.310351] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-[ 1801.310354] fsstress        D 0000000000000000     0 15061  15060 0x00000000
-[ 1801.310360]  ffff880037953a68 0000000000000046 0000000000000000 ffff880000000000
-[ 1801.310368]  0000000000014000 ffff880121521fa0 ffff880121522320 ffff880037953fd8
-[ 1801.310375]  ffff880121522328 0000000000014000 ffff880037952010 0000000000014000
-[ 1801.310383] Call Trace:
-[ 1801.310388]  [<ffffffff815bdee5>] rwsem_down_failed_common+0xc5/0x160
-[ 1801.310393]  [<ffffffff815bdf93>] rwsem_down_write_failed+0x13/0x20
-[ 1801.310399]  [<ffffffff812f1513>] call_rwsem_down_write_failed+0x13/0x20
-[ 1801.310416]  [<ffffffffa02af93e>] ? next4_xattr_set_handle+0xce/0x490 [next4]
-[ 1801.310422]  [<ffffffff815bd125>] ? down_write+0x65/0x70
-[ 1801.310438]  [<ffffffffa02af93e>] ? next4_xattr_set_handle+0xce/0x490 [next4]
-[ 1801.310443]  [<ffffffff8109e6ad>] ? trace_hardirqs_on+0xd/0x10
-[ 1801.310459]  [<ffffffffa02af93e>] next4_xattr_set_handle+0xce/0x490 [next4]
-[ 1801.310465]  [<ffffffff8124d5b6>] ? jbd2__journal_start+0xe6/0x130
-[ 1801.310482]  [<ffffffffa02afd9f>] next4_xattr_set+0x9f/0x100 [next4]
-[ 1801.310498]  [<ffffffffa02afe4c>] next4_xattr_user_set+0x4c/0x50 [next4]
-[ 1801.310503]  [<ffffffff8118f509>] generic_setxattr+0x99/0xa0
-[ 1801.310508]  [<ffffffff81190260>] __vfs_setxattr_noperm+0x50/0x150
-[ 1801.310513]  [<ffffffff8119041c>] vfs_setxattr+0xbc/0xc0
-[ 1801.310518]  [<ffffffff811904f0>] setxattr+0xd0/0x150
-[ 1801.310523]  [<ffffffff81177d95>] ? putname+0x35/0x50
-[ 1801.310528]  [<ffffffff8117b852>] ? user_path_at+0x62/0xa0
-[ 1801.310533]  [<ffffffff811906f5>] sys_lsetxattr+0xa5/0xc0
-[ 1801.310538]  [<ffffffff815be0d9>] ? trace_hardirqs_on_thunk+0x3a/0x3f
-[ 1801.310544]  [<ffffffff8100bf82>] system_call_fastpath+0x16/0x1b
-[ 1801.310547] INFO: lockdep is turned off.
-
-============================================================================================================
-Reported-by: Amir Goldstein <amir73il@users.sf.net>
 Date:   Tue Mar 29 22:19:41 2011 +0200
 HEAD: 40073931
 
@@ -55,4 +19,24 @@ Mar 29 22:19:41 qalab kernel: [27505.976657] snapshot: warning: insufficient buf
 Mar 29 22:19:41 qalab kernel: [27505.976671] snapshot: warning: insufficient buffer/user credits (1340/0) for COW operation?
 Mar 29 22:19:41 qalab kernel: [27505.988038] snapshot: snapshot (871) deleted
 
+============================================================================================================
+Reported-by: Amir Goldstein <amir73il@users.sf.net>
+Date:   Mon May 2 16:12:04 2011 +0300
+HEAD: d5fa928b
 
+snapshot shrink leaves unreclaimed block when ext4 has flex_bg layout
+
+Running 'e4snapshot tests 6' will create snapshots 1-6 with size 1M-6M.
+
+Running 'e4snapshot test 7' will create snapshot 7, mount snapshot 1 and
+delete snapshots 2-6.
+This should free up space of snapshots 2-6, but it doesn't because of
+flex_bg shrink bug.
+
+Running 'e4snapshot test 8' will create snapshot 8, umount snapshot 1 and
+deletes snapshot 7.
+This merges snapshots 2-7 to snapshot 1, which is much too big (16M)
+due to flex_bg shrink bug.
+
+
+============================================================================================================

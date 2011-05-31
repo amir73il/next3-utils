@@ -3,7 +3,7 @@ PROGS:= truncate fallocate
 all: ${PROGS}
 
 install:
-	install -m 755 next4 ${PROGS} ${DESTDIR}
+	install -m 755 ${PROGS} ${DESTDIR}
 	
 clean:
-	rm -rf ${PROGS} *snap *.next4
+	rm -rf ${PROGS}

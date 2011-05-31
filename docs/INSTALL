@@ -1,71 +1,73 @@
-Next3 INSTALL:
-==============
+ext4dev snapshots INSTALL:
+==========================
 
-This INSTALL file contains instructions for building and installing next3 kernel module and utils.
+This INSTALL file contains instructions for building and installing ext4dev kernel module and utils.
 
-The installer was tested on Ubuntu 9.10-10.10 distributions and on x86 and x86_64 machines,
-but should work on any distribution with kernel version between 2.6.31 and 2.6.35 and on any machine.
+The installer was tested on Ubuntu 11.4 and Fedora 15 distributions and on x86 and x86_64 machines,
+but should work on any distribution with kernel version 2.6.38 and on any machine.
 
-Support for other kernel versions will be provided later on or per demand.
+Support for newer kernel versions may be provided later on or per demand.
 
-1. Download and build next3 kernel module and utils
-===================================================
-Download the next3 package from [http://sourceforge.net/projects/next3/files/].
+1. Download and build ext4dev kernel module and utils
+=====================================================
+Download the ext4dev package from [http://next3.sourceforge.net/files/].
 
-The next3 kernel module has to match the kernel version on your system,
-so the next3 Makefile detects your kernel version and tries to download
-matching patches from the next3 website.
+The ext4dev kernel module has to match the kernel version on your system,
+so the ext4dev Makefile detects your kernel version and tries to download
+matching patches from the ext4dev website.
 
-Pre-compiled binaries (for x86) of the patched e2fsprogs utils are included in the next3 package.
+Pre-compiled binaries (for x86_64) of the patched e2fsprogs utils are included in the ext4dev package.
 If those binaries fail to execute, the Makefile will build the utils for your system.
 
-To build the next3 kernel module and optionally the next3 utils, run:
+To build the ext4dev kernel module and optionally the ext4dev utils, run:
 
-# tar xfz next3-1.0.12.tar.gz
-# cd next3-1.0.12
+# tar xfz ext4dev_snapshots-1.0.13.tar.gz
+# cd ext4dev_snapshots-1.0.13
 # make
-downloading next3 patches for kernel 2.6.29.3...
+downloading ext4dev patches for kernel 2.6.38.6...
 ...
-make -C /lib/modules/2.6.29.3/build M=/home/amir/next3-1.0.12/next3 modules
+make -C /lib/modules/2.6.38.6/build M=/home/amir/ext4dev_snapshots-1.0.13/ext4dev modules
 ...
-  LD [M]  /home/amir/next3-1.0.12/next3/next3.ko
-make[1]: Leaving directory `/usr/src/kernels/linux-2.6.29.3'
-bin/mkfs.next3 -V || make e2fsprogs
-mke2fs 1.41.9-next3-1.0.12 (25-Jul-2010)
-        Using EXT2FS Library version 1.41.9-next3-1.0.12
-bin/fsck.next3 -V
-e2fsck 1.41.9-next3-1.0.12 (25-Jul-2010)
-        Using EXT2FS Library version 1.41.9-next3-1.0.12, 25-Jul-2010
+  LD [M]  /home/amir/ext4dev_snapshots-1.0.13/ext4dev/ext4dev.ko
+make[1]: Leaving directory `/usr/src/kernels/linux-2.6.38.6'
+bin/mkfs.ext4dev -V || make e2fsprogs
+mke2fs 1.41.14-next3-1.0.13-7 (24-May-2011)
+        Using EXT2FS Library version 1.41.14-next3-1.0.13-7
+bin/fsck.ext4dev -V
+e2fsck 1.41.14-next3-1.0.13-7 (24-May-2011)
+        Using EXT2FS Library version 1.41.14-next3-1.0.13-7, 24-May-2011
 
 
-2. Test next3 snapshots
-=======================
-At this point, you can test the next3 filesystem without installing the module and utils on your system.
-To create a next3 filesystem on an image file and test snapshots, run:
+2. Test ext4dev snapshots
+=========================
+At this point, you can test the ext4dev filesystem without installing the module and utils on your system.
+To create a ext4dev filesystem on an image file and test snapshots, run:
 
 # sudo make test
-grep next3 /proc/modules || /sbin/insmod next3/next3.ko
-(test -f test.img && (bin/tunefs.next3 -l test.img | grep UUID)) || ( touch test.img ; yes | bin/mkfs.next3 test.img 1048576 )
-mke2fs 1.41.9-next3-1.0.12 (25-Jul-2010)
+grep ext4dev /proc/modules || /sbin/insmod ext4dev/ext4dev.ko
+(test -f test.img && (bin/tunefs.ext4dev -l test.img | grep UUID)) || ( touch test.img ; yes | bin/mkfs.ext4dev test.img 1048576 )
+mke2fs 1.41.14-next3-1.0.13-7 (24-May-2011)
 ...
 Running snapshot test 1:
 ------------------------
 ...
 
 
-3. Install next3 kernel module and utils on your system
-=======================================================
+3. Install ext4dev kernel module and utils on your system
+=========================================================
 # sudo make install
-mkdir -p /lib/modules/2.6.29.3/fs/next3
-install -m 644 next3/next3.ko /lib/modules/2.6.29.3/fs/next3
+mkdir -p /lib/modules/2.6.38.6/fs/ext4dev
+install -m 644 ext4dev/ext4dev.ko /lib/modules/2.6.38.6/fs/ext4dev
 /sbin/depmod -a
-/sbin/modprobe next3
-install bin/next3 /sbin
-install bin/fsck.next3 /sbin
-install bin/mkfs.next3 /sbin
-install bin/tunefs.next3 /sbin
-install bin/lsattr.next3 /sbin
-install bin/chattr.next3 /sbin
+/sbin/modprobe ext4dev
+install bin/snapshot.ext4dev /sbin
+install bin/fsck.ext4dev /sbin
+install bin/mkfs.ext4dev /sbin
+install bin/tunefs.ext4dev /sbin
+install bin/dumpfs.ext4dev /sbin
+install bin/lsattr.ext4dev /sbin
+install bin/chattr.ext4dev /sbin
+install bin/resize.ext4dev /sbin
 
 
-see HOWTO file for some usage examples of working with next3 snapshot.
+see HOWTO file for some usage examples of working with ext4dev snapshot.
