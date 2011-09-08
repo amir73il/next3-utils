@@ -21,8 +21,7 @@ install: install_module install_utils
 
 .PHONY: module
 module: ${EXT4}
-	test -f ${EVENTS_DIR}/${EXT4}.h || \
-		sudo install ${EXT4}/${EXT4}_events.h ${EVENTS_DIR}/${EXT4}.h
+	sudo install -C ${EXT4}/${EXT4}_events.h ${EVENTS_DIR}/${EXT4}.h
 	make -C ${KDIR} M=${PWD}/${EXT4} modules
 	install -T ${EXT4}/${EXT4}.ko bin/${EXT4}.ko
 
