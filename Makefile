@@ -47,7 +47,8 @@ install_utils:
 
 .PHONY: test
 test:
-	grep ${EXT4} /proc/modules || /sbin/modprobe ${EXT4} 2>/dev/null || /sbin/insmod bin/${EXT4}.ko
+	grep ${EXT4} /proc/modules || /sbin/insmod bin/${EXT4}.ko || /sbin/modprobe ${EXT4}
+	./bin/snapshot.${EXT4} version
 	touch test.img && mkdir -p test && ./bin/snapshot.${EXT4} config ${PWD}/test.img ${PWD}/test
 	(./bin/tunefs.${EXT4} -l test.img | grep UUID) || \
 		( ./bin/truncate -s 4G test.img ; yes | ./bin/snapshot.${EXT4} mkfs )
