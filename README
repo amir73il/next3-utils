@@ -15,7 +15,7 @@ docs/BUGS - Open issues.
 bin/snapshot.ext4dev - snapshots management script.
 bin/{fsck,mkfs,tunefs,lsattr/chattr}.ext4dev - Pre-compiled (for x86_64) e2fsprogs utils with snapshot support patches.
 
-For more information, please visit the NEXT3 wiki [http://sourceforge.net/apps/mediawiki/next3].
+For more information, please visit the NEXT3 wiki [https://github.com/amir73il/next3-utils/wiki].
 Please post support questions to the next3-users mailing list [https://lists.sourceforge.net/lists/listinfo/next3-users].
 Please post bugs and technical questions to the next3-devel mailing list [https://lists.sourceforge.net/lists/listinfo/next3-devel].
 For other requests please contact Amir Goldstein <amir73il@users.sourceforge.net>.

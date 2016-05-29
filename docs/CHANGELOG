@@ -69,7 +69,7 @@ next3-1.0.9
 -----------
 Apr 15, 2010
 - first public release of next3
-- next3 wiki [http://sourceforge.net/apps/mediawiki/next3]
+- next3 wiki
 - free snapshot blocks when discarding snapshots (tune2fs -O ^has_snapshot)
 - cleanup after reboot in the middle of snapshot take
 - disable unsupported features: disk quota, data journaling, block size != 4K
