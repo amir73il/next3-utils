@@ -97,12 +97,12 @@ The locking semantics SHOULD guarantee that data structure are manipulated by th
 
 ==Data integrity rules==
 # Snapshot code MUST NOT change any data or metadata block, EXCEPT changes that are explicitly allowed by other data integrity rules.
-# Snapshot code MAY change [[#Reserved fields and bits in on-disk structures]] (which are not used by ext2/ext3/ext4).
-# Snapshot code MAY add [[#New fields and bits in in-memory structures]], as long as they are initialized properly.
-# The [[#New snapshot file flags]] MAY ONLY be set on snapshot files.
-# Snapshot code MAY indirectly change [[#File system global bitmaps and counters]], when allocating blocks for active snapshot.
-# Snapshot code MAY directly change [[#Blocks mapped to special snapshot inodes]].
-# Snapshot code MAY change the inode mapping of [[#Blocks moved to snapshot files]], given that the data of these blocks is about to become obsolete (overwritten or truncated completely).
+# Snapshot code MAY change [[Code documentation#New_fields_and_bits_in_ondisk_structures]] (which are not used by ext2/ext3/ext4).
+# Snapshot code MAY add [[Code documentation#New_fields_and_bits_in_inmemory_structures]], as long as they are initialized properly.
+# The [[Code documentation#New_snapshot_file_flags]] MAY ONLY be set on snapshot files.
+# Snapshot code MAY indirectly change [[Code documentation#File_system_global_bitmaps_and_counters]], when allocating blocks for active snapshot.
+# Snapshot code MAY directly change [[Code documentation#Blocks_mapped_to_special_snapshot_inodes]].
+# Snapshot code MAY change the inode mapping of [[Code documentation#Blocks_moved_to_snapshot_files]], given that the data of these blocks is about to become obsolete (overwritten or truncated completely).
 
 ==General locking semantics==
 Following are general rules about manipulating snapshot structures.

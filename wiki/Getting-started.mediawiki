@@ -126,7 +126,7 @@ id inode attributes disk-usage mtime filename
 
 ==Mount a snapshot==
 To mount snapshot 'Monday', use the command "next3 mount Monday".
-The snapshot will be mounted at "<next3-root>@Monday" with read-only access.
+The snapshot will be mounted at "NEXT3_ROOT@Monday" with read-only access.
 
 <pre>
 # next3 stat
@@ -160,12 +160,12 @@ id inode attributes disk-usage mtime filename
 Finally, to delete snapshot 'Monday', use the command "next3 delete Monday".
 
 <pre>
-~ # next3 delete Monday
+# next3 delete Monday
 snapshot /var/vol/1@Monday was unmounted
 .
 snapshot /var/vol/1@Monday is deleted
 .
-~ # next3 stat
+# next3 stat
 Mounted next3 filesystem and snapshots:
 Filesystem           1K-blocks      Used Available Use% Mounted on
 /dev/1/vol1          480713424    202844 456091664   0% /var/vol/1
@@ -179,6 +179,6 @@ id inode attributes disk-usage mtime filename
 
 ==What else?==
 A few more useful commands:
-* "next3 help <cmd>" - display help on next3 commands.
-* "next3 debug <n>" - set next3 debug level (default=1).
+* "next3 help CMD" - display help on next3 commands.
+* "next3 debug N" - set next3 debug level (default=1).
 * "next3 tests" - runs a few simple sanity tests.

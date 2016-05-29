@@ -1,9 +1,9 @@
 This page was created to help simplifying the user-kernel API for Next3 snapshots, according to suggestions of Ted T'so.
 
-For internal kernel API, see [[Code documentation#Snapshot kernel API]].
+For internal kernel API, see [[Code documentation#Snapshot_kernel_API]].
 
 == Taking a snapshot ==
-Script command: "next3 take <name>"
+Script command: "next3 take NAME"
 
 Current API:
 <pre>
@@ -22,7 +22,7 @@ Simplified API:
 '''<font color=red>TODO: Invoke snapshot take from create command.</font>'''
 
 == Mounting a snapshot ==
-Script command: "next3 mount <name>"
+Script command: "next3 mount NAME"
 
 Current API:
 <pre>
@@ -38,7 +38,7 @@ Simplified API:
 '''<font color=red>TODO: Auto-enable snapshot on snapshot file open.</font>'''
 
 == Deleting a snapshot ==
-Script command: "next3 remove <name>"
+Script command: "next3 remove NAME"
 
 Current API:
 <pre>
