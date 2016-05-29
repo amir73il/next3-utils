@@ -54,6 +54,11 @@ Please post benchmark results to the [https://lists.sourceforge.net/lists/listin
 
 Please contact the project administrator if you would like to contribute to the project by running benchmarks.
 
+== LWN Articles ==
+May  2010: [https://lwn.net/Articles/387231/ The Next3 filesystem]
+
+June 2011: [https://lwn.net/Articles/446618/ Ext4 snapshot concerns]
+
 == Help and support ==
 Please post support questions to the [https://lists.sourceforge.net/lists/listinfo/next3-users next3-users mailing list].
 
