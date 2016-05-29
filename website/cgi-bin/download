@@ -44,14 +44,19 @@ if [ ! -z $KREL ] ; then
 	IFS="${IFS}.-"
 	set $KREL
 	IFS="$OIFS"
-	KVER="`[ _$1 = _2 ] && [ _$2 = _6 ] && echo $1.$2.$3`"
+	if [ _$1 = _2 ] && [ _$2 = _6 ] ; then
+		KVER="`echo $1.$2.$3`"
+	fi
+	if [ _$1 = _3 ] ; then
+		KVER="`echo $1.$2`"
+	fi
 fi
 
 #echo Kernel Release: $KREL
 #echo Kernel Version: $KVER
 #echo Machine: $MACH
 
-BASE=/home/groups/n/ne/next3
+BASE=/home/project-web/next3
 
 KERNEL=linux-$KVER
 # look for file in kernel specific dir...

@@ -12,7 +12,7 @@ echo ""
 <PRE>
 EOM
 
-cat /home/groups/n/ne/next3/persistent/download.log
+cat /home/project-web/next3/persistent/download.log
 
 CAT << EOM
 </PRE>
